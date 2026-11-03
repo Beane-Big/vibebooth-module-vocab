@@ -10,14 +10,17 @@ ARG HF_ENDPOINT=https://huggingface.co
 ARG SPACY_MODEL_URL=https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_ROOT_USER_ACTION=ignore PYTHONUNBUFFERED=1
 WORKDIR /app
-COPY requirements.txt fetch_wheel.py ./
+COPY requirements.txt download.py fetch_wheel.py ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     python fetch_wheel.py "$SPACY_MODEL_URL" /tmp/wheels \
  && pip install --index-url "$PIP_INDEX_URL" -r requirements.txt \
  && pip install --index-url "$PIP_INDEX_URL" --no-deps kokoro-onnx==0.6.1 /tmp/wheels/*.whl \
  && rm -rf /tmp/wheels
-COPY voices.py fetch_models.py ./
-RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models
+# 模型和声音分两步下载，后一步失败时重新构建，前一步用缓存。
+COPY fetch_models.py ./
+RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models model
+COPY voices.py ./
+RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models voices
 COPY server.py .
 RUN useradd --uid 10001 --no-create-home app
 USER app
