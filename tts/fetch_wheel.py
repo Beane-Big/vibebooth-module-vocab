@@ -4,15 +4,14 @@
 import email.parser
 import os
 import sys
-import urllib.request
 import zipfile
+
+from download import download
 
 url, out = sys.argv[1], sys.argv[2]
 os.makedirs(out, exist_ok=True)
 tmp = os.path.join(out, "download.tmp")
-print("下载", url, flush=True)
-with urllib.request.urlopen(url, timeout=120) as r, open(tmp, "wb") as f:
-    f.write(r.read())
+download(url, tmp)
 with zipfile.ZipFile(tmp) as z:
     meta = next(n for n in z.namelist() if n.endswith(".dist-info/METADATA"))
     info = email.parser.Parser().parsestr(z.read(meta).decode("utf-8"))
