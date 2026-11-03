@@ -1,0 +1,5 @@
+.row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.n { color: var(--muted); font-size: 13px; min-width: 2.5em; }
+.word { background: none; color: var(--accent); padding: 0; font-weight: 600; }
+.zh { flex: 1; min-width: 8em; font-size: 14px; }
+.extra { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); margin-left: auto; }

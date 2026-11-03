@@ -1,0 +1,18 @@
+.quiz { display: flex; flex-direction: column; gap: 16px; }
+.top { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; }
+.prompt { min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.prompt p { margin: 0; }
+.big { font-size: 40px; font-weight: 700; }
+.mid { font-size: 22px; font-weight: 600; line-height: 1.35; }
+.answer { border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; text-align: center; }
+.answer p { margin: 0; }
+.grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.grades button { padding: 12px 8px; }
+.again { background: var(--danger); }
+.hard { background: #c77700; }
+.easy { background: #1f8f5a; }
+.right { color: #1f8f5a; font-weight: 600; }
+.wrong { color: var(--danger); font-weight: 600; }
+.ph { color: var(--muted); font-size: 14px; line-height: 1.4; }
+.input { font-size: 22px; text-align: center; }
+.blank { display: inline-block; min-width: 3em; border-bottom: 2px solid currentColor; }
