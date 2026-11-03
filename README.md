@@ -27,7 +27,7 @@
 | --- | --- |
 | `PIP_INDEX_URL` | `https://pypi.tuna.tsinghua.edu.cn/simple` |
 | `HF_ENDPOINT` | `https://hf-mirror.com` |
-| `SPACY_MODEL_URL` | en_core_web_sm-3.8.0 的 wheel 在镜像里的地址，GitHub 能连上时不用填 |
+| `SPACY_MODEL_URL` | en_core_web_sm 的 wheel 在镜像里的地址（3.8.0 或 3.7.1 都行，hf-mirror 上是 3.7.1），GitHub 能连上时不用填 |
 
 ## 常用命令
 
