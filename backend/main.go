@@ -1,4 +1,4 @@
-// 一词两句 的后端。网关已经校验过登录，这里用 SDK 拿到当前用户；每个人的进度存在本模块卷里的 SQLite 文件，词库内置只读。
+// 背单词 的后端。网关已经校验过登录，这里用 SDK 拿到当前用户；每个人的进度存在本模块卷里的 SQLite 文件，词库内置只读。
 package main
 
 import (
@@ -30,7 +30,8 @@ func main() {
 		slog.Error("加载词典失败", "err", err)
 		os.Exit(1)
 	}
-	store, err := OpenStore(filepath.Join(env("DATA_DIR", "/data"), "vocab.db"))
+	dataDir := env("DATA_DIR", "/data")
+	store, err := OpenStore(filepath.Join(dataDir, "vocab.db"))
 	if err != nil {
 		slog.Error("打开数据库失败", "err", err)
 		os.Exit(1)
@@ -39,6 +40,7 @@ func main() {
 
 	api := http.NewServeMux()
 	newHandlers(deck, dict, store).register(api)
+	newSpeaker(env("TTS_URL", "http://vocab-tts:8880"), filepath.Join(dataDir, "tts"), deck, dict).register(api)
 	for _, add := range routes {
 		add(api)
 	}

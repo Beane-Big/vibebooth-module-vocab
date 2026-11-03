@@ -1,4 +1,4 @@
-# 一词两句
+# 背单词
 
 按计划背英语单词，每个词配例句，自动复习和错题本
 
@@ -16,6 +16,18 @@
 ## 词库
 
 `backend/deck/core.json` 是生成好的词库，提交在仓库里，构建镜像不需要联网下载。要更新时运行 `npm install` 再 `npm run deck`：脚本下载 ECDICT、CMUdict、Britfone 和 Tatoeba 的原始数据到 `.cache/deck/`，按词频取前 3000 名，每个词挑最多 5 条中英例句。来源和许可证见 `backend/deck/NOTICE.md`。
+
+## 朗读
+
+英文用模块自带的 Kokoro 语音（容器 `vocab-tts`，代码在 `tts/`）合成，后端把每句的 MP3 存在卷里，全家共用；中文用浏览器朗读。模型在构建镜像时下载，镜像约 1GB。
+
+构建时要下载 Python 包、HuggingFace 上的模型和 GitHub 上的 spaCy 英文模型。服务器在国内时，在构建器设置里加这些构建参数（不加就用官方源）：
+
+| 参数 | 例子 |
+| --- | --- |
+| `PIP_INDEX_URL` | `https://pypi.tuna.tsinghua.edu.cn/simple` |
+| `HF_ENDPOINT` | `https://hf-mirror.com` |
+| `SPACY_MODEL_URL` | en_core_web_sm-3.8.0 的 wheel 在镜像里的地址，GitHub 能连上时不用填 |
 
 ## 常用命令
 

@@ -123,7 +123,7 @@ type Settings struct {
 	Examples   int     `json:"examples"`   // 每个词几条例句，2–5
 	SentencePh bool    `json:"sentencePh"` // 例句下面显示整句音标
 	Accent     string  `json:"accent"`     // en-US 或 en-GB
-	Rate       float64 `json:"rate"`       // 朗读语速，0.6–1.2
+	Rate       float64 `json:"rate"`       // 朗读语速，0.5–1.5
 	AutoRepeat int     `json:"autoRepeat"` // 自动播放时英文读几遍，1–3
 	AutoPause  float64 `json:"autoPause"`  // 自动播放每句之间停几秒，留给跟读
 	AutoZh     bool    `json:"autoZh"`     // 自动播放时读不读中文
@@ -154,7 +154,7 @@ func (s *Settings) Normalize() {
 	if s.Rate == 0 {
 		s.Rate = d.Rate
 	}
-	s.Rate = max(0.6, min(1.2, s.Rate))
+	s.Rate = max(0.5, min(1.5, s.Rate))
 	s.AutoPause = max(0, min(10, s.AutoPause))
 	if s.ReviewMode != "listen" && s.ReviewMode != "look" {
 		s.ReviewMode = "mix"

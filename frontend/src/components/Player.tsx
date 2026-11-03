@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Settings, Word } from "../api";
-import { canSpeak, plainZh, speak, stopSpeaking, wait } from "../speech";
+import { canSpeak, plainZh, prefetchSpeech, speak, stopSpeaking, wait } from "../speech";
 import Icon from "./Icon";
-import WordCard, { pagesOf } from "./WordCard";
+import WordCard, { pagesOf, type Page } from "./WordCard";
 import styles from "./Player.module.css";
 
 type Props = {
@@ -18,12 +18,15 @@ type Props = {
 // 翻页后等一会儿再读，卡片换完、眼睛先看到字再听到声音；连续快速翻页时只读最后停下的那一页。
 const readDelay = 500;
 
+const enOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].en : p.word.w);
+
 // 学习卡片的播放器。手动模式像翻卡片：左右滑动、方向键或按钮翻页，每进一页读一遍英文；
 // 自动模式按“英文（读几遍）→ 中文 → 停顿”一页页往下放，屏幕保持常亮，切到后台就暂停。
 // 翻页、自动播放、再读一遍、翻页时朗读的开关都是卡片底部的图标按钮。
 export default function Player({ words, examples, settings, start = 0, onPos, onDone, doneLabel = "学完了" }: Props) {
   const pages = pagesOf(words, examples);
   const [pos, setPos] = useState(Math.min(start, Math.max(0, pages.length - 1)));
+  const [dir, setDir] = useState(0); // 上一次翻页的方向：1 往后、-1 往前，卡片从对应的一边滑进来
   const [auto, setAuto] = useState(false);
   const [readOnEnter, setReadOnEnter] = useState(() => localStorage.getItem("vocab.readOnEnter") !== "0");
   const run = useRef(0); // 每次翻页或停止都加 1，正在进行的朗读看到编号变了就停下
@@ -38,6 +41,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
       onDone();
       return;
     }
+    setDir(next > pos ? 1 : -1);
     setPos(next);
     onPos?.(next);
   };
@@ -51,7 +55,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   // 读当前页：英文读 repeat 遍，需要时再读中文。
   async function read(id: number, repeat: number, withZh: boolean) {
     const { accent, rate, autoPause } = settings;
-    const en = page.example >= 0 ? page.word.ex[page.example].en : page.word.w;
+    const en = enOf(page);
     const zh = page.example >= 0 ? page.word.ex[page.example].zh : plainZh(page.word.zh[0] ?? "");
     for (let i = 0; i < repeat && run.current === id; i++) {
       if (i > 0) await wait(autoPause * 1000);
@@ -67,6 +71,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   useEffect(() => {
     const id = ++run.current;
     stopSpeaking();
+    if (pages[pos + 1]) prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
     if (auto) {
       (async () => {
         await read(id, settings.autoRepeat, settings.autoZh);
@@ -159,7 +164,8 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   return (
     <div className={styles.player}>
       <div
-        className={styles.stage}
+        key={pos}
+        className={`${styles.stage} ${dir > 0 ? styles.fromRight : dir < 0 ? styles.fromLeft : ""}`}
         onPointerDown={(e) => (touch.current = (e.target as HTMLElement).closest("button") ? null : e.clientX)}
         onPointerUp={(e) => {
           if (touch.current === null) return;

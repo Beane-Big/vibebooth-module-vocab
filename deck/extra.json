@@ -1,0 +1,2198 @@
+{
+"abortion": [
+  {"en":"Abortion is a sensitive topic in many countries.","zh":"堕胎在许多国家都是一个敏感话题。"},
+  {"en":"The new law limits abortion after six weeks.","zh":"新法律限制六周后堕胎。"},
+  {"en":"They had a long debate about abortion rights.","zh":"他们就堕胎权进行了长时间的辩论。"}
+],
+"academic": [
+  {"en":"The academic year starts in September.","zh":"学年从九月开始。"},
+  {"en":"He has an excellent academic record.","zh":"他的学业成绩非常优秀。"},
+  {"en":"She is an academic at Oxford.","zh":"她是牛津大学的一名学者。"}
+],
+"activist": [
+  {"en":"She is a well-known climate activist.","zh":"她是一位知名的气候活动人士。"},
+  {"en":"Activists protested outside the building.","zh":"活动人士在大楼外抗议。"}
+],
+"ad": [
+  {"en":"I saw an ad for a new phone.","zh":"我看到了一款新手机的广告。"},
+  {"en":"She put an ad in the paper to sell her car.","zh":"她在报纸上登了广告卖车。"},
+  {"en":"This video has too many ads.","zh":"这个视频广告太多了。"}
+],
+"additional": [
+  {"en":"Is there an additional charge for breakfast?","zh":"早餐要另外收费吗？"}
+],
+"administration": [
+  {"en":"She studied business administration in college.","zh":"她在大学学的是工商管理。"},
+  {"en":"The new administration promised lower taxes.","zh":"新一届政府承诺降低税收。"},
+  {"en":"Please ask the school administration for a form.","zh":"请向学校行政部门要一张表格。"},
+  {"en":"He has ten years of experience in hospital administration.","zh":"他有十年的医院管理经验。"},
+  {"en":"The administration will announce its plan next week.","zh":"政府下周将公布它的计划。"}
+],
+"administrator": [
+  {"en":"Please contact the system administrator.","zh":"请联系系统管理员。"},
+  {"en":"She is a school administrator.","zh":"她是一名学校行政人员。"},
+  {"en":"The administrator approved my request.","zh":"管理员批准了我的申请。"},
+  {"en":"He works as a hospital administrator.","zh":"他是一名医院管理人员。"},
+  {"en":"Only administrators can change these settings.","zh":"只有管理员可以更改这些设置。"}
+],
+"adviser": [
+  {"en":"My adviser helped me choose my classes.","zh":"我的导师帮我选了课。"},
+  {"en":"She works as a financial adviser.","zh":"她是一名理财顾问。"},
+  {"en":"The president met with his advisers this morning.","zh":"总统今天上午会见了他的顾问们。"},
+  {"en":"You should talk to a legal adviser first.","zh":"你应该先咨询一下法律顾问。"},
+  {"en":"He has been my adviser for three years.","zh":"他做我的指导老师已经三年了。"}
+],
+"advocate": [
+  {"en":"She is a strong advocate for children's rights.","zh":"她是儿童权益的坚定倡导者。"}
+],
+"agenda": [
+  {"en":"What's on the agenda for today's meeting?","zh":"今天的会议议程是什么？"},
+  {"en":"Saving money is high on my agenda.","zh":"存钱是我的头等大事。"},
+  {"en":"Let's add this to the agenda.","zh":"我们把这个加到议程里吧。"},
+  {"en":"He has a hidden agenda.","zh":"他另有图谋。"}
+],
+"aircraft": [
+  {"en":"The aircraft landed safely despite the storm.","zh":"尽管有暴风雨，飞机还是安全降落了。"},
+  {"en":"My uncle repairs aircraft for a living.","zh":"我叔叔是修飞机的。"},
+  {"en":"The airline bought ten new aircraft this year.","zh":"这家航空公司今年买了十架新飞机。"},
+  {"en":"All passengers must stay seated until the aircraft stops.","zh":"飞机停稳前所有乘客必须坐在座位上。"}
+],
+"airline": [
+  {"en":"Which airline are you flying with?","zh":"你坐哪家航空公司的航班？"},
+  {"en":"The airline lost my luggage.","zh":"航空公司把我的行李弄丢了。"},
+  {"en":"She works for an airline as a pilot.","zh":"她在一家航空公司当飞行员。"}
+],
+"alter": [
+  {"en":"We had to alter our plans because of the rain.","zh":"因为下雨，我们不得不改变计划。"},
+  {"en":"She had the dress altered to fit her.","zh":"她把裙子改得合身了。"}
+],
+"alternative": [
+  {"en":"Is there an alternative to driving?","zh":"除了开车还有别的选择吗？"}
+],
+"analysis": [
+  {"en":"The data needs more careful analysis.","zh":"这些数据需要更仔细的分析。"}
+],
+"analyst": [
+  {"en":"She works as a data analyst.","zh":"她是一名数据分析师。"},
+  {"en":"Analysts expect prices to rise next year.","zh":"分析人士预计明年价格会上涨。"},
+  {"en":"He is a financial analyst at a bank.","zh":"他是一家银行的金融分析师。"}
+],
+"analyze": [
+  {"en":"We need to analyze the results carefully.","zh":"我们需要仔细分析结果。"}
+],
+"annual": [
+  {"en":"The annual meeting is held in June.","zh":"年会在六月举行。"},
+  {"en":"What is your annual salary?","zh":"你的年薪是多少？"},
+  {"en":"We go on an annual trip to the beach.","zh":"我们每年都去海边旅行一次。"},
+  {"en":"The company publishes an annual report.","zh":"公司每年发布一份年度报告。"}
+],
+"apparent": [
+  {"en":"It soon became apparent that he was lost.","zh":"很快就看出来他迷路了。"},
+  {"en":"For no apparent reason, she started crying.","zh":"她莫名其妙地哭了起来。"},
+  {"en":"The problem was apparent to everyone.","zh":"这个问题大家都看得出来。"},
+  {"en":"His apparent calm hid his fear.","zh":"他表面的平静掩盖了他的恐惧。"}
+],
+"apparently": [
+  {"en":"Apparently, the store is closed today.","zh":"听说这家店今天不营业。"}
+],
+"approximately": [
+  {"en":"The flight takes approximately three hours.","zh":"飞行大约需要三个小时。"}
+],
+"armed": [
+  {"en":"The police were armed with guns.","zh":"警察都配备了枪支。"},
+  {"en":"She joined the armed forces at eighteen.","zh":"她十八岁参军。"}
+],
+"arrangement": [
+  {"en":"We made an arrangement to meet at six.","zh":"我们约好六点见面。"},
+  {"en":"She made a beautiful flower arrangement.","zh":"她做了一个漂亮的插花。"},
+  {"en":"I'll make all the travel arrangements.","zh":"我来安排所有的行程。"}
+],
+"assault": [
+  {"en":"He was arrested for assault.","zh":"他因袭击他人被捕。"},
+  {"en":"The army launched an assault on the city.","zh":"军队对这座城市发起了进攻。"},
+  {"en":"She was assaulted on her way home.","zh":"她在回家路上遭到了袭击。"},
+  {"en":"The loud music was an assault on my ears.","zh":"那么吵的音乐简直是在折磨我的耳朵。"},
+  {"en":"Police are looking for the man who assaulted him.","zh":"警方正在寻找袭击他的那名男子。"}
+],
+"assess": [
+  {"en":"The doctor will assess your condition.","zh":"医生会评估你的身体状况。"},
+  {"en":"It's hard to assess the damage yet.","zh":"现在还很难估计损失。"},
+  {"en":"Students are assessed at the end of each term.","zh":"学生在每学期末接受评估。"}
+],
+"assessment": [
+  {"en":"The teacher made an assessment of each student.","zh":"老师对每个学生做了评估。"},
+  {"en":"What is your assessment of the situation?","zh":"你对形势的判断是什么？"},
+  {"en":"We do a risk assessment before every trip.","zh":"每次旅行前我们都会做风险评估。"},
+  {"en":"The assessment will take about an hour.","zh":"评估大约需要一个小时。"},
+  {"en":"Students get regular assessments in each subject.","zh":"学生每门课都有定期测评。"}
+],
+"assist": [
+  {"en":"Can I assist you with your bags?","zh":"需要我帮你拿包吗？"}
+],
+"association": [
+  {"en":"She is a member of the teachers' association.","zh":"她是教师协会的会员。"}
+],
+"assumption": [
+  {"en":"Don't make assumptions about people.","zh":"不要对别人妄下定论。"},
+  {"en":"That assumption turned out to be wrong.","zh":"那个假设结果是错误的。"}
+],
+"assure": [
+  {"en":"I assure you it's safe.","zh":"我向你保证这是安全的。"},
+  {"en":"She assured me that she would come.","zh":"她向我保证她会来。"},
+  {"en":"Let me assure you, everything is fine.","zh":"请放心，一切都好。"},
+  {"en":"The doctor assured us there was no danger.","zh":"医生向我们保证没有危险。"}
+],
+"athlete": [
+  {"en":"Athletes need a lot of sleep.","zh":"运动员需要大量睡眠。"},
+  {"en":"She was a top athlete in high school.","zh":"她高中时是一名顶尖运动员。"}
+],
+"attorney": [
+  {"en":"My attorney told me not to say anything.","zh":"我的律师让我什么都别说。"},
+  {"en":"You have the right to an attorney.","zh":"你有权请律师。"},
+  {"en":"She hired an attorney to handle the case.","zh":"她请了一位律师来处理这个案子。"}
+],
+"awareness": [
+  {"en":"The campaign raised awareness of mental health.","zh":"这次活动提高了人们对心理健康的认识。"}
+],
+"background": [
+  {"en":"Can you hear the music in the background?","zh":"你能听到背景里的音乐吗？"}
+],
+"barrier": [
+  {"en":"Language can be a barrier to making friends.","zh":"语言可能成为交朋友的障碍。"},
+  {"en":"The police put up barriers on the road.","zh":"警察在路上设置了路障。"},
+  {"en":"Cost is the biggest barrier for many students.","zh":"费用是许多学生面临的最大障碍。"}
+],
+"basically": [
+  {"en":"Basically, we need more time.","zh":"说到底，我们需要更多时间。"},
+  {"en":"The two phones are basically the same.","zh":"这两部手机基本上一样。"}
+],
+"beneath": [
+  {"en":"The cat is sleeping beneath the table.","zh":"猫正在桌子底下睡觉。"},
+  {"en":"She felt the warm sand beneath her feet.","zh":"她感觉到脚下温暖的沙子。"}
+],
+"biological": [
+  {"en":"She is not his biological mother.","zh":"她不是他的亲生母亲。"},
+  {"en":"Hunger is a biological need.","zh":"饥饿是一种生理需求。"},
+  {"en":"He studies biological science.","zh":"他学的是生物科学。"},
+  {"en":"Every body has a biological clock.","zh":"每个人的身体都有生物钟。"},
+  {"en":"They found her biological father.","zh":"他们找到了她的亲生父亲。"}
+],
+"bond": [
+  {"en":"There is a strong bond between the two sisters.","zh":"这两姐妹之间感情很深。"},
+  {"en":"He invested his money in government bonds.","zh":"他把钱投资在政府债券上。"},
+  {"en":"Playing games together helped them bond.","zh":"一起玩游戏让他们关系更亲近了。"}
+],
+"boundary": [
+  {"en":"Good friends respect each other's boundaries.","zh":"好朋友会尊重彼此的界限。"}
+],
+"brief": [
+  {"en":"Please keep your answer brief.","zh":"请简短回答。"}
+],
+"buck": [
+  {"en":"Can you lend me ten bucks?","zh":"你能借我十块钱吗？"}
+],
+"buyer": [
+  {"en":"We finally found a buyer for the house.","zh":"我们终于找到了买房的人。"},
+  {"en":"First-time buyers often need help with loans.","zh":"首次购房者常常需要贷款方面的帮助。"},
+  {"en":"The buyer asked for a lower price.","zh":"买家要求降价。"},
+  {"en":"She works as a buyer for a fashion store.","zh":"她在一家服装店做采购。"}
+],
+"cabinet": [
+  {"en":"The cups are in the kitchen cabinet.","zh":"杯子在厨房的橱柜里。"},
+  {"en":"The president will announce his new cabinet tomorrow.","zh":"总统明天将公布新内阁名单。"},
+  {"en":"We bought two new cabinets for the bathroom.","zh":"我们给浴室买了两个新柜子。"}
+],
+"cable": [
+  {"en":"Can I borrow your phone cable?","zh":"我能借一下你的手机数据线吗？"},
+  {"en":"We don't have cable TV at home.","zh":"我们家没有有线电视。"},
+  {"en":"The power cable is too short.","zh":"电源线太短了。"},
+  {"en":"They took the cable car up the mountain.","zh":"他们坐缆车上了山。"}
+],
+"campaign": [
+  {"en":"The election campaign starts next month.","zh":"竞选活动下个月开始。"},
+  {"en":"She campaigned for cleaner air in the city.","zh":"她为城市空气更清洁而奔走呼吁。"},
+  {"en":"Their ad campaign was a big success.","zh":"他们的广告宣传活动非常成功。"}
+],
+"capability": [
+  {"en":"The new phone has better camera capabilities.","zh":"新手机的拍照功能更强。"},
+  {"en":"I'm not sure it's within my capability.","zh":"我不确定这是否在我的能力范围之内。"},
+  {"en":"Children have the capability to learn quickly.","zh":"孩子们有快速学习的能力。"},
+  {"en":"We need to improve our production capability.","zh":"我们需要提高生产能力。"}
+],
+"catholic": [
+  {"en":"She went to a Catholic school as a child.","zh":"她小时候上的是天主教学校。"}
+],
+"celebration": [
+  {"en":"We had a small celebration for her birthday.","zh":"我们为她的生日办了个小小的庆祝会。"},
+  {"en":"The celebrations went on all night.","zh":"庆祝活动持续了一整夜。"}
+],
+"celebrity": [
+  {"en":"She became a celebrity after the show.","zh":"那个节目之后她成了名人。"},
+  {"en":"Many celebrities attended the wedding.","zh":"许多名人出席了婚礼。"}
+],
+"ceo": [
+  {"en":"She became the CEO at the age of forty.","zh":"她四十岁时成为首席执行官。"},
+  {"en":"The CEO will speak at the meeting.","zh":"首席执行官将在会上讲话。"}
+],
+"chamber": [
+  {"en":"The council meets in a large chamber downstairs.","zh":"议会在楼下的一个大会议厅开会。"},
+  {"en":"The heart has four chambers.","zh":"心脏有四个腔室。"},
+  {"en":"The local chamber of commerce supports small shops.","zh":"当地商会扶持小商店。"},
+  {"en":"We walked through the old castle chambers.","zh":"我们走过了古堡里的一间间房间。"}
+],
+"champion": [
+  {"en":"She is the national tennis champion.","zh":"她是全国网球冠军。"},
+  {"en":"The champions celebrated with their fans.","zh":"冠军们和球迷一起庆祝。"},
+  {"en":"He has championed the rights of workers for years.","zh":"他多年来一直为工人的权益奔走。"}
+],
+"championship": [
+  {"en":"Our team won the championship this year.","zh":"我们队今年赢得了冠军。"},
+  {"en":"She is training for the world championships.","zh":"她正在为世界锦标赛训练。"}
+],
+"characterize": [
+  {"en":"How would you characterize your teaching style?","zh":"你会怎样描述你的教学风格？"},
+  {"en":"The region is characterized by long, cold winters.","zh":"这个地区的特点是冬季漫长寒冷。"},
+  {"en":"Kindness characterizes everything she does.","zh":"她做什么都透着善良。"},
+  {"en":"His early work was characterized by bright colors.","zh":"他早期的作品以色彩明亮为特点。"},
+  {"en":"I wouldn't characterize him as lazy.","zh":"我不会说他懒。"}
+],
+"chart": [
+  {"en":"The chart shows our sales for the year.","zh":"这张图表显示了我们全年的销售额。"},
+  {"en":"Her new song is at the top of the charts.","zh":"她的新歌在排行榜上名列第一。"},
+  {"en":"The nurse checked the patient's chart.","zh":"护士查看了病人的病历记录。"},
+  {"en":"We charted our progress on the wall.","zh":"我们把进度画成图贴在墙上。"}
+],
+"chief": [
+  {"en":"The police chief spoke to reporters.","zh":"警察局长对记者发表了讲话。"},
+  {"en":"Cost is our chief concern.","zh":"成本是我们最关心的问题。"},
+  {"en":"She is the chief editor of the magazine.","zh":"她是这本杂志的主编。"}
+],
+"cite": [
+  {"en":"Please cite your sources at the end.","zh":"请在结尾注明你的资料来源。"},
+  {"en":"She cited a famous study in her speech.","zh":"她在演讲中引用了一项著名的研究。"},
+  {"en":"He was cited for bravery.","zh":"他因英勇而受到表彰。"}
+],
+"classic": [
+  {"en":"This movie is a classic.","zh":"这部电影是经典之作。"}
+],
+"client": [
+  {"en":"I have a meeting with a client at three.","zh":"我三点要见一位客户。"}
+],
+"clinical": [
+  {"en":"The drug is in clinical trials.","zh":"这种药正在进行临床试验。"},
+  {"en":"She has years of clinical experience.","zh":"她有多年的临床经验。"},
+  {"en":"The room looks cold and clinical.","zh":"这个房间看起来冷冰冰的，像医院一样。"},
+  {"en":"He was diagnosed with clinical depression.","zh":"他被诊断出患有临床抑郁症。"}
+],
+"coalition": [
+  {"en":"The two parties formed a coalition.","zh":"这两个政党组成了联盟。"},
+  {"en":"The coalition government lasted two years.","zh":"联合政府持续了两年。"},
+  {"en":"A coalition of groups organized the march.","zh":"多个团体组成的联盟组织了这次游行。"},
+  {"en":"The coalition broke up after the vote.","zh":"投票后联盟解散了。"},
+  {"en":"They built a coalition to fight poverty.","zh":"他们结成联盟对抗贫困。"}
+],
+"column": [
+  {"en":"She writes a weekly column for the paper.","zh":"她为报纸写一个每周专栏。"},
+  {"en":"Write your name in the first column.","zh":"在第一栏写上你的名字。"},
+  {"en":"The old building has tall stone columns.","zh":"这座老建筑有高大的石柱。"}
+],
+"combination": [
+  {"en":"Do you remember the combination for the lock?","zh":"你记得这把锁的密码吗？"},
+  {"en":"Red and green is a strange combination.","zh":"红配绿是一个奇怪的组合。"}
+],
+"commander": [
+  {"en":"The commander gave the order to move.","zh":"指挥官下令前进。"},
+  {"en":"He was the commander of the army.","zh":"他是这支军队的指挥官。"},
+  {"en":"The ship's commander spoke to the crew.","zh":"舰长对船员们讲了话。"},
+  {"en":"She became the first female commander.","zh":"她成为第一位女指挥官。"},
+  {"en":"The commander was proud of his soldiers.","zh":"指挥官为他的士兵们感到骄傲。"}
+],
+"commercial": [
+  {"en":"I hate the commercials in the middle of a movie.","zh":"我讨厌电影中间插播的广告。"},
+  {"en":"This area is mostly commercial buildings.","zh":"这个地区大多是商业建筑。"},
+  {"en":"The film was a huge commercial success.","zh":"这部电影在商业上非常成功。"},
+  {"en":"She made a TV commercial for a phone company.","zh":"她为一家手机公司拍了一支电视广告。"}
+],
+"commission": [
+  {"en":"She gets a commission on every sale.","zh":"她每卖出一件都能拿到佣金。"},
+  {"en":"The city set up a commission to study the problem.","zh":"市里成立了一个委员会来研究这个问题。"}
+],
+"commitment": [
+  {"en":"Learning a language takes time and commitment.","zh":"学一门语言需要时间和投入。"},
+  {"en":"I have a lot of family commitments this week.","zh":"这周我有很多家庭事务要处理。"},
+  {"en":"Thank you for your commitment to the team.","zh":"感谢你对团队的付出。"},
+  {"en":"He is afraid of commitment.","zh":"他害怕承担责任。"},
+  {"en":"The company made a commitment to cut waste.","zh":"公司承诺减少浪费。"}
+],
+"compete": [
+  {"en":"Small shops can't compete with big stores.","zh":"小商店无法和大商场竞争。"},
+  {"en":"She will compete in the Olympics next year.","zh":"她明年将参加奥运会比赛。"}
+],
+"component": [
+  {"en":"Trust is a key component of any friendship.","zh":"信任是任何友谊的关键要素。"},
+  {"en":"The factory makes car components.","zh":"这家工厂生产汽车零部件。"}
+],
+"comprehensive": [
+  {"en":"The guide gives a comprehensive list of hotels.","zh":"这本指南列出了全面的酒店名单。"},
+  {"en":"We need comprehensive insurance for the car.","zh":"我们需要给车上全险。"},
+  {"en":"The book is a comprehensive history of China.","zh":"这本书是一部全面的中国史。"},
+  {"en":"The doctor ordered a comprehensive health check.","zh":"医生安排了一次全面的体检。"},
+  {"en":"She gave a clear and comprehensive answer.","zh":"她给出了清楚而全面的回答。"}
+],
+"concentration": [
+  {"en":"Noise makes concentration difficult.","zh":"噪音让人很难集中注意力。"},
+  {"en":"This job requires a lot of concentration.","zh":"这份工作需要高度集中精力。"},
+  {"en":"There is a high concentration of shops downtown.","zh":"市中心商店非常密集。"},
+  {"en":"I lost my concentration and made a mistake.","zh":"我一走神就出了错。"}
+],
+"confront": [
+  {"en":"She decided to confront her fears.","zh":"她决定直面自己的恐惧。"},
+  {"en":"I confronted him about the lie.","zh":"我就那个谎言当面质问了他。"}
+],
+"congress": [
+  {"en":"Congress passed the new law yesterday.","zh":"国会昨天通过了这项新法律。"},
+  {"en":"She was elected to Congress at the age of thirty.","zh":"她三十岁时当选为国会议员。"},
+  {"en":"The bill is now waiting for Congress to vote.","zh":"这项法案正在等待国会投票。"},
+  {"en":"Doctors from many countries attended the medical congress.","zh":"来自许多国家的医生参加了这次医学大会。"}
+],
+"congressional": [
+  {"en":"She is running in the congressional election.","zh":"她正在参加国会选举。"},
+  {"en":"A congressional report was published today.","zh":"国会今天发布了一份报告。"},
+  {"en":"He works for a congressional committee.","zh":"他为一个国会委员会工作。"},
+  {"en":"The congressional hearing lasted all day.","zh":"国会听证会持续了一整天。"}
+],
+"conservation": [
+  {"en":"Water conservation is important in dry areas.","zh":"在干旱地区节约用水很重要。"},
+  {"en":"She works for a wildlife conservation group.","zh":"她在一个野生动物保护组织工作。"},
+  {"en":"The park was created for conservation.","zh":"这座公园是为了保护自然而建的。"},
+  {"en":"Energy conservation can save you money.","zh":"节约能源能帮你省钱。"}
+],
+"considerable": [
+  {"en":"The repairs cost a considerable amount of money.","zh":"修理花了相当大一笔钱。"},
+  {"en":"She has considerable experience in sales.","zh":"她在销售方面经验相当丰富。"},
+  {"en":"The plan caused considerable debate.","zh":"这个计划引起了不少争论。"},
+  {"en":"It took considerable effort to finish on time.","zh":"费了很大劲才按时完成。"}
+],
+"consistent": [
+  {"en":"You need to be consistent with your practice.","zh":"你的练习需要持之以恒。"},
+  {"en":"Her work is always consistent.","zh":"她的工作一直很稳定。"},
+  {"en":"His story is not consistent with the facts.","zh":"他的说法与事实不符。"}
+],
+"constitute": [
+  {"en":"Women constitute half of our staff.","zh":"女性占我们员工的一半。"},
+  {"en":"This does not constitute a legal contract.","zh":"这并不构成一份法律合同。"},
+  {"en":"What constitutes a healthy diet?","zh":"怎样才算健康的饮食？"}
+],
+"constitutional": [
+  {"en":"Free speech is a constitutional right here.","zh":"在这里，言论自由是宪法赋予的权利。"},
+  {"en":"The court said the new law was not constitutional.","zh":"法院裁定这项新法律违宪。"},
+  {"en":"They are debating a constitutional change.","zh":"他们正在讨论一项修宪提案。"},
+  {"en":"The country is going through a constitutional crisis.","zh":"这个国家正经历一场宪政危机。"},
+  {"en":"She studied constitutional law at university.","zh":"她在大学学的是宪法。"}
+],
+"consultant": [
+  {"en":"She works as a business consultant.","zh":"她是一名商业顾问。"},
+  {"en":"We hired a consultant to help us.","zh":"我们请了一位顾问来帮忙。"},
+  {"en":"He is a consultant at a big hospital.","zh":"他是一家大医院的顾问医生。"},
+  {"en":"The consultant gave us some good advice.","zh":"顾问给了我们一些好建议。"},
+  {"en":"Our IT consultant fixed the problem.","zh":"我们的 IT 顾问解决了这个问题。"}
+],
+"consumer": [
+  {"en":"Consumers are spending less on clothes this year.","zh":"今年消费者在服装上的花费减少了。"}
+],
+"contemporary": [
+  {"en":"We visited a museum of contemporary art.","zh":"我们参观了一家当代艺术博物馆。"}
+],
+"contrast": [
+  {"en":"In contrast, his brother is very quiet.","zh":"相比之下，他弟弟很安静。"}
+],
+"contribution": [
+  {"en":"Thank you for your contribution to the project.","zh":"感谢你对这个项目的贡献。"},
+  {"en":"Every contribution, big or small, helps.","zh":"每一份捐助，无论大小，都有帮助。"},
+  {"en":"She made a great contribution to science.","zh":"她为科学作出了巨大贡献。"},
+  {"en":"All contributions go to the children's hospital.","zh":"所有捐款都将捐给儿童医院。"}
+],
+"controversy": [
+  {"en":"The new law caused a lot of controversy.","zh":"新法律引起了很大争议。"},
+  {"en":"The singer is no stranger to controversy.","zh":"这位歌手经常身陷争议。"},
+  {"en":"There was some controversy over the final score.","zh":"最后的比分有些争议。"},
+  {"en":"He tries to avoid controversy at work.","zh":"他在工作中尽量避免引起争议。"},
+  {"en":"The film sparked controversies around the world.","zh":"这部电影在世界各地引发了争议。"}
+],
+"convention": [
+  {"en":"The city hosts a big comic convention every year.","zh":"这座城市每年举办一次大型动漫展。"},
+  {"en":"By convention, the bride wears white.","zh":"按照惯例，新娘穿白色。"},
+  {"en":"Thousands of people attended the convention.","zh":"数千人参加了这次大会。"}
+],
+"conventional": [
+  {"en":"She doesn't like conventional medicine.","zh":"她不喜欢传统医学。"},
+  {"en":"It's a conventional house with a garden.","zh":"这是一座带花园的普通房子。"},
+  {"en":"He has very conventional ideas about marriage.","zh":"他对婚姻的看法很传统。"},
+  {"en":"We cooked it in a conventional oven.","zh":"我们用普通烤箱烤的。"}
+],
+"corporate": [
+  {"en":"She has a corporate job in a big bank.","zh":"她在一家大银行做公司职员。"},
+  {"en":"He wore a suit to the corporate dinner.","zh":"他穿着西装去参加公司晚宴。"},
+  {"en":"The corporate office is in New York.","zh":"公司总部在纽约。"},
+  {"en":"Many young people don't like corporate life.","zh":"很多年轻人不喜欢公司生活。"}
+],
+"correspondent": [
+  {"en":"She is a foreign correspondent in Paris.","zh":"她是驻巴黎的外国记者。"},
+  {"en":"Our correspondent sent this report from the scene.","zh":"我们的记者从现场发回了这篇报道。"},
+  {"en":"He worked as a war correspondent for ten years.","zh":"他当了十年战地记者。"},
+  {"en":"The newspaper has correspondents in many countries.","zh":"这家报社在很多国家都有记者。"},
+  {"en":"I'm a terrible correspondent; I never answer letters.","zh":"我很不擅长写信，从来不回信。"}
+],
+"council": [
+  {"en":"The city council voted for the new park.","zh":"市议会投票通过了建新公园的提议。"},
+  {"en":"She was elected to the student council.","zh":"她当选为学生会成员。"},
+  {"en":"Call the council to report a broken light.","zh":"打电话给市政部门报告路灯坏了。"},
+  {"en":"The council meets every Tuesday.","zh":"委员会每周二开会。"}
+],
+"counselor": [
+  {"en":"The school counselor helped me choose a college.","zh":"学校的辅导老师帮我选了大学。"},
+  {"en":"She sees a counselor once a week.","zh":"她每周去看一次心理咨询师。"},
+  {"en":"He works as a counselor at a summer camp.","zh":"他在夏令营当辅导员。"},
+  {"en":"Talk to a counselor if you feel stressed.","zh":"如果觉得压力大，就去找心理咨询师聊聊。"},
+  {"en":"The counselor listened without judging her.","zh":"咨询师静静听着，没有评判她。"}
+],
+"county": [
+  {"en":"She grew up in a small county in the south.","zh":"她在南方的一个小县城长大。"},
+  {"en":"The county fair is next weekend.","zh":"县里的集市在下个周末。"},
+  {"en":"This is the largest lake in the county.","zh":"这是这个县最大的湖。"}
+],
+"coverage": [
+  {"en":"There is no phone coverage in the mountains.","zh":"山里没有手机信号。"},
+  {"en":"The news coverage of the event was huge.","zh":"这次事件的新闻报道铺天盖地。"},
+  {"en":"Does your insurance include dental coverage?","zh":"你的保险包括牙科吗？"},
+  {"en":"The TV coverage starts at seven.","zh":"电视转播七点开始。"},
+  {"en":"We have good Wi-Fi coverage in every room.","zh":"每个房间的无线网络信号都很好。"}
+],
+"creation": [
+  {"en":"The government wants job creation in small towns.","zh":"政府希望在小城镇创造就业机会。"},
+  {"en":"This dish is the chef's own creation.","zh":"这道菜是厨师自己创制的。"},
+  {"en":"The website explains the creation of the park.","zh":"这个网站介绍了公园的创建过程。"}
+],
+"creative": [
+  {"en":"She is very creative with colors.","zh":"她在用色方面很有创意。"},
+  {"en":"We need some creative ideas for the party.","zh":"我们需要一些关于派对的创意。"}
+],
+"crew": [
+  {"en":"The flight crew was very friendly.","zh":"机组人员非常友好。"},
+  {"en":"A film crew is shooting on our street.","zh":"一个摄制组正在我们街上拍摄。"}
+],
+"criteria": [
+  {"en":"What are the criteria for the job?","zh":"这份工作的标准是什么？"},
+  {"en":"You must meet all the criteria.","zh":"你必须符合所有条件。"},
+  {"en":"We used three criteria to choose the winner.","zh":"我们用三条标准来选出获胜者。"},
+  {"en":"The criteria are listed on the website.","zh":"这些标准都列在网站上。"},
+  {"en":"Price is one of my main criteria.","zh":"价格是我考虑的主要标准之一。"}
+],
+"critic": [
+  {"en":"The critics loved the new movie.","zh":"影评人很喜欢这部新电影。"},
+  {"en":"He is a food critic for a newspaper.","zh":"他是一家报纸的美食评论家。"},
+  {"en":"Critics say the plan is too expensive.","zh":"批评者说这个计划太贵了。"}
+],
+"critical": [
+  {"en":"Good sleep is critical for your health.","zh":"良好的睡眠对你的健康至关重要。"}
+],
+"crucial": [
+  {"en":"The next few days are crucial.","zh":"接下来的几天至关重要。"},
+  {"en":"Sleep is crucial for learning.","zh":"睡眠对学习至关重要。"},
+  {"en":"He made a crucial mistake.","zh":"他犯了一个关键性的错误。"}
+],
+"curriculum": [
+  {"en":"Music is part of the school curriculum.","zh":"音乐是学校课程的一部分。"},
+  {"en":"The new curriculum starts in September.","zh":"新课程从九月开始实施。"},
+  {"en":"They added coding to the curriculum.","zh":"他们在课程中加入了编程。"},
+  {"en":"The curriculum is too focused on exams.","zh":"这套课程太注重考试了。"},
+  {"en":"Teachers helped design the new curriculum.","zh":"老师们参与设计了新课程。"}
+],
+"dealer": [
+  {"en":"We bought the car from a local dealer.","zh":"我们从当地的一家经销商那里买了车。"},
+  {"en":"He is an art dealer in Paris.","zh":"他是巴黎的一名艺术品商人。"},
+  {"en":"The dealer gave us a good price.","zh":"经销商给了我们一个好价钱。"},
+  {"en":"Ask the dealer about the warranty.","zh":"问问经销商保修的事。"}
+],
+"decade": [
+  {"en":"Prices have doubled in the past decade.","zh":"过去十年里价格翻了一番。"},
+  {"en":"They have been friends for decades.","zh":"他们是几十年的老朋友了。"},
+  {"en":"This is the hottest summer in a decade.","zh":"这是十年来最热的夏天。"}
+],
+"defensive": [
+  {"en":"Why are you so defensive about it?","zh":"你为什么对这件事这么敏感？"},
+  {"en":"He gets defensive when people criticize him.","zh":"别人一批评他，他就开始为自己辩解。"},
+  {"en":"The team played a very defensive game.","zh":"这支球队打得非常保守。"},
+  {"en":"They built defensive walls around the city.","zh":"他们在城市周围修建了防御城墙。"},
+  {"en":"Defensive driving can save your life.","zh":"防御性驾驶能救你的命。"}
+],
+"deficit": [
+  {"en":"The country has a huge budget deficit.","zh":"这个国家有巨额预算赤字。"},
+  {"en":"The trade deficit grew last year.","zh":"去年贸易逆差扩大了。"},
+  {"en":"We need to cut the deficit.","zh":"我们需要削减赤字。"},
+  {"en":"Our team came back from a ten-point deficit.","zh":"我们队从落后十分追了回来。"},
+  {"en":"There is a deficit of good teachers.","zh":"好老师很缺。"}
+],
+"define": [
+  {"en":"Don't let one mistake define you.","zh":"不要让一次错误定义你。"},
+  {"en":"Can you define this word in English?","zh":"你能用英语解释这个词吗？"},
+  {"en":"We need to define our goals first.","zh":"我们首先需要明确我们的目标。"}
+],
+"definition": [
+  {"en":"Look up the definition in a dictionary.","zh":"在词典里查一下这个定义。"}
+],
+"delivery": [
+  {"en":"Is delivery free for orders over fifty dollars?","zh":"订单满五十美元免运费吗？"}
+],
+"democrat": [
+  {"en":"She has been a Democrat for many years.","zh":"她当民主党人很多年了。"},
+  {"en":"The Democrats want to raise the minimum wage.","zh":"民主党人想提高最低工资。"},
+  {"en":"Both Democrats and Republicans supported the plan.","zh":"民主党人和共和党人都支持这个计划。"}
+],
+"democratic": [
+  {"en":"Everyone should have a democratic right to vote.","zh":"每个人都应该享有投票的民主权利。"}
+],
+"demonstrate": [
+  {"en":"Let me demonstrate how this machine works.","zh":"让我演示一下这台机器是怎么工作的。"},
+  {"en":"Thousands of people demonstrated against the war.","zh":"成千上万的人举行示威反对战争。"},
+  {"en":"The results demonstrate that the plan works.","zh":"结果证明这个计划行得通。"}
+],
+"deputy": [
+  {"en":"She is the deputy head of the school.","zh":"她是学校的副校长。"},
+  {"en":"The deputy manager will meet you.","zh":"副经理会见你。"},
+  {"en":"He was named deputy mayor.","zh":"他被任命为副市长。"}
+],
+"destruction": [
+  {"en":"The storm left a path of destruction.","zh":"风暴所过之处一片狼藉。"},
+  {"en":"We must stop the destruction of the rainforest.","zh":"我们必须阻止对雨林的破坏。"}
+],
+"detect": [
+  {"en":"Dogs can detect smells we can't.","zh":"狗能闻出我们闻不到的气味。"},
+  {"en":"The test detected a problem early.","zh":"这项检查及早发现了问题。"},
+  {"en":"I detected a note of anger in her voice.","zh":"我听出她的声音里带着一丝怒气。"}
+],
+"dialogue": [
+  {"en":"The movie has very little dialogue.","zh":"这部电影的对白很少。"},
+  {"en":"We need an open dialogue between parents and teachers.","zh":"家长和老师之间需要坦诚的沟通。"},
+  {"en":"Practice the dialogues with a partner.","zh":"和同伴一起练习这些对话。"},
+  {"en":"The two leaders agreed to continue the dialogue.","zh":"两位领导人同意继续对话。"}
+],
+"dimension": [
+  {"en":"What are the dimensions of the room?","zh":"这个房间的尺寸是多少？"},
+  {"en":"The problem has a political dimension.","zh":"这个问题有政治层面的因素。"},
+  {"en":"Music adds a new dimension to the film.","zh":"音乐给这部电影增添了新的维度。"},
+  {"en":"Check the dimensions before you buy the sofa.","zh":"买沙发前先确认一下尺寸。"},
+  {"en":"We live in a world of three dimensions.","zh":"我们生活在三维世界里。"}
+],
+"disability": [
+  {"en":"The building is easy to use for people with disabilities.","zh":"这栋楼方便残障人士使用。"},
+  {"en":"She has a learning disability.","zh":"她有学习障碍。"},
+  {"en":"He gets disability benefits.","zh":"他领取残疾补助。"}
+],
+"discipline": [
+  {"en":"Learning a language takes discipline.","zh":"学一门语言需要自律。"},
+  {"en":"The teacher keeps good discipline in class.","zh":"这位老师把课堂纪律管得很好。"},
+  {"en":"Parents need to discipline their children.","zh":"父母需要管教孩子。"},
+  {"en":"He lacks the discipline to study every day.","zh":"他缺乏每天学习的自制力。"}
+],
+"dismiss": [
+  {"en":"Don't dismiss the idea without thinking about it.","zh":"别想都不想就否定这个主意。"}
+],
+"disorder": [
+  {"en":"She has a sleep disorder.","zh":"她有睡眠障碍。"},
+  {"en":"The room was in total disorder.","zh":"房间里一片混乱。"},
+  {"en":"After the party, the kitchen was in total disorder.","zh":"派对过后，厨房一片狼藉。"}
+],
+"dispute": [
+  {"en":"The two countries are in a dispute over the border.","zh":"两国在边界问题上存在争端。"},
+  {"en":"Nobody disputed the final result.","zh":"没有人对最终结果提出异议。"},
+  {"en":"They hired a lawyer to settle the dispute.","zh":"他们请了律师来解决这场纠纷。"}
+],
+"distinction": [
+  {"en":"There is a clear distinction between the two words.","zh":"这两个词之间有明显的区别。"},
+  {"en":"She graduated with distinction.","zh":"她以优异成绩毕业。"},
+  {"en":"Kids don't always make a distinction between fact and fiction.","zh":"孩子们并不总能分清事实和虚构。"},
+  {"en":"He has the distinction of being the youngest player.","zh":"他是年纪最小的球员，这让他与众不同。"}
+],
+"distribute": [
+  {"en":"The teacher distributed the tests to the class.","zh":"老师把试卷发给了全班。"},
+  {"en":"Volunteers are distributing food to families in need.","zh":"志愿者正在给困难家庭分发食物。"},
+  {"en":"Wealth is not evenly distributed.","zh":"财富分配并不均匀。"},
+  {"en":"The company distributes its products across Asia.","zh":"这家公司在亚洲各地销售产品。"}
+],
+"distribution": [
+  {"en":"The distribution of food took all day.","zh":"分发食物花了一整天。"},
+  {"en":"She works in film distribution.","zh":"她从事电影发行工作。"},
+  {"en":"The distribution of wealth is unequal.","zh":"财富分配不平等。"},
+  {"en":"Our distribution center is near the port.","zh":"我们的配送中心在港口附近。"}
+],
+"district": [
+  {"en":"We live in a quiet district near the river.","zh":"我们住在河边一个安静的街区。"}
+],
+"diverse": [
+  {"en":"Our team comes from diverse backgrounds.","zh":"我们团队成员背景各异。"},
+  {"en":"The city has a diverse population.","zh":"这座城市的人口构成多元。"},
+  {"en":"She has diverse interests, from music to science.","zh":"她兴趣广泛，从音乐到科学都喜欢。"},
+  {"en":"The menu is diverse enough for everyone.","zh":"菜单种类丰富，人人都能找到喜欢的。"}
+],
+"diversity": [
+  {"en":"The city is famous for its cultural diversity.","zh":"这座城市以文化多样性著称。"},
+  {"en":"We value diversity in our team.","zh":"我们重视团队的多元化。"},
+  {"en":"The island has a rich diversity of birds.","zh":"这个岛上有种类繁多的鸟。"},
+  {"en":"There is little diversity in the menu.","zh":"菜单上的菜品种类很少。"},
+  {"en":"Diversity makes the school more interesting.","zh":"多元化让学校更有意思。"}
+],
+"division": [
+  {"en":"Our team plays in the first division.","zh":"我们队在甲级联赛踢球。"},
+  {"en":"She works in the sales division.","zh":"她在销售部门工作。"},
+  {"en":"Children learn division after multiplication.","zh":"孩子们学完乘法再学除法。"}
+],
+"domestic": [
+  {"en":"Domestic flights leave from Terminal 2.","zh":"国内航班从 2 号航站楼出发。"},
+  {"en":"Cats and dogs are domestic animals.","zh":"猫和狗是家养动物。"},
+  {"en":"He doesn't help with domestic work.","zh":"他不帮忙做家务。"},
+  {"en":"Domestic sales rose by ten percent.","zh":"国内销售额增长了百分之十。"}
+],
+"dominate": [
+  {"en":"One company dominates the market.","zh":"一家公司主导着这个市场。"},
+  {"en":"He tends to dominate the conversation.","zh":"他总是在谈话中抢话。"},
+  {"en":"The news was dominated by the storm.","zh":"新闻被这场风暴占据了。"},
+  {"en":"Our team dominated the whole game.","zh":"我们队在整场比赛中占据上风。"}
+],
+"draft": [
+  {"en":"This is just the first draft.","zh":"这只是初稿。"},
+  {"en":"I drafted an email to my boss.","zh":"我给老板起草了一封邮件。"}
+],
+"drag": [
+  {"en":"Don't drag your feet when you walk.","zh":"走路时别拖着脚。"},
+  {"en":"She dragged the heavy bag up the stairs.","zh":"她把沉重的包拖上楼梯。"}
+],
+"dramatic": [
+  {"en":"There has been a dramatic rise in prices.","zh":"价格急剧上涨。"},
+  {"en":"Don't be so dramatic, it's just a cold.","zh":"别那么夸张，只是感冒而已。"},
+  {"en":"The movie has a dramatic ending.","zh":"这部电影有一个戏剧性的结局。"},
+  {"en":"The view from the top is dramatic.","zh":"山顶的景色非常壮观。"},
+  {"en":"She made a dramatic change to her life.","zh":"她的生活发生了巨大的变化。"}
+],
+"earnings": [
+  {"en":"He saves half of his earnings every month.","zh":"他每个月把一半收入存起来。"},
+  {"en":"The company reported strong earnings this year.","zh":"公司今年公布的盈利很可观。"},
+  {"en":"Her earnings went up after the promotion.","zh":"升职后她的收入提高了。"},
+  {"en":"Tips make up most of his earnings.","zh":"小费占了他收入的大部分。"}
+],
+"eastern": [
+  {"en":"They live in the eastern part of the city.","zh":"他们住在城市的东部。"},
+  {"en":"The sun rises in the eastern sky.","zh":"太阳从东方的天空升起。"},
+  {"en":"She is interested in Eastern philosophy.","zh":"她对东方哲学很感兴趣。"},
+  {"en":"It will rain in eastern areas tomorrow.","zh":"明天东部地区会下雨。"}
+],
+"economist": [
+  {"en":"Economists expect prices to rise next year.","zh":"经济学家预计明年物价会上涨。"},
+  {"en":"She is an economist at the central bank.","zh":"她是央行的一名经济学家。"},
+  {"en":"The economist explained the crisis in simple words.","zh":"这位经济学家用简单的话解释了这场危机。"}
+],
+"editor": [
+  {"en":"She is the editor of a fashion magazine.","zh":"她是一家时尚杂志的编辑。"},
+  {"en":"I sent my story to the editor.","zh":"我把我的稿子发给了编辑。"},
+  {"en":"The editor asked me to make it shorter.","zh":"编辑让我写得短一些。"},
+  {"en":"He works as a video editor.","zh":"他是一名视频剪辑师。"}
+],
+"educational": [
+  {"en":"This is a fun and educational game for kids.","zh":"这是一款既好玩又有教育意义的儿童游戏。"}
+],
+"educator": [
+  {"en":"She has been an educator for twenty years.","zh":"她从事教育工作二十年了。"},
+  {"en":"Many educators support the new plan.","zh":"许多教育工作者支持这个新计划。"},
+  {"en":"He is a respected educator in the city.","zh":"他是这座城市里一位受人尊敬的教育家。"},
+  {"en":"Parents and educators should work together.","zh":"家长和教育者应该合作。"}
+],
+"effectively": [
+  {"en":"This medicine works very effectively.","zh":"这种药非常有效。"},
+  {"en":"She manages her time effectively.","zh":"她能有效地管理自己的时间。"},
+  {"en":"We need to communicate more effectively.","zh":"我们需要更有效地沟通。"},
+  {"en":"The store is effectively closed.","zh":"这家店实际上已经关门了。"}
+],
+"efficient": [
+  {"en":"This new heater is very efficient.","zh":"这台新暖气很节能。"},
+  {"en":"She is fast and efficient at her job.","zh":"她工作又快又高效。"}
+],
+"eliminate": [
+  {"en":"Our team was eliminated in the first round.","zh":"我们队在第一轮就被淘汰了。"}
+],
+"elite": [
+  {"en":"He trained with an elite group of athletes.","zh":"他和一批精英运动员一起训练。"},
+  {"en":"Only the elite could afford such schools.","zh":"只有上层精英才上得起这样的学校。"},
+  {"en":"She joined an elite police unit.","zh":"她加入了一支精英警队。"},
+  {"en":"The political elites ignored the voters.","zh":"政治精英们无视选民。"},
+  {"en":"It's an elite university with very high standards.","zh":"这是一所标准很高的名牌大学。"}
+],
+"elsewhere": [
+  {"en":"Let's go elsewhere, it's too crowded here.","zh":"我们去别处吧，这里太挤了。"},
+  {"en":"Prices are lower elsewhere.","zh":"别的地方价格更便宜。"},
+  {"en":"He found a job elsewhere.","zh":"他在别处找到了工作。"},
+  {"en":"Rain is expected elsewhere in the country.","zh":"全国其他地区预计会下雨。"},
+  {"en":"If you don't like it, shop elsewhere.","zh":"如果你不喜欢，就去别家买。"}
+],
+"emission": [
+  {"en":"Cars are a major source of emissions.","zh":"汽车是排放物的主要来源。"},
+  {"en":"We must cut carbon emissions.","zh":"我们必须减少碳排放。"},
+  {"en":"The new engine has very low emission levels.","zh":"新发动机的排放水平很低。"}
+],
+"emphasize": [
+  {"en":"The teacher emphasized the importance of practice.","zh":"老师强调了练习的重要性。"},
+  {"en":"I want to emphasize that this is just a test.","zh":"我想强调这只是一次测试。"},
+  {"en":"She always emphasizes safety first.","zh":"她总是强调安全第一。"}
+],
+"employer": [
+  {"en":"My employer pays for my lunch.","zh":"我的雇主为我付午餐费。"},
+  {"en":"The company is the biggest employer in town.","zh":"这家公司是镇上最大的雇主。"},
+  {"en":"Employers want people with good English.","zh":"雇主们想要英语好的人。"},
+  {"en":"Ask your employer for a letter.","zh":"向你的雇主要一封证明信。"}
+],
+"employment": [
+  {"en":"She is looking for employment in a hospital.","zh":"她正在医院找工作。"}
+],
+"enforcement": [
+  {"en":"Law enforcement officers arrived quickly.","zh":"执法人员很快就到了。"},
+  {"en":"The new rules need strict enforcement.","zh":"新规定需要严格执行。"},
+  {"en":"There is little enforcement of the speed limit.","zh":"限速规定几乎没有得到执行。"},
+  {"en":"She has a career in law enforcement.","zh":"她从事执法工作。"}
+],
+"engineering": [
+  {"en":"She studies engineering at university.","zh":"她在大学学工程。"},
+  {"en":"The bridge is a great piece of engineering.","zh":"这座桥是一项伟大的工程。"},
+  {"en":"He works in software engineering.","zh":"他从事软件工程工作。"},
+  {"en":"Engineering jobs pay well.","zh":"工程类工作收入很高。"}
+],
+"enhance": [
+  {"en":"Good lighting can enhance a room.","zh":"好的灯光能让房间增色不少。"},
+  {"en":"This course will enhance your skills.","zh":"这门课程会提高你的技能。"},
+  {"en":"Salt enhances the flavor of food.","zh":"盐能提升食物的味道。"},
+  {"en":"The photo was enhanced on a computer.","zh":"这张照片在电脑上做过美化处理。"},
+  {"en":"We want to enhance the user experience.","zh":"我们想提升用户体验。"}
+],
+"enterprise": [
+  {"en":"She runs a small enterprise in her town.","zh":"她在镇上经营一家小企业。"},
+  {"en":"The government supports small enterprises.","zh":"政府扶持小型企业。"},
+  {"en":"It was a risky enterprise.","zh":"那是一项冒险的事业。"},
+  {"en":"He showed great enterprise as a young man.","zh":"他年轻时就表现出很强的进取心。"}
+],
+"episode": [
+  {"en":"I watched the last episode last night.","zh":"我昨晚看了最后一集。"},
+  {"en":"The show has ten episodes in each season.","zh":"这部剧每季有十集。"}
+],
+"equally": [
+  {"en":"We split the bill equally.","zh":"我们平均分摊了账单。"},
+  {"en":"Both answers are equally correct.","zh":"两个答案同样正确。"},
+  {"en":"She loves her two children equally.","zh":"她同样爱她的两个孩子。"},
+  {"en":"Everyone should be treated equally.","zh":"每个人都应该受到平等对待。"},
+  {"en":"The second book is equally good.","zh":"第二本书同样好看。"}
+],
+"essentially": [
+  {"en":"The two plans are essentially the same.","zh":"这两个计划本质上是一样的。"},
+  {"en":"Essentially, we need more money.","zh":"说到底，我们需要更多的钱。"},
+  {"en":"He is essentially a kind person.","zh":"他本质上是个善良的人。"},
+  {"en":"The job is essentially done.","zh":"这项工作基本完成了。"}
+],
+"establishment": [
+  {"en":"The establishment of the school took ten years.","zh":"这所学校花了十年才建成。"},
+  {"en":"This is the oldest eating establishment in town.","zh":"这是镇上最老的一家餐馆。"},
+  {"en":"The band was popular with young people, not the establishment.","zh":"这支乐队受年轻人欢迎，而不受主流权势阶层待见。"},
+  {"en":"The street is full of drinking establishments.","zh":"这条街上到处都是酒吧。"},
+  {"en":"He has always fought against the establishment.","zh":"他一直在对抗当权派。"}
+],
+"estate": [
+  {"en":"She works in real estate.","zh":"她从事房地产工作。"},
+  {"en":"He left his whole estate to his daughter.","zh":"他把全部遗产留给了女儿。"},
+  {"en":"They live on a large estate in the country.","zh":"他们住在乡下一处很大的庄园里。"},
+  {"en":"Real estate prices keep going up.","zh":"房地产价格不断上涨。"},
+  {"en":"We drove past a big housing estate.","zh":"我们开车经过一个很大的住宅区。"}
+],
+"ethnic": [
+  {"en":"There are many ethnic restaurants on this street.","zh":"这条街上有许多民族风味餐馆。"},
+  {"en":"The city is home to many ethnic groups.","zh":"这座城市有许多民族聚居。"},
+  {"en":"She wore an ethnic dress to the festival.","zh":"她穿着民族服装去参加节日活动。"}
+],
+"evaluate": [
+  {"en":"We need to evaluate the results first.","zh":"我们需要先评估结果。"},
+  {"en":"Teachers evaluate students in many ways.","zh":"老师用多种方式评价学生。"},
+  {"en":"How do you evaluate a good restaurant?","zh":"你怎么评价一家餐厅好不好？"},
+  {"en":"The doctor will evaluate your condition.","zh":"医生会评估你的病情。"},
+  {"en":"Each plan was carefully evaluated.","zh":"每个方案都经过了仔细评估。"}
+],
+"evaluation": [
+  {"en":"Each worker gets a yearly evaluation.","zh":"每个员工每年都会有一次考核。"},
+  {"en":"Please fill in the course evaluation form.","zh":"请填写课程评估表。"},
+  {"en":"The evaluation will take two weeks.","zh":"评估需要两周时间。"},
+  {"en":"We need an honest evaluation of the plan.","zh":"我们需要对这个计划做一个诚实的评估。"},
+  {"en":"Her evaluation of the book was very positive.","zh":"她对这本书的评价非常正面。"}
+],
+"evolution": [
+  {"en":"Darwin developed the theory of evolution.","zh":"达尔文提出了进化论。"},
+  {"en":"The evolution of the phone has been amazing.","zh":"手机的发展令人惊叹。"},
+  {"en":"The company went through a slow evolution.","zh":"这家公司经历了缓慢的演变。"},
+  {"en":"The museum shows the evolution of the bicycle.","zh":"这座博物馆展示了自行车的发展历程。"}
+],
+"evolve": [
+  {"en":"Languages evolve over time.","zh":"语言会随着时间演变。"},
+  {"en":"Their friendship evolved into love.","zh":"他们的友谊渐渐发展成了爱情。"},
+  {"en":"Birds evolved from dinosaurs.","zh":"鸟类是由恐龙进化而来的。"},
+  {"en":"The plan keeps evolving as we learn more.","zh":"随着了解得越来越多，这个计划也在不断调整。"}
+],
+"exhibition": [
+  {"en":"There is a photo exhibition at the museum.","zh":"博物馆里有一个摄影展。"}
+],
+"existing": [
+  {"en":"The new app works with your existing account.","zh":"新应用可以使用你现有的账号。"},
+  {"en":"We need to improve the existing roads.","zh":"我们需要改善现有的道路。"}
+],
+"expand": [
+  {"en":"The company plans to expand into Asia.","zh":"这家公司计划扩张到亚洲。"}
+],
+"expansion": [
+  {"en":"The company is planning a rapid expansion overseas.","zh":"公司正计划快速拓展海外业务。"},
+  {"en":"The airport expansion will take five years.","zh":"机场扩建将需要五年时间。"},
+  {"en":"Heat causes the expansion of metal.","zh":"热会使金属膨胀。"},
+  {"en":"Local people protested against the road expansion.","zh":"当地居民抗议道路扩建。"}
+],
+"exposure": [
+  {"en":"Too much sun exposure is bad for your skin.","zh":"晒太阳过多对皮肤不好。"},
+  {"en":"Exposure to English at an early age helps.","zh":"从小接触英语很有帮助。"},
+  {"en":"The climbers died from exposure.","zh":"登山者死于严寒。"},
+  {"en":"The company got a lot of media exposure.","zh":"这家公司获得了大量媒体曝光。"},
+  {"en":"Children need exposure to different cultures.","zh":"孩子们需要接触不同的文化。"}
+],
+"extensive": [
+  {"en":"The library has an extensive collection of maps.","zh":"这家图书馆收藏了大量地图。"},
+  {"en":"The storm caused extensive damage.","zh":"这场风暴造成了大面积破坏。"},
+  {"en":"She has extensive experience in teaching.","zh":"她有丰富的教学经验。"}
+],
+"external": [
+  {"en":"The external walls need painting.","zh":"外墙需要粉刷了。"},
+  {"en":"I saved the photos on an external hard drive.","zh":"我把照片存在了移动硬盘上。"},
+  {"en":"This cream is for external use only.","zh":"这种药膏仅供外用。"}
+],
+"extraordinary": [
+  {"en":"She has an extraordinary voice.","zh":"她的嗓音非同寻常。"}
+],
+"facility": [
+  {"en":"The hotel has excellent sports facilities.","zh":"这家酒店有一流的体育设施。"},
+  {"en":"There are no medical facilities on the island.","zh":"岛上没有医疗设施。"},
+  {"en":"The new facility will open in May.","zh":"新的设施将在五月开放。"},
+  {"en":"Are there washing facilities at the campsite?","zh":"露营地有洗漱设施吗？"},
+  {"en":"The school has good facilities for disabled students.","zh":"这所学校为残疾学生提供了良好的设施。"}
+],
+"faculty": [
+  {"en":"She is a member of the faculty at Harvard.","zh":"她是哈佛大学的教职员。"},
+  {"en":"He studies in the faculty of law.","zh":"他在法学院学习。"},
+  {"en":"The faculty meeting is on Friday.","zh":"全体教职员会议在星期五。"},
+  {"en":"At ninety, she still has all her faculties.","zh":"九十岁了，她仍然耳聪目明。"}
+],
+"fantasy": [
+  {"en":"He loves reading fantasy novels about dragons.","zh":"他喜欢读关于龙的奇幻小说。"}
+],
+"federal": [
+  {"en":"Federal workers will get a pay raise next year.","zh":"联邦雇员明年将获得加薪。"},
+  {"en":"The project is paid for with federal money.","zh":"这个项目由联邦资金支付。"},
+  {"en":"She works for a federal agency in Washington.","zh":"她在华盛顿的一家联邦机构工作。"}
+],
+"fewer": [
+  {"en":"Fewer people take the bus these days.","zh":"现在坐公交车的人少了。"}
+],
+"fiber": [
+  {"en":"Fruit and vegetables are rich in fiber.","zh":"水果和蔬菜富含纤维。"},
+  {"en":"We just got fiber internet at home.","zh":"我们家刚装了光纤网络。"},
+  {"en":"This shirt is made from natural fibers.","zh":"这件衬衫是天然纤维做的。"}
+],
+"finance": [
+  {"en":"She works in finance at a big bank.","zh":"她在一家大银行做金融工作。"},
+  {"en":"He needs help managing his finances.","zh":"他需要有人帮他打理财务。"}
+],
+"folk": [
+  {"en":"My folks live in a small town.","zh":"我的家人住在一个小镇上。"},
+  {"en":"She loves listening to folk music.","zh":"她喜欢听民间音乐。"},
+  {"en":"Hi, folks! Welcome to the show.","zh":"大家好！欢迎收看节目。"}
+],
+"foundation": [
+  {"en":"Trust is the foundation of a good team.","zh":"信任是一个好团队的基础。"}
+],
+"founder": [
+  {"en":"He is the founder of a small tech company.","zh":"他是一家小型科技公司的创始人。"},
+  {"en":"The founders started the business in a garage.","zh":"创始人们在车库里创办了这家公司。"},
+  {"en":"A statue of the town founder stands in the square.","zh":"广场上立着小镇创建者的雕像。"}
+],
+"fund": [
+  {"en":"The school is raising funds for a new library.","zh":"学校正在为新图书馆筹集资金。"}
+],
+"gang": [
+  {"en":"The whole gang came to my birthday.","zh":"那帮朋友全都来参加我的生日会了。"},
+  {"en":"He was in a gang when he was young.","zh":"他年轻时参加过帮派。"},
+  {"en":"Gang violence is a problem in some cities.","zh":"帮派暴力是一些城市的问题。"}
+],
+"gap": [
+  {"en":"There is a big age gap between them.","zh":"他们年龄相差很大。"},
+  {"en":"I took a gap year before starting college.","zh":"上大学前我休了一年间隔年。"}
+],
+"gear": [
+  {"en":"Don't forget your camping gear.","zh":"别忘了你的露营装备。"},
+  {"en":"Put the car in first gear.","zh":"把车挂到一挡。"},
+  {"en":"This course is geared to beginners.","zh":"这门课程是为初学者设计的。"}
+],
+"gene": [
+  {"en":"She got her blue eyes from her father's genes.","zh":"她的蓝眼睛遗传自她父亲的基因。"},
+  {"en":"Scientists have found a gene linked to the disease.","zh":"科学家发现了一个与这种疾病有关的基因。"},
+  {"en":"It runs in the genes.","zh":"这是遗传的。"},
+  {"en":"Every gene carries a piece of information.","zh":"每个基因都携带着一段信息。"}
+],
+"genetic": [
+  {"en":"Eye color is mostly genetic.","zh":"眼睛的颜色主要由基因决定。"},
+  {"en":"The disease is caused by a genetic problem.","zh":"这种病是基因问题引起的。"}
+],
+"governor": [
+  {"en":"The governor visited the flooded towns.","zh":"州长视察了被洪水淹没的城镇。"},
+  {"en":"She was elected governor of Texas.","zh":"她当选为得克萨斯州州长。"},
+  {"en":"The governor gave a speech this morning.","zh":"州长今天上午发表了讲话。"},
+  {"en":"He met the governor of the central bank.","zh":"他见了中央银行行长。"}
+],
+"grand": [
+  {"en":"They had a grand wedding by the sea.","zh":"他们在海边举办了一场盛大的婚礼。"}
+],
+"growth": [
+  {"en":"Children need good food for healthy growth.","zh":"孩子们需要好的食物来健康成长。"}
+],
+"headquarters": [
+  {"en":"The company headquarters is in Shanghai.","zh":"公司总部在上海。"},
+  {"en":"He was called back to headquarters.","zh":"他被召回了总部。"},
+  {"en":"The police headquarters is next to the station.","zh":"警察总局就在车站旁边。"},
+  {"en":"They are building new headquarters downtown.","zh":"他们正在市中心建新总部。"}
+],
+"hip": [
+  {"en":"She broke her hip when she fell.","zh":"她摔倒时摔断了髋骨。"},
+  {"en":"He stood with his hands on his hips.","zh":"他双手叉腰站着。"},
+  {"en":"This is a hip new cafe.","zh":"这是一家时髦的新咖啡馆。"},
+  {"en":"She loves hip hop music.","zh":"她喜欢嘻哈音乐。"}
+],
+"historian": [
+  {"en":"She is a historian of ancient China.","zh":"她是研究中国古代史的历史学家。"},
+  {"en":"Historians still argue about the war.","zh":"历史学家们至今仍在争论这场战争。"},
+  {"en":"The historian wrote a book about the city.","zh":"这位历史学家写了一本关于这座城市的书。"},
+  {"en":"He wants to be a historian.","zh":"他想成为一名历史学家。"},
+  {"en":"A local historian showed us around.","zh":"一位当地历史学者带我们参观。"}
+],
+"historical": [
+  {"en":"She likes reading historical novels.","zh":"她喜欢读历史小说。"}
+],
+"holy": [
+  {"en":"This is a holy place for many people.","zh":"对许多人来说，这是一个圣地。"},
+  {"en":"Jerusalem is called the Holy City.","zh":"耶路撒冷被称为圣城。"},
+  {"en":"Holy cow, that was close!","zh":"天哪，好险！"},
+  {"en":"Many pilgrims visit the holy mountain every spring.","zh":"每年春天都有许多朝圣者来这座圣山。"}
+],
+"housing": [
+  {"en":"Housing is very expensive in this city.","zh":"这座城市的住房非常贵。"},
+  {"en":"The university offers student housing.","zh":"这所大学提供学生宿舍。"},
+  {"en":"They are building new housing near the station.","zh":"他们正在车站附近建新的住宅。"}
+],
+"immediate": [
+  {"en":"We need an immediate answer.","zh":"我们需要立即得到答复。"},
+  {"en":"Only immediate family came to the wedding.","zh":"只有直系亲属参加了婚礼。"},
+  {"en":"There is no immediate danger.","zh":"眼下没有危险。"}
+],
+"immigrant": [
+  {"en":"His parents were immigrants from Italy.","zh":"他的父母是来自意大利的移民。"}
+],
+"immigration": [
+  {"en":"We waited an hour at immigration.","zh":"我们在入境处等了一个小时。"},
+  {"en":"Immigration is a big issue in the election.","zh":"移民问题是这次选举的一大议题。"},
+  {"en":"He works as an immigration lawyer.","zh":"他是一名移民律师。"},
+  {"en":"The country changed its immigration rules.","zh":"这个国家修改了移民规定。"}
+],
+"implication": [
+  {"en":"What are the implications of this decision?","zh":"这个决定会带来什么影响？"},
+  {"en":"The implication was that he was lying.","zh":"言下之意是他在撒谎。"},
+  {"en":"Think about the implications before you sign.","zh":"签字前想想后果。"}
+],
+"impose": [
+  {"en":"The city imposed a ban on fireworks.","zh":"这座城市颁布了烟花禁令。"},
+  {"en":"I don't want to impose on you.","zh":"我不想给你添麻烦。"},
+  {"en":"Don't impose your ideas on others.","zh":"不要把你的想法强加给别人。"}
+],
+"incentive": [
+  {"en":"The bonus is a good incentive to work harder.","zh":"奖金是激励大家更努力工作的好办法。"},
+  {"en":"There's no incentive for them to change.","zh":"他们没有改变的动力。"},
+  {"en":"The government offers tax incentives for electric cars.","zh":"政府为电动车提供税收优惠。"},
+  {"en":"Free coffee is a small incentive to come early.","zh":"免费咖啡是早点来的一个小小诱因。"},
+  {"en":"Kids need an incentive to read more.","zh":"孩子们需要一些激励才会多读书。"}
+],
+"including": [
+  {"en":"The trip costs 500 dollars, including meals.","zh":"这次旅行花费 500 美元，包括餐费。"},
+  {"en":"Five people came, including my brother.","zh":"来了五个人，包括我弟弟。"},
+  {"en":"We sell all kinds of fruit, including mangoes.","zh":"我们卖各种水果，包括芒果。"},
+  {"en":"Everyone was tired, including the teacher.","zh":"每个人都累了，包括老师。"}
+],
+"incorporate": [
+  {"en":"We will incorporate your ideas into the plan.","zh":"我们会把你的想法纳入计划。"},
+  {"en":"The new phone incorporates a better camera.","zh":"新手机配备了更好的摄像头。"},
+  {"en":"Try to incorporate exercise into your day.","zh":"试着把锻炼融入你的日常生活。"},
+  {"en":"The company was incorporated in 2010.","zh":"这家公司于 2010 年注册成立。"}
+],
+"increasingly": [
+  {"en":"It's getting increasingly cold at night.","zh":"晚上越来越冷了。"},
+  {"en":"Online shopping is increasingly popular.","zh":"网上购物越来越流行。"},
+  {"en":"She became increasingly worried about her son.","zh":"她越来越担心她的儿子。"}
+],
+"index": [
+  {"en":"Look up the word in the index.","zh":"在索引里查这个词。"},
+  {"en":"The stock index fell today.","zh":"今天股指下跌了。"}
+],
+"infection": [
+  {"en":"Wash the cut to prevent infection.","zh":"把伤口洗干净，防止感染。"},
+  {"en":"He is taking medicine for an ear infection.","zh":"他在吃治耳朵感染的药。"},
+  {"en":"Infections spread quickly in crowded places.","zh":"传染病在人多的地方传播得很快。"},
+  {"en":"The infection cleared up after a week.","zh":"一周后感染就好了。"}
+],
+"ingredient": [
+  {"en":"Fresh fish is the main ingredient.","zh":"新鲜的鱼是主要食材。"}
+],
+"initial": [
+  {"en":"My initial reaction was surprise.","zh":"我最初的反应是惊讶。"},
+  {"en":"Please write your initials here.","zh":"请在这里写上你姓名的首字母。"},
+  {"en":"The initial plan was too expensive.","zh":"最初的计划太贵了。"}
+],
+"initially": [
+  {"en":"Initially, I didn't like the city at all.","zh":"起初我一点也不喜欢这座城市。"},
+  {"en":"The trip was initially planned for June.","zh":"这次旅行原本计划在六月。"},
+  {"en":"She was initially nervous, but then she relaxed.","zh":"她一开始很紧张，后来就放松了。"}
+],
+"initiative": [
+  {"en":"She took the initiative and called him first.","zh":"她主动先给他打了电话。"},
+  {"en":"The city launched a new recycling initiative.","zh":"这座城市推出了一项新的回收计划。"}
+],
+"inner": [
+  {"en":"She found inner peace through yoga.","zh":"她通过瑜伽找到了内心的平静。"}
+],
+"insight": [
+  {"en":"The book gives a great insight into Chinese culture.","zh":"这本书让人深入了解中国文化。"},
+  {"en":"She shared some useful insights from her trip.","zh":"她分享了旅途中的一些有用心得。"},
+  {"en":"His comments showed real insight.","zh":"他的评论很有见地。"},
+  {"en":"The survey gave us insight into what customers want.","zh":"这项调查让我们了解到顾客想要什么。"}
+],
+"inspire": [
+  {"en":"Her story inspired me to try again.","zh":"她的故事激励我再试一次。"},
+  {"en":"Great teachers inspire their students.","zh":"好老师能激发学生。"}
+],
+"instance": [
+  {"en":"For instance, you could take the bus.","zh":"比如，你可以坐公交车。"},
+  {"en":"In this instance, I think you are right.","zh":"在这件事上，我觉得你是对的。"},
+  {"en":"There were several instances of cheating.","zh":"出现了好几起作弊事件。"},
+  {"en":"Many fruits, for instance apples, are good for you.","zh":"很多水果，比如苹果，都对身体有好处。"},
+  {"en":"In most instances, the problem goes away by itself.","zh":"大多数情况下，这个问题会自己消失。"}
+],
+"institution": [
+  {"en":"Banks are important financial institutions.","zh":"银行是重要的金融机构。"},
+  {"en":"She works at a research institution in Beijing.","zh":"她在北京的一家研究机构工作。"},
+  {"en":"Marriage is an old social institution.","zh":"婚姻是一种古老的社会制度。"},
+  {"en":"The museum is a cultural institution of the city.","zh":"这家博物馆是这座城市的文化机构。"},
+  {"en":"People are losing trust in public institutions.","zh":"人们对公共机构越来越不信任。"}
+],
+"intense": [
+  {"en":"The heat was intense in the afternoon.","zh":"下午热得厉害。"},
+  {"en":"She felt an intense pain in her back.","zh":"她感到背部一阵剧痛。"},
+  {"en":"It was an intense game until the end.","zh":"这场比赛直到最后都很激烈。"},
+  {"en":"The training is short but intense.","zh":"训练时间短但强度大。"}
+],
+"interaction": [
+  {"en":"Babies need lots of interaction with adults.","zh":"婴儿需要和大人多互动。"},
+  {"en":"There was little interaction between the two groups.","zh":"两组人之间几乎没有交流。"},
+  {"en":"I enjoy the interaction with my students.","zh":"我喜欢和学生们互动。"}
+],
+"internal": [
+  {"en":"This is an internal meeting for staff only.","zh":"这是一个只限员工参加的内部会议。"},
+  {"en":"He suffered internal injuries in the accident.","zh":"他在事故中受了内伤。"},
+  {"en":"The company is facing internal problems.","zh":"公司正面临内部问题。"},
+  {"en":"Please send it by internal mail.","zh":"请通过内部邮件发送。"}
+],
+"interpret": [
+  {"en":"How do you interpret this dream?","zh":"你怎么解读这个梦？"}
+],
+"interpretation": [
+  {"en":"That's one interpretation of the poem.","zh":"那是对这首诗的一种解读。"},
+  {"en":"She provided interpretation at the meeting.","zh":"她在会上做口译。"}
+],
+"intervention": [
+  {"en":"The doctor said early intervention is important.","zh":"医生说早期干预很重要。"},
+  {"en":"Without his intervention, they would have fought.","zh":"要不是他出面调停，他们早就打起来了。"},
+  {"en":"The government's intervention helped the economy.","zh":"政府的干预帮助了经济。"},
+  {"en":"Some people oppose military intervention.","zh":"有些人反对军事干预。"},
+  {"en":"The problem was solved without outside intervention.","zh":"问题在没有外部干预的情况下解决了。"}
+],
+"introduction": [
+  {"en":"The introduction of the book is too long.","zh":"这本书的引言太长了。"}
+],
+"investigator": [
+  {"en":"Investigators are looking into the fire.","zh":"调查人员正在调查这起火灾。"},
+  {"en":"She hired a private investigator.","zh":"她雇了一名私家侦探。"},
+  {"en":"The investigators found no evidence.","zh":"调查人员没有发现任何证据。"},
+  {"en":"An insurance investigator came to check the damage.","zh":"保险公司派了调查员来查看损失。"}
+],
+"investor": [
+  {"en":"The startup is looking for new investors.","zh":"这家初创公司正在寻找新的投资者。"},
+  {"en":"Investors are worried about the market.","zh":"投资者们对市场感到担忧。"}
+],
+"involvement": [
+  {"en":"Thanks for your involvement in the project.","zh":"感谢你参与这个项目。"},
+  {"en":"Parent involvement helps children do well at school.","zh":"家长的参与有助于孩子在学校表现良好。"},
+  {"en":"He denied any involvement in the crime.","zh":"他否认与这起犯罪有任何牵连。"},
+  {"en":"Her involvement with the charity began years ago.","zh":"她多年前就开始参与这个慈善机构的工作。"},
+  {"en":"We want more community involvement.","zh":"我们希望社区更多地参与进来。"}
+],
+"joint": [
+  {"en":"We opened a joint bank account.","zh":"我们开了一个联名银行账户。"},
+  {"en":"My knee joint hurts when it rains.","zh":"下雨时我的膝关节会疼。"},
+  {"en":"It was a joint decision.","zh":"这是一个共同的决定。"},
+  {"en":"The two companies made a joint offer.","zh":"这两家公司联合报价。"}
+],
+"journal": [
+  {"en":"I write in my journal every night.","zh":"我每天晚上写日记。"},
+  {"en":"Her research was published in a medical journal.","zh":"她的研究发表在一家医学期刊上。"},
+  {"en":"The library keeps old journals in the basement.","zh":"图书馆把过期期刊放在地下室。"}
+],
+"judgment": [
+  {"en":"I trust your judgment.","zh":"我相信你的判断。"},
+  {"en":"Don't make a judgment too quickly.","zh":"不要太快下结论。"}
+],
+"jury": [
+  {"en":"The jury found him not guilty.","zh":"陪审团裁定他无罪。"},
+  {"en":"She was called for jury duty last month.","zh":"她上个月被召去当陪审员。"},
+  {"en":"The jury will decide the winner of the contest.","zh":"评委会将决定比赛的获胜者。"},
+  {"en":"The jury is still out on that idea.","zh":"那个想法目前还没有定论。"}
+],
+"justify": [
+  {"en":"How can you justify spending so much money?","zh":"你怎么解释花了这么多钱？"},
+  {"en":"Nothing justifies hitting a child.","zh":"任何理由都不能成为打孩子的借口。"},
+  {"en":"Her fears turned out to be justified.","zh":"事实证明她的担心是有道理的。"}
+],
+"lab": [
+  {"en":"She spends most of her time in the lab.","zh":"她大部分时间都待在实验室里。"},
+  {"en":"The lab results will be ready tomorrow.","zh":"化验结果明天出来。"},
+  {"en":"We have a computer lab at school.","zh":"我们学校有一间计算机房。"}
+],
+"label": [
+  {"en":"Read the label before you take the medicine.","zh":"吃药前先看标签。"}
+],
+"largely": [
+  {"en":"The plan was largely successful.","zh":"这个计划基本上是成功的。"},
+  {"en":"Her success is largely due to hard work.","zh":"她的成功很大程度上归功于努力。"},
+  {"en":"The town is largely made up of old people.","zh":"这个镇上住的大多是老人。"}
+],
+"latter": [
+  {"en":"Tea or coffee? I'd prefer the latter.","zh":"茶还是咖啡？我想要后者。"},
+  {"en":"He spent the latter part of his life in Spain.","zh":"他的后半生是在西班牙度过的。"},
+  {"en":"Of the two plans, the latter seems cheaper.","zh":"两个方案中，后一个看起来更便宜。"}
+],
+"lawn": [
+  {"en":"Can you mow the lawn this weekend?","zh":"你这个周末能修剪一下草坪吗？"}
+],
+"lawsuit": [
+  {"en":"The neighbors filed a lawsuit over the noise.","zh":"邻居们因为噪音提起了诉讼。"},
+  {"en":"She won the lawsuit against her former employer.","zh":"她打赢了对前雇主的官司。"},
+  {"en":"The company is facing several lawsuits this year.","zh":"这家公司今年面临好几起诉讼。"},
+  {"en":"They settled the lawsuit before it went to court.","zh":"他们在开庭前就和解了这起诉讼。"},
+  {"en":"A lawsuit can take years and cost a fortune.","zh":"一场官司可能拖上好几年，花一大笔钱。"}
+],
+"layer": [
+  {"en":"Wear layers because it gets cold at night.","zh":"多穿几层，晚上会冷。"},
+  {"en":"The cake has three layers of chocolate.","zh":"这个蛋糕有三层巧克力。"}
+],
+"league": [
+  {"en":"Our team is at the top of the league.","zh":"我们队在联赛中排名第一。"}
+],
+"legislation": [
+  {"en":"New legislation will ban smoking in parks.","zh":"新的法律将禁止在公园吸烟。"},
+  {"en":"The government plans to introduce new legislation.","zh":"政府计划出台新的法规。"},
+  {"en":"This legislation protects workers' rights.","zh":"这项立法保护工人的权利。"},
+  {"en":"The legislation was passed by a large majority.","zh":"这项法案以压倒性多数获得通过。"}
+],
+"liberal": [
+  {"en":"She has liberal views on most issues.","zh":"她在大多数问题上观点开明。"},
+  {"en":"The city is known as a liberal place.","zh":"这座城市以思想开放著称。"},
+  {"en":"He is a liberal and she is a conservative.","zh":"他是自由派，她是保守派。"},
+  {"en":"Don't be too liberal with the salt.","zh":"盐别放太多。"}
+],
+"limited": [
+  {"en":"We only have a limited amount of time.","zh":"我们的时间有限。"}
+],
+"literally": [
+  {"en":"I literally ran all the way here.","zh":"我真的是一路跑过来的。"},
+  {"en":"Don't take his words literally.","zh":"别把他的话当真。"}
+],
+"literary": [
+  {"en":"She loves reading literary magazines on weekends.","zh":"她周末喜欢看文学杂志。"}
+],
+"mainly": [
+  {"en":"The visitors are mainly students.","zh":"来访者主要是学生。"},
+  {"en":"I use my phone mainly for messages.","zh":"我用手机主要是发消息。"}
+],
+"maker": [
+  {"en":"She bought a new coffee maker.","zh":"她买了一台新的咖啡机。"},
+  {"en":"He is a famous film maker.","zh":"他是一位著名的电影制作人。"},
+  {"en":"The maker of this watch is Swiss.","zh":"这块手表的制造商是瑞士的。"},
+  {"en":"Car makers are moving to electric cars.","zh":"汽车制造商正在转向电动汽车。"}
+],
+"manufacturer": [
+  {"en":"Contact the manufacturer if it breaks.","zh":"如果坏了，请联系制造商。"},
+  {"en":"She works for a car manufacturer.","zh":"她在一家汽车制造商工作。"},
+  {"en":"The manufacturer offers a two-year warranty.","zh":"厂家提供两年保修。"},
+  {"en":"Phone manufacturers release new models every year.","zh":"手机厂商每年都推出新机型。"},
+  {"en":"Follow the instructions from the manufacturer.","zh":"请按照厂家的说明操作。"}
+],
+"meanwhile": [
+  {"en":"Meanwhile, I'll make some tea.","zh":"这段时间我去泡点茶。"}
+],
+"mechanism": [
+  {"en":"The lock has a simple mechanism inside.","zh":"这把锁里面的机械装置很简单。"},
+  {"en":"Crying is a natural defense mechanism.","zh":"哭是一种天然的自我保护机制。"},
+  {"en":"We need a better mechanism for handling complaints.","zh":"我们需要一个更好的投诉处理机制。"},
+  {"en":"Scientists still don't fully understand the mechanism.","zh":"科学家们仍未完全弄清其中的机制。"},
+  {"en":"The clock stopped because one of its mechanisms broke.","zh":"钟停了，因为里面有个机件坏了。"}
+],
+"mental": [
+  {"en":"Exercise is good for your mental health.","zh":"运动对你的心理健康有好处。"}
+],
+"minority": [
+  {"en":"Only a minority of students live on campus.","zh":"只有少数学生住在校内。"},
+  {"en":"The country has many ethnic minorities.","zh":"这个国家有许多少数民族。"},
+  {"en":"Those who disagreed were in the minority.","zh":"持反对意见的人占少数。"}
+],
+"missile": [
+  {"en":"The country tested a new missile.","zh":"这个国家试射了一枚新导弹。"},
+  {"en":"The missile hit the target.","zh":"导弹击中了目标。"},
+  {"en":"They built a missile defense system.","zh":"他们建立了导弹防御系统。"},
+  {"en":"Missiles were fired across the border.","zh":"导弹越过边境发射出去。"}
+],
+"mode": [
+  {"en":"Put your phone in silent mode during the movie.","zh":"看电影时请把手机调成静音模式。"},
+  {"en":"The bike is the cheapest mode of transport.","zh":"自行车是最便宜的交通方式。"},
+  {"en":"This camera has several shooting modes.","zh":"这台相机有好几种拍摄模式。"},
+  {"en":"After the holiday, I'm back in work mode.","zh":"假期结束，我又进入工作状态了。"}
+],
+"monitor": [
+  {"en":"The doctor will monitor your heart rate.","zh":"医生会监测你的心率。"},
+  {"en":"I work with two monitors on my desk.","zh":"我办公桌上有两台显示器。"}
+],
+"moreover": [
+  {"en":"The hotel is cheap; moreover, it's near the beach.","zh":"这家酒店很便宜，而且离海滩很近。"},
+  {"en":"It's late. Moreover, I'm very tired.","zh":"天晚了。而且，我很累。"}
+],
+"mostly": [
+  {"en":"The audience was mostly young people.","zh":"观众大多是年轻人。"},
+  {"en":"I'm mostly free on weekends.","zh":"我周末大多有空。"},
+  {"en":"The weather has been mostly sunny this week.","zh":"这周天气大多晴朗。"}
+],
+"negotiate": [
+  {"en":"We negotiated a better price.","zh":"我们谈下了一个更好的价格。"},
+  {"en":"You can negotiate your salary.","zh":"你的工资可以谈。"},
+  {"en":"The two sides are still negotiating.","zh":"双方仍在谈判。"},
+  {"en":"She knows how to negotiate with clients.","zh":"她知道怎么和客户谈判。"},
+  {"en":"They refused to negotiate.","zh":"他们拒绝谈判。"}
+],
+"negotiation": [
+  {"en":"The price is open to negotiation.","zh":"价格可以商量。"}
+],
+"nevertheless": [
+  {"en":"It was raining. Nevertheless, we went out.","zh":"当时在下雨，不过我们还是出去了。"},
+  {"en":"The task was hard but nevertheless fun.","zh":"这个任务很难，但还是很有趣。"},
+  {"en":"She was tired; nevertheless, she kept working.","zh":"她很累，但仍然继续工作。"}
+],
+"newly": [
+  {"en":"We met the newly married couple at the party.","zh":"我们在派对上见到了那对新婚夫妇。"}
+],
+"notion": [
+  {"en":"I have no notion of what he means.","zh":"我完全不明白他是什么意思。"},
+  {"en":"She rejected the notion that women can't lead.","zh":"她否认女性不能当领导的观念。"},
+  {"en":"The notion of working from home is popular now.","zh":"在家办公的想法现在很流行。"},
+  {"en":"He has some strange notions about money.","zh":"他对钱有一些奇怪的想法。"},
+  {"en":"Where did you get that notion?","zh":"你从哪儿得来的这个想法？"}
+],
+"obligation": [
+  {"en":"You are under no obligation to buy anything.","zh":"你没有义务买任何东西。"},
+  {"en":"Parents have an obligation to protect their children.","zh":"父母有保护孩子的责任。"}
+],
+"observation": [
+  {"en":"He was kept in the hospital for observation.","zh":"他被留院观察。"},
+  {"en":"She has good powers of observation.","zh":"她的观察力很强。"},
+  {"en":"Can I make an observation?","zh":"我能说一下我的看法吗？"}
+],
+"observer": [
+  {"en":"A careful observer would notice the mistake.","zh":"细心的观察者会注意到这个错误。"},
+  {"en":"Observers say the election was fair.","zh":"观察人士说选举是公平的。"},
+  {"en":"He attended the meeting as an observer.","zh":"他以观察员的身份出席了会议。"},
+  {"en":"She is a keen observer of people.","zh":"她很善于观察人。"},
+  {"en":"International observers will watch the vote.","zh":"国际观察员将监督投票。"}
+],
+"occasion": [
+  {"en":"This dress is for special occasions.","zh":"这条裙子是特殊场合穿的。"},
+  {"en":"I've met him on several occasions.","zh":"我见过他好几次。"}
+],
+"offense": [
+  {"en":"No offense, but I don't like your hat.","zh":"无意冒犯，但我不喜欢你的帽子。"},
+  {"en":"Driving without a license is a serious offense.","zh":"无证驾驶是严重的违法行为。"},
+  {"en":"She took offense at his joke.","zh":"她被他的玩笑惹恼了。"},
+  {"en":"Our team has a strong offense this year.","zh":"我们队今年的进攻很强。"}
+],
+"ongoing": [
+  {"en":"The investigation is still ongoing.","zh":"调查仍在进行中。"},
+  {"en":"We have an ongoing problem with the heating.","zh":"我们的暖气一直有毛病。"},
+  {"en":"Learning a language is an ongoing process.","zh":"学语言是一个持续不断的过程。"}
+],
+"outcome": [
+  {"en":"We are waiting for the outcome of the vote.","zh":"我们在等投票的结果。"}
+],
+"overall": [
+  {"en":"Overall, I enjoyed the trip.","zh":"总的来说，我很喜欢这次旅行。"},
+  {"en":"What was the overall cost of the wedding?","zh":"婚礼的总花费是多少？"},
+  {"en":"She was the overall winner of the race.","zh":"她是这场比赛的总冠军。"}
+],
+"panel": [
+  {"en":"The control panel is on the left.","zh":"控制面板在左边。"},
+  {"en":"She was invited to join the panel discussion.","zh":"她受邀参加小组讨论。"}
+],
+"participant": [
+  {"en":"Each participant will get a free T-shirt.","zh":"每位参加者都会得到一件免费的 T 恤。"},
+  {"en":"The participants were asked to fill out a form.","zh":"参与者被要求填写一张表格。"}
+],
+"participation": [
+  {"en":"Thank you for your participation.","zh":"感谢你的参与。"},
+  {"en":"Class participation is part of your grade.","zh":"课堂参与是你成绩的一部分。"},
+  {"en":"We want more participation from young people.","zh":"我们希望更多年轻人参与。"},
+  {"en":"Participation in the event is free.","zh":"参加这个活动是免费的。"},
+  {"en":"Thanks for your active participation in the class.","zh":"感谢你在课堂上的积极参与。"}
+],
+"partly": [
+  {"en":"It was partly my fault.","zh":"这部分是我的错。"}
+],
+"partnership": [
+  {"en":"The two companies formed a partnership.","zh":"两家公司建立了合作关系。"},
+  {"en":"Marriage is a partnership of equals.","zh":"婚姻是平等的伙伴关系。"},
+  {"en":"We work in partnership with local schools.","zh":"我们和当地学校合作。"},
+  {"en":"The city has partnerships with several foreign towns.","zh":"这座城市和几个外国城镇建立了友好关系。"}
+],
+"pause": [
+  {"en":"She paused for a moment before answering.","zh":"她停顿了一下才回答。"},
+  {"en":"Press pause, I need to get some water.","zh":"按一下暂停，我去倒点水。"}
+],
+"payment": [
+  {"en":"We accept payment by card.","zh":"我们接受刷卡付款。"},
+  {"en":"The first payment is due next month.","zh":"第一笔款项下个月到期。"},
+  {"en":"I'm behind on my car payments.","zh":"我的车贷还款拖欠了。"}
+],
+"peak": [
+  {"en":"Avoid the subway at peak hours.","zh":"高峰时段别坐地铁。"}
+],
+"peer": [
+  {"en":"Teenagers care a lot about their peers.","zh":"青少年很在意同龄人。"},
+  {"en":"She peered through the window.","zh":"她透过窗户仔细看。"},
+  {"en":"Peer pressure can be very strong.","zh":"同伴压力可能非常大。"}
+],
+"penalty": [
+  {"en":"There is a penalty for returning books late.","zh":"还书晚了要罚款。"}
+],
+"perceive": [
+  {"en":"How do others perceive you?","zh":"别人如何看待你？"},
+  {"en":"Dogs can perceive sounds we can't hear.","zh":"狗能察觉到我们听不到的声音。"},
+  {"en":"She is perceived as a strong leader.","zh":"她被认为是一位强有力的领导者。"},
+  {"en":"Children perceive the world differently.","zh":"孩子们看待世界的方式不同。"}
+],
+"percentage": [
+  {"en":"What percentage of students passed the exam?","zh":"考试的通过率是多少？"},
+  {"en":"A small percentage of people work from home.","zh":"一小部分人在家办公。"},
+  {"en":"Sales went up by a large percentage.","zh":"销售额大幅增长。"},
+  {"en":"He gets a percentage of every sale.","zh":"每笔销售他都能拿到一定比例的提成。"}
+],
+"perception": [
+  {"en":"Public perception of the company has changed.","zh":"公众对这家公司的看法已经改变了。"},
+  {"en":"Our perception of time changes as we get older.","zh":"随着年龄增长，我们对时间的感知会改变。"},
+  {"en":"There is a perception that the city is unsafe.","zh":"人们普遍认为这座城市不安全。"},
+  {"en":"She has a sharp perception of people.","zh":"她看人很准。"}
+],
+"permanent": [
+  {"en":"She is looking for a permanent job.","zh":"她在找一份长期工作。"}
+],
+"personally": [
+  {"en":"Personally, I prefer tea.","zh":"就我个人而言，我更喜欢茶。"}
+],
+"personnel": [
+  {"en":"Only medical personnel can enter.","zh":"只有医务人员可以进入。"},
+  {"en":"Please talk to the personnel department.","zh":"请找人事部门。"},
+  {"en":"The company is cutting personnel costs.","zh":"公司正在削减人员开支。"},
+  {"en":"All personnel must wear a badge.","zh":"所有工作人员都必须佩戴胸牌。"},
+  {"en":"Military personnel were sent to help.","zh":"军队人员被派去帮忙。"}
+],
+"perspective": [
+  {"en":"Try to see it from my perspective.","zh":"试着从我的角度来看这件事。"},
+  {"en":"Travel gives you a new perspective on life.","zh":"旅行能让你对生活有新的看法。"},
+  {"en":"We need to keep things in perspective.","zh":"我们需要正确看待这些事情。"},
+  {"en":"Different people have different perspectives.","zh":"不同的人有不同的看法。"},
+  {"en":"From a business perspective, it makes sense.","zh":"从商业角度看，这是合理的。"}
+],
+"phase": [
+  {"en":"Don't worry, it's just a phase.","zh":"别担心，这只是一个阶段。"}
+],
+"physician": [
+  {"en":"You should talk to your physician first.","zh":"你应该先咨询你的医生。"}
+],
+"plot": [
+  {"en":"The plot of the movie was hard to follow.","zh":"这部电影的情节很难看懂。"},
+  {"en":"They bought a small plot of land.","zh":"他们买了一小块地。"},
+  {"en":"Police discovered a plot to rob the bank.","zh":"警方发现了一个抢银行的阴谋。"}
+],
+"politically": [
+  {"en":"He is not politically active.","zh":"他不怎么参与政治活动。"},
+  {"en":"It was a politically difficult decision.","zh":"从政治角度看，这是一个艰难的决定。"},
+  {"en":"The country is politically stable now.","zh":"这个国家现在政局稳定。"},
+  {"en":"Try to be politically neutral at work.","zh":"在工作中尽量保持政治中立。"},
+  {"en":"The joke wasn't politically correct.","zh":"这个笑话不太政治正确。"}
+],
+"poll": [
+  {"en":"A new poll shows most people support the plan.","zh":"一项新的民意调查显示，大多数人支持这个计划。"},
+  {"en":"The polls close at eight tonight.","zh":"投票站今晚八点关闭。"},
+  {"en":"We polled our users about the new design.","zh":"我们就新设计向用户做了调查。"},
+  {"en":"She is leading in the latest polls.","zh":"在最新的民调中她处于领先地位。"}
+],
+"portrait": [
+  {"en":"She painted a portrait of her mother.","zh":"她给母亲画了一幅肖像。"}
+],
+"pose": [
+  {"en":"Can you pose for a photo?","zh":"你能摆个姿势拍张照吗？"},
+  {"en":"Smoking poses a serious risk to health.","zh":"吸烟对健康构成严重威胁。"}
+],
+"possess": [
+  {"en":"He possesses a rare talent for music.","zh":"他有罕见的音乐天赋。"}
+],
+"potential": [
+  {"en":"This idea has great potential.","zh":"这个想法很有潜力。"}
+],
+"potentially": [
+  {"en":"This mistake could potentially cost us millions.","zh":"这个错误可能会让我们损失数百万。"},
+  {"en":"The ice on the road is potentially dangerous.","zh":"路面上的冰可能很危险。"},
+  {"en":"It's potentially the best deal we'll get.","zh":"这可能是我们能拿到的最好条件了。"},
+  {"en":"The storm could potentially reach the coast tonight.","zh":"风暴今晚可能会到达海岸。"},
+  {"en":"Potentially, anyone can learn to play the piano.","zh":"从理论上讲，任何人都能学会弹钢琴。"}
+],
+"prayer": [
+  {"en":"She says a prayer before every meal.","zh":"她每顿饭前都会祷告。"},
+  {"en":"Our prayers are with the families.","zh":"我们为这些家庭祈祷。"},
+  {"en":"His prayers were answered.","zh":"他的祈祷应验了。"}
+],
+"precisely": [
+  {"en":"That's precisely what I mean.","zh":"我正是这个意思。"},
+  {"en":"The train left at precisely nine o'clock.","zh":"火车九点整准时出发。"},
+  {"en":"Can you tell me precisely what happened?","zh":"你能确切地告诉我发生了什么吗？"}
+],
+"presentation": [
+  {"en":"I have to give a presentation tomorrow.","zh":"我明天要做一个演示报告。"},
+  {"en":"The food was delicious and the presentation was beautiful.","zh":"菜很好吃，摆盘也很漂亮。"},
+  {"en":"All the presentations were recorded.","zh":"所有的演讲都录了下来。"}
+],
+"preserve": [
+  {"en":"We must preserve the old buildings.","zh":"我们必须保护这些老建筑。"}
+],
+"presidential": [
+  {"en":"The presidential election is next year.","zh":"总统选举在明年。"},
+  {"en":"They watched the presidential debate on TV.","zh":"他们在电视上看了总统辩论。"},
+  {"en":"He stayed in the presidential suite.","zh":"他住在总统套房。"}
+],
+"previously": [
+  {"en":"I had previously lived in Shanghai.","zh":"我以前住在上海。"},
+  {"en":"As previously mentioned, the store opens at nine.","zh":"如前所述，商店九点开门。"},
+  {"en":"She previously worked as a nurse.","zh":"她以前是一名护士。"},
+  {"en":"This was previously a school.","zh":"这里以前是一所学校。"}
+],
+"primarily": [
+  {"en":"The course is primarily for beginners.","zh":"这门课程主要面向初学者。"},
+  {"en":"I use my phone primarily for work.","zh":"我的手机主要用于工作。"},
+  {"en":"The town is known primarily for its wine.","zh":"这个小镇主要以葡萄酒闻名。"}
+],
+"prior": [
+  {"en":"No prior experience is needed for this job.","zh":"这份工作不需要相关经验。"},
+  {"en":"Please arrive ten minutes prior to the start.","zh":"请在开始前十分钟到达。"},
+  {"en":"I have a prior engagement that evening.","zh":"那天晚上我已经有约了。"},
+  {"en":"She had no prior knowledge of the plan.","zh":"她事先对这个计划一无所知。"},
+  {"en":"Prior to joining us, he worked in London.","zh":"加入我们之前，他在伦敦工作。"}
+],
+"priority": [
+  {"en":"My family is my top priority.","zh":"我的家人是我最重要的事。"},
+  {"en":"Safety is our first priority.","zh":"安全是我们的首要任务。"},
+  {"en":"You need to get your priorities right.","zh":"你得分清轻重缓急。"},
+  {"en":"Old people have priority on the bus.","zh":"老年人在公交车上享有优先权。"}
+],
+"procedure": [
+  {"en":"What is the procedure for getting a visa?","zh":"办签证的手续是什么？"},
+  {"en":"It's a simple procedure that takes ten minutes.","zh":"这是一个只需十分钟的简单手术。"}
+],
+"producer": [
+  {"en":"She is a music producer in Los Angeles.","zh":"她是洛杉矶的一名音乐制作人。"},
+  {"en":"China is a major producer of tea.","zh":"中国是茶叶的主要生产国。"},
+  {"en":"The producer wants to change the ending.","zh":"制片人想修改结局。"}
+],
+"prominent": [
+  {"en":"She is a prominent writer in her country.","zh":"她是她们国家的知名作家。"},
+  {"en":"Put the sign in a prominent place.","zh":"把标牌放在显眼的地方。"},
+  {"en":"He has a prominent nose.","zh":"他鼻子很高。"},
+  {"en":"Several prominent doctors signed the letter.","zh":"几位知名医生在这封信上签了名。"}
+],
+"proper": [
+  {"en":"You need proper shoes for hiking.","zh":"徒步需要合适的鞋子。"},
+  {"en":"Let's have a proper dinner tonight.","zh":"今晚我们好好吃顿晚饭吧。"},
+  {"en":"Put the books back in their proper place.","zh":"把书放回原处。"}
+],
+"prosecutor": [
+  {"en":"The prosecutor asked for a ten-year sentence.","zh":"检察官要求判处十年徒刑。"},
+  {"en":"She worked as a prosecutor for many years.","zh":"她当了很多年检察官。"},
+  {"en":"The prosecutors dropped the case.","zh":"检方撤销了这个案子。"},
+  {"en":"The prosecutor questioned the witness.","zh":"检察官询问了证人。"}
+],
+"prospect": [
+  {"en":"The prospect of a holiday made her happy.","zh":"想到要去度假，她很高兴。"},
+  {"en":"His job prospects are good.","zh":"他的就业前景很好。"},
+  {"en":"I don't like the prospect of working late.","zh":"我不喜欢可能要加班这件事。"},
+  {"en":"There is little prospect of rain this week.","zh":"这周不太可能下雨。"},
+  {"en":"The team has good prospects for next season.","zh":"这支球队下赛季前景看好。"}
+],
+"protein": [
+  {"en":"Eggs are a good source of protein.","zh":"鸡蛋是蛋白质的好来源。"},
+  {"en":"You need more protein in your diet.","zh":"你的饮食中需要更多蛋白质。"},
+  {"en":"He drinks a protein shake after the gym.","zh":"他健身后喝一杯蛋白粉奶昔。"},
+  {"en":"Beans are rich in protein.","zh":"豆类富含蛋白质。"},
+  {"en":"How much protein should I eat every day?","zh":"我每天应该吃多少蛋白质？"}
+],
+"provision": [
+  {"en":"The school makes provision for disabled students.","zh":"学校为残疾学生做了相应安排。"},
+  {"en":"We took enough provisions for three days.","zh":"我们带了够吃三天的食物。"},
+  {"en":"There is no provision for parking here.","zh":"这里没有设置停车位。"},
+  {"en":"The contract has a provision about late payment.","zh":"合同里有一条关于逾期付款的规定。"},
+  {"en":"The provision of clean water is important.","zh":"提供清洁的饮用水很重要。"}
+],
+"psychological": [
+  {"en":"Stress can cause psychological problems.","zh":"压力会导致心理问题。"},
+  {"en":"The film is a psychological thriller.","zh":"这部电影是一部心理惊悚片。"},
+  {"en":"Losing his job had a psychological effect on him.","zh":"失业对他造成了心理影响。"},
+  {"en":"She needs psychological support.","zh":"她需要心理支持。"}
+],
+"psychology": [
+  {"en":"She is studying psychology at university.","zh":"她在大学学心理学。"}
+],
+"publication": [
+  {"en":"The book is ready for publication.","zh":"这本书可以出版了。"},
+  {"en":"She writes for several publications.","zh":"她为好几家刊物写稿。"},
+  {"en":"The date of publication is next spring.","zh":"出版日期是明年春天。"},
+  {"en":"This is a free monthly publication.","zh":"这是一份免费的月刊。"}
+],
+"racial": [
+  {"en":"The law bans racial discrimination.","zh":"法律禁止种族歧视。"}
+],
+"radical": [
+  {"en":"We need radical changes to the system.","zh":"这个制度需要彻底改革。"}
+],
+"rank": [
+  {"en":"Our school ranks first in the city.","zh":"我们学校在全市排名第一。"}
+],
+"rating": [
+  {"en":"The restaurant has a five-star rating.","zh":"这家餐厅评级为五星。"},
+  {"en":"The show got very high ratings.","zh":"这个节目收视率很高。"},
+  {"en":"Please give the app a rating.","zh":"请给这个应用打个分。"},
+  {"en":"His approval rating has dropped.","zh":"他的支持率下降了。"},
+  {"en":"Check the energy rating before you buy a fridge.","zh":"买冰箱前先看看能效等级。"}
+],
+"react": [
+  {"en":"How did your parents react to the news?","zh":"你父母听到这个消息有什么反应？"}
+],
+"reader": [
+  {"en":"She is a fast reader.","zh":"她读书很快。"}
+],
+"recall": [
+  {"en":"The company recalled thousands of cars last month.","zh":"这家公司上个月召回了几千辆汽车。"}
+],
+"recipe": [
+  {"en":"Can you give me the recipe for this cake?","zh":"你能给我这个蛋糕的做法吗？"}
+],
+"recognition": [
+  {"en":"She received recognition for her work.","zh":"她的工作得到了认可。"},
+  {"en":"The town has changed beyond recognition.","zh":"这个小镇变得面目全非。"},
+  {"en":"The phone uses face recognition.","zh":"这部手机使用人脸识别。"}
+],
+"recommendation": [
+  {"en":"I bought this book on your recommendation.","zh":"我是听了你的推荐才买这本书的。"}
+],
+"regime": [
+  {"en":"The old regime fell after the protests.","zh":"抗议活动之后旧政权倒台了。"},
+  {"en":"She follows a strict exercise regime.","zh":"她遵循严格的锻炼计划。"},
+  {"en":"The country was ruled by a military regime.","zh":"这个国家曾由军政府统治。"},
+  {"en":"Many people left during the regime.","zh":"在那个政权统治期间，很多人离开了。"}
+],
+"regional": [
+  {"en":"She has a strong regional accent.","zh":"她有很重的地方口音。"},
+  {"en":"We tried some regional dishes in Sichuan.","zh":"我们在四川尝了一些地方菜。"}
+],
+"religious": [
+  {"en":"Christmas is a religious holiday for many people.","zh":"对许多人来说，圣诞节是一个宗教节日。"}
+],
+"representation": [
+  {"en":"Women still lack representation in politics.","zh":"女性在政界的代表仍然不足。"},
+  {"en":"The painting is a representation of peace.","zh":"这幅画象征着和平。"},
+  {"en":"You have the right to legal representation.","zh":"你有权请律师代理。"},
+  {"en":"The map is a simple representation of the city.","zh":"这张地图是这座城市的简化示意图。"},
+  {"en":"Every country has representation in the meeting.","zh":"每个国家都有代表参加会议。"}
+],
+"republican": [
+  {"en":"He has voted Republican all his life.","zh":"他一辈子都投共和党的票。"},
+  {"en":"The Republicans won more seats this year.","zh":"共和党今年赢得了更多席位。"},
+  {"en":"Her parents are both Republicans.","zh":"她的父母都是共和党人。"},
+  {"en":"The Republican candidate gave a long speech.","zh":"共和党候选人发表了一篇很长的演讲。"}
+],
+"researcher": [
+  {"en":"Researchers have found a new kind of fish.","zh":"研究人员发现了一种新的鱼类。"},
+  {"en":"She is a researcher at a big university.","zh":"她是一所大学的研究人员。"},
+  {"en":"The researchers spent five years on this study.","zh":"研究人员在这项研究上花了五年时间。"},
+  {"en":"According to researchers, coffee may be good for you.","zh":"根据研究人员的说法，咖啡可能对你有好处。"},
+  {"en":"He works as a market researcher.","zh":"他是一名市场调研员。"}
+],
+"resistance": [
+  {"en":"There is strong resistance to the new rules.","zh":"新规定遭到强烈抵制。"},
+  {"en":"Exercise can improve your resistance to illness.","zh":"锻炼可以提高你的抵抗力。"},
+  {"en":"The plan met with little resistance.","zh":"这个计划几乎没有遇到阻力。"},
+  {"en":"She joined the resistance during the war.","zh":"战争期间她参加了抵抗运动。"},
+  {"en":"Take the path of least resistance.","zh":"选择阻力最小的那条路。"}
+],
+"respondent": [
+  {"en":"Most respondents said they were happy.","zh":"大多数受访者说他们很开心。"},
+  {"en":"Each respondent answered ten questions.","zh":"每位受访者回答了十个问题。"},
+  {"en":"Half of the respondents were women.","zh":"一半的受访者是女性。"},
+  {"en":"The respondents were all over sixty.","zh":"受访者都超过六十岁。"},
+  {"en":"One respondent did not answer the last question.","zh":"有一位受访者没有回答最后一个问题。"}
+],
+"response": [
+  {"en":"Thanks for your quick response.","zh":"感谢你的迅速回复。"},
+  {"en":"We got hundreds of responses to the survey.","zh":"我们收到了几百份调查问卷的回复。"}
+],
+"restore": [
+  {"en":"Power was restored after two hours.","zh":"两小时后恢复了供电。"},
+  {"en":"They restored the old house.","zh":"他们修复了那座老房子。"},
+  {"en":"A good sleep will restore your energy.","zh":"好好睡一觉能恢复你的精力。"}
+],
+"retain": [
+  {"en":"This soil retains water well.","zh":"这种土壤保水性好。"},
+  {"en":"It's hard to retain good workers.","zh":"留住好员工很难。"},
+  {"en":"She retained her title for another year.","zh":"她又保住了一年的冠军头衔。"},
+  {"en":"Reviewing helps you retain new words.","zh":"复习能帮你记住新单词。"},
+  {"en":"The town has retained its old charm.","zh":"这座小镇保留了往日的韵味。"}
+],
+"revenue": [
+  {"en":"The company's revenue grew by twenty percent.","zh":"公司的收入增长了百分之二十。"},
+  {"en":"Tourism brings a lot of revenue to the city.","zh":"旅游业给这座城市带来了大量收入。"},
+  {"en":"Ad revenue fell sharply last year.","zh":"去年广告收入大幅下降。"},
+  {"en":"Most of our revenue comes from online sales.","zh":"我们的大部分收入来自网上销售。"}
+],
+"roughly": [
+  {"en":"It takes roughly an hour by car.","zh":"开车大约需要一个小时。"}
+],
+"route": [
+  {"en":"Which route is the fastest to the airport?","zh":"去机场哪条路线最快？"}
+],
+"routine": [
+  {"en":"Exercise is part of my daily routine.","zh":"锻炼是我日常生活的一部分。"},
+  {"en":"It's just a routine check.","zh":"这只是例行检查。"},
+  {"en":"I need a break from my routine.","zh":"我需要从日常琐事中解脱一下。"}
+],
+"sample": [
+  {"en":"Can I have a free sample?","zh":"我能要一份免费样品吗？"},
+  {"en":"The doctor took a blood sample.","zh":"医生抽了一份血样。"},
+  {"en":"We sampled the local food on our trip.","zh":"我们在旅途中品尝了当地的食物。"}
+],
+"satisfaction": [
+  {"en":"Helping others gives me great satisfaction.","zh":"帮助别人让我很有满足感。"},
+  {"en":"Customer satisfaction is our top priority.","zh":"客户满意是我们的首要目标。"},
+  {"en":"He smiled with satisfaction at his work.","zh":"他看着自己的作品满意地笑了。"}
+],
+"scenario": [
+  {"en":"In the worst scenario, we'll lose the house.","zh":"最坏的情况是我们会失去房子。"}
+],
+"sector": [
+  {"en":"She works in the public sector.","zh":"她在公共部门工作。"},
+  {"en":"The tech sector is growing fast.","zh":"科技行业发展迅速。"},
+  {"en":"Many jobs in the service sector pay badly.","zh":"服务业的很多工作收入很低。"},
+  {"en":"The private sector created more jobs this year.","zh":"今年私营部门创造了更多就业机会。"}
+],
+"secure": [
+  {"en":"Keep your password in a secure place.","zh":"把密码放在安全的地方。"},
+  {"en":"She finally secured a job at the bank.","zh":"她终于在银行找到了一份工作。"}
+],
+"segment": [
+  {"en":"Cut the orange into segments.","zh":"把橙子分成一瓣一瓣的。"},
+  {"en":"The show has a short news segment.","zh":"这个节目有一个简短的新闻环节。"},
+  {"en":"Young people are our largest customer segment.","zh":"年轻人是我们最大的客户群体。"},
+  {"en":"The road is divided into three segments.","zh":"这条路分成三段。"},
+  {"en":"Each segment of the course lasts a week.","zh":"课程的每个部分持续一周。"}
+],
+"selection": [
+  {"en":"The shop has a wide selection of wines.","zh":"这家店有各种各样的葡萄酒可供选择。"},
+  {"en":"The selection of players will be made next week.","zh":"球员选拔将在下周进行。"},
+  {"en":"Make your selection and press OK.","zh":"选好后按确定。"},
+  {"en":"They have a good selection of books for kids.","zh":"他们有很多适合孩子的好书。"}
+],
+"senate": [
+  {"en":"The Senate will vote on the bill tomorrow.","zh":"参议院明天将对该法案进行投票。"},
+  {"en":"She was elected to the Senate last year.","zh":"她去年当选为参议员。"},
+  {"en":"The plan was approved by the Senate.","zh":"这个计划获得了参议院的批准。"},
+  {"en":"There are one hundred members in the Senate.","zh":"参议院有一百名议员。"},
+  {"en":"The Senate and the House disagree on taxes.","zh":"参议院和众议院在税收问题上意见不一。"}
+],
+"senator": [
+  {"en":"The senator gave a speech on education.","zh":"这位参议员发表了关于教育的演讲。"},
+  {"en":"She was elected senator at the age of forty.","zh":"她四十岁时当选为参议员。"},
+  {"en":"Several senators voted against the bill.","zh":"几位参议员对这项法案投了反对票。"},
+  {"en":"I wrote a letter to my senator.","zh":"我给我们州的参议员写了一封信。"}
+],
+"session": [
+  {"en":"The training session lasts two hours.","zh":"培训课持续两个小时。"},
+  {"en":"We have a study session after school.","zh":"我们放学后有一个学习时段。"},
+  {"en":"The doctor recommended ten therapy sessions.","zh":"医生建议做十次治疗。"}
+],
+"setting": [
+  {"en":"The story's setting is a small village.","zh":"这个故事的背景是一个小村庄。"},
+  {"en":"You can change the language in the settings.","zh":"你可以在设置里更改语言。"}
+],
+"settlement": [
+  {"en":"They reached a settlement out of court.","zh":"他们在庭外达成了和解。"},
+  {"en":"This was once a small fishing settlement.","zh":"这里曾是一个小渔村。"},
+  {"en":"She got a large settlement after the accident.","zh":"事故后她获得了一大笔赔偿。"},
+  {"en":"Both sides want a peaceful settlement.","zh":"双方都希望和平解决。"}
+],
+"sexual": [
+  {"en":"The company has a strict policy against sexual harassment.","zh":"公司对性骚扰有严格的规定。"},
+  {"en":"Schools should teach young people about sexual health.","zh":"学校应该教年轻人性健康知识。"},
+  {"en":"He was accused of sexual misconduct.","zh":"他被指控有性不端行为。"}
+],
+"shift": [
+  {"en":"I work the night shift this week.","zh":"这周我上夜班。"},
+  {"en":"Can you shift your chair a little?","zh":"你能把椅子挪一下吗？"},
+  {"en":"There has been a shift in public opinion.","zh":"公众舆论发生了转变。"}
+],
+"significance": [
+  {"en":"The date has a special significance for us.","zh":"这个日子对我们有特殊意义。"},
+  {"en":"Nobody realized the significance of the discovery.","zh":"没有人意识到这个发现的重要性。"},
+  {"en":"Don't attach too much significance to his words.","zh":"别太把他的话当回事。"},
+  {"en":"The temple is of great historical significance.","zh":"这座寺庙有重要的历史意义。"}
+],
+"significant": [
+  {"en":"There has been a significant change in the weather.","zh":"天气发生了显著的变化。"}
+],
+"significantly": [
+  {"en":"Prices have risen significantly this year.","zh":"今年价格大幅上涨。"},
+  {"en":"Her English has improved significantly.","zh":"她的英语有了明显进步。"},
+  {"en":"This new road will significantly cut travel time.","zh":"这条新路将大大缩短出行时间。"},
+  {"en":"The two results are not significantly different.","zh":"这两个结果没有显著差别。"}
+],
+"similarly": [
+  {"en":"The two brothers dress similarly.","zh":"兄弟俩穿得差不多。"},
+  {"en":"Prices rose last year, and similarly, wages went up.","zh":"去年物价上涨了，工资也同样涨了。"},
+  {"en":"Treat every customer similarly, rich or poor.","zh":"不管有钱没钱，对每位顾客都要一视同仁。"},
+  {"en":"Similarly, you can save the file as a PDF.","zh":"同样，你也可以把文件存成 PDF。"},
+  {"en":"Both cities were similarly affected by the flood.","zh":"两座城市受洪水的影响差不多。"}
+],
+"snap": [
+  {"en":"Sorry I snapped at you.","zh":"对不起，我刚才冲你发火了。"},
+  {"en":"The branch snapped under his weight.","zh":"树枝被他压断了。"}
+],
+"solid": [
+  {"en":"The lake was frozen solid.","zh":"湖面冻得结结实实。"},
+  {"en":"She has a solid knowledge of grammar.","zh":"她的语法基础很扎实。"}
+],
+"somehow": [
+  {"en":"Somehow I lost my keys again.","zh":"不知怎么的，我又把钥匙弄丢了。"},
+  {"en":"We'll finish it on time somehow.","zh":"我们总会想办法按时完成的。"}
+],
+"specialist": [
+  {"en":"My doctor sent me to a specialist.","zh":"我的医生让我去看专科医生。"},
+  {"en":"She is a specialist in children's books.","zh":"她是儿童读物方面的专家。"}
+],
+"specific": [
+  {"en":"Is there a specific time you want to meet?","zh":"你想在某个具体时间见面吗？"}
+],
+"specifically": [
+  {"en":"I specifically asked for no sugar.","zh":"我特别说明了不要糖。"},
+  {"en":"This book is written specifically for beginners.","zh":"这本书是专门为初学者写的。"},
+  {"en":"What specifically don't you like about it?","zh":"你具体不喜欢它哪一点？"},
+  {"en":"The room was designed specifically for children.","zh":"这个房间是专门为孩子设计的。"}
+],
+"spin": [
+  {"en":"The wheel began to spin.","zh":"轮子开始转动。"},
+  {"en":"Let's take the car for a spin.","zh":"我们开车出去兜一圈吧。"},
+  {"en":"My head is spinning.","zh":"我头晕。"}
+],
+"spiritual": [
+  {"en":"Many people go to India for a spiritual journey.","zh":"许多人去印度进行心灵之旅。"},
+  {"en":"He is the spiritual leader of the group.","zh":"他是这个团体的精神领袖。"},
+  {"en":"Music gives her spiritual comfort.","zh":"音乐给了她精神上的慰藉。"},
+  {"en":"She is not religious, but she is spiritual.","zh":"她不信教，但很注重精神生活。"}
+],
+"spokesman": [
+  {"en":"A spokesman for the company refused to comment.","zh":"公司发言人拒绝发表评论。"},
+  {"en":"The police spokesman answered questions from reporters.","zh":"警方发言人回答了记者的提问。"},
+  {"en":"He is the official spokesman for the team.","zh":"他是球队的官方发言人。"},
+  {"en":"Two spokesmen gave very different stories.","zh":"两位发言人的说法大相径庭。"},
+  {"en":"The spokesman said the airport would reopen soon.","zh":"发言人说机场很快就会重新开放。"}
+],
+"squeeze": [
+  {"en":"Squeeze some lemon on the fish.","zh":"在鱼上挤点柠檬汁。"},
+  {"en":"Can we squeeze one more person into the car?","zh":"车里还能再挤一个人吗？"}
+],
+"stability": [
+  {"en":"Children need stability at home.","zh":"孩子需要稳定的家庭环境。"},
+  {"en":"The country is enjoying a period of stability.","zh":"这个国家正处于一段稳定时期。"},
+  {"en":"Wide tires give the car more stability.","zh":"宽轮胎让车更稳。"},
+  {"en":"She wants a job with more stability.","zh":"她想要一份更稳定的工作。"},
+  {"en":"Prices have shown stability this year.","zh":"今年物价比较稳定。"}
+],
+"stable": [
+  {"en":"Make sure the ladder is stable before you climb.","zh":"爬梯子之前先确认它是稳的。"}
+],
+"stair": [
+  {"en":"The bottom stair creaks when you step on it.","zh":"最下面那级楼梯一踩就吱吱响。"},
+  {"en":"He sat on the top stair and waited.","zh":"他坐在最上面一级台阶上等着。"},
+  {"en":"Watch out, the third stair is loose.","zh":"小心，第三级台阶松了。"},
+  {"en":"She climbed one stair at a time.","zh":"她一级一级地往上爬。"},
+  {"en":"The cat sleeps on the same stair every day.","zh":"那只猫每天都睡在同一级台阶上。"}
+],
+"stake": [
+  {"en":"Too much is at stake to give up now.","zh":"现在放弃代价太大了。"},
+  {"en":"She owns a stake in the company.","zh":"她持有这家公司的股份。"},
+  {"en":"The stakes are high in this game.","zh":"这场比赛事关重大。"}
+],
+"statistics": [
+  {"en":"The statistics show that crime has fallen.","zh":"统计数据显示犯罪率下降了。"},
+  {"en":"I took a statistics class last semester.","zh":"我上学期上了一门统计学课。"},
+  {"en":"Don't trust statistics without checking the source.","zh":"不核实来源就别轻信统计数据。"}
+],
+"steady": [
+  {"en":"Hold the camera steady.","zh":"把相机拿稳。"}
+],
+"steel": [
+  {"en":"The bridge is made of steel.","zh":"这座桥是钢铁造的。"}
+],
+"storage": [
+  {"en":"We keep old furniture in storage.","zh":"我们把旧家具存放在仓库里。"},
+  {"en":"My phone is running out of storage.","zh":"我的手机存储空间快满了。"},
+  {"en":"The house has plenty of storage space.","zh":"这房子的储物空间很充足。"},
+  {"en":"Proper storage keeps food fresh longer.","zh":"正确的储存能让食物保鲜更久。"}
+],
+"strategic": [
+  {"en":"Moving the office was a strategic decision.","zh":"搬办公室是一个战略性决定。"},
+  {"en":"The city has a strategic location near the sea.","zh":"这座城市靠海，地理位置很重要。"},
+  {"en":"We need a more strategic approach to marketing.","zh":"我们的营销需要更有策略。"},
+  {"en":"He made a strategic mistake early in the game.","zh":"他在比赛初期犯了一个战术错误。"}
+],
+"studio": [
+  {"en":"She rents a small studio in the city center.","zh":"她在市中心租了一间小单身公寓。"},
+  {"en":"The band is recording in the studio.","zh":"乐队正在录音室录音。"},
+  {"en":"He has a photo studio downtown.","zh":"他在市中心有一家摄影工作室。"},
+  {"en":"We visited a film studio in Hollywood.","zh":"我们参观了好莱坞的一个电影制片厂。"},
+  {"en":"The artist works in a studio at home.","zh":"这位艺术家在家里的画室工作。"}
+],
+"substantial": [
+  {"en":"She earns a substantial salary.","zh":"她的薪水相当可观。"},
+  {"en":"We had a substantial breakfast.","zh":"我们吃了一顿丰盛的早餐。"},
+  {"en":"There has been substantial progress.","zh":"已经取得了实质性进展。"},
+  {"en":"The storm caused substantial damage.","zh":"这场风暴造成了巨大损失。"},
+  {"en":"A substantial number of people agreed.","zh":"相当多的人同意了。"}
+],
+"supporter": [
+  {"en":"She is a big supporter of the local team.","zh":"她是当地球队的忠实支持者。"},
+  {"en":"His supporters cheered when he arrived.","zh":"他到达时，支持者们欢呼起来。"}
+],
+"supreme": [
+  {"en":"The Supreme Court made its decision today.","zh":"最高法院今天作出了裁决。"},
+  {"en":"Safety is of supreme importance here.","zh":"在这里，安全是最重要的。"},
+  {"en":"He is the supreme leader of the country.","zh":"他是这个国家的最高领导人。"}
+],
+"survey": [
+  {"en":"Would you like to take a short survey?","zh":"你愿意做一个简短的调查吗？"},
+  {"en":"We surveyed five hundred students about their sleep.","zh":"我们调查了五百名学生的睡眠情况。"}
+],
+"sustain": [
+  {"en":"It's hard to sustain this pace for long.","zh":"这样的节奏很难长期保持。"},
+  {"en":"He sustained serious injuries in the crash.","zh":"他在车祸中受了重伤。"}
+],
+"swing": [
+  {"en":"The kids are playing on the swings.","zh":"孩子们在荡秋千。"},
+  {"en":"He swung the bat and hit the ball.","zh":"他挥棒击中了球。"},
+  {"en":"Her mood can swing quickly.","zh":"她的情绪变化很快。"}
+],
+"tablespoon": [
+  {"en":"Add two tablespoons of sugar.","zh":"加两大勺糖。"},
+  {"en":"Mix a tablespoon of honey into the tea.","zh":"在茶里拌一大勺蜂蜜。"},
+  {"en":"You only need a tablespoon of oil.","zh":"你只需要一大勺油。"},
+  {"en":"Take one tablespoon of the medicine at night.","zh":"晚上服一大勺药。"},
+  {"en":"Stir in three tablespoons of milk.","zh":"倒入三大勺牛奶搅匀。"}
+],
+"tank": [
+  {"en":"We need to fill up the tank before the trip.","zh":"出发前我们得把油箱加满。"}
+],
+"teaspoon": [
+  {"en":"Add half a teaspoon of salt.","zh":"加半小勺盐。"},
+  {"en":"I take one teaspoon of sugar in my coffee.","zh":"我的咖啡里放一小勺糖。"},
+  {"en":"Give the baby one teaspoon at a time.","zh":"每次给宝宝喂一小勺。"}
+],
+"technical": [
+  {"en":"We are having some technical problems.","zh":"我们遇到了一些技术问题。"},
+  {"en":"Please call technical support for help.","zh":"请打电话给技术支持寻求帮助。"},
+  {"en":"The article is too technical for me.","zh":"这篇文章对我来说太专业了。"},
+  {"en":"She went to a technical college.","zh":"她上的是一所技术学院。"},
+  {"en":"The game was delayed for technical reasons.","zh":"比赛因技术原因推迟了。"}
+],
+"technique": [
+  {"en":"She taught me a new cooking technique.","zh":"她教了我一种新的烹饪技巧。"},
+  {"en":"Good technique is more important than strength.","zh":"好的技巧比力气更重要。"}
+],
+"teen": [
+  {"en":"The show is popular with teens.","zh":"这个节目很受青少年欢迎。"}
+],
+"tension": [
+  {"en":"There is a lot of tension between them.","zh":"他们之间关系很紧张。"},
+  {"en":"A hot bath can relieve muscle tension.","zh":"洗个热水澡可以缓解肌肉紧张。"},
+  {"en":"You could feel the tension in the room.","zh":"你能感觉到房间里的紧张气氛。"},
+  {"en":"His joke broke the tension.","zh":"他的笑话缓和了紧张气氛。"}
+],
+"terror": [
+  {"en":"The children screamed in terror.","zh":"孩子们吓得尖叫起来。"},
+  {"en":"She has a terror of deep water.","zh":"她特别怕深水。"},
+  {"en":"The city was shocked by the terror attack.","zh":"这座城市被这次恐怖袭击震惊了。"},
+  {"en":"He faced the terrors of the night alone.","zh":"他独自面对夜晚的种种恐惧。"}
+],
+"terrorism": [
+  {"en":"The world must work together against terrorism.","zh":"全世界必须共同打击恐怖主义。"},
+  {"en":"The attack was an act of terrorism.","zh":"这次袭击是一起恐怖主义行为。"}
+],
+"testify": [
+  {"en":"She agreed to testify against her boss.","zh":"她同意出庭指证她的老板。"}
+],
+"testimony": [
+  {"en":"Her testimony helped the jury reach a decision.","zh":"她的证词帮助陪审团做出了裁决。"},
+  {"en":"The witness changed his testimony at the last minute.","zh":"证人在最后一刻改了证词。"},
+  {"en":"The judge listened carefully to every testimony.","zh":"法官认真听取了每一份证词。"},
+  {"en":"His success is a testimony to years of hard work.","zh":"他的成功证明了多年的努力。"}
+],
+"testing": [
+  {"en":"The new drug is still in testing.","zh":"这种新药仍在试验中。"},
+  {"en":"There is too much testing in schools.","zh":"学校里考试太多了。"}
+],
+"theme": [
+  {"en":"The theme of the party is the eighties.","zh":"这次派对的主题是八十年代。"}
+],
+"therapy": [
+  {"en":"She goes to therapy once a week.","zh":"她每周去做一次心理治疗。"},
+  {"en":"Music therapy can help people relax.","zh":"音乐疗法可以帮助人放松。"}
+],
+"therefore": [
+  {"en":"It was raining; therefore, we stayed at home.","zh":"当时在下雨，所以我们待在家里。"}
+],
+"tissue": [
+  {"en":"Can you pass me a tissue, please?","zh":"能递给我一张纸巾吗？"},
+  {"en":"She always carries tissues in her bag.","zh":"她包里总是带着纸巾。"},
+  {"en":"The doctor took a small sample of tissue.","zh":"医生取了一小块组织样本。"}
+],
+"tournament": [
+  {"en":"Our team won the chess tournament.","zh":"我们队赢得了国际象棋锦标赛。"},
+  {"en":"She plays in several tournaments every year.","zh":"她每年参加好几场比赛。"}
+],
+"tragedy": [
+  {"en":"Losing their home was a real tragedy.","zh":"失去家园真是一场悲剧。"}
+],
+"trail": [
+  {"en":"We walked along a mountain trail.","zh":"我们沿着一条山间小路走。"},
+  {"en":"The dog left a trail of mud on the floor.","zh":"狗在地板上留下了一串泥印。"},
+  {"en":"The police are on the trail of the thief.","zh":"警察正在追踪那个小偷。"},
+  {"en":"Our team trailed by ten points at half time.","zh":"半场时我们队落后十分。"}
+],
+"transform": [
+  {"en":"The new paint transformed the room.","zh":"新刷的漆让房间焕然一新。"}
+],
+"transition": [
+  {"en":"The transition to a new job can be hard.","zh":"适应新工作可能很难。"},
+  {"en":"We want a smooth transition of power.","zh":"我们希望权力平稳过渡。"},
+  {"en":"She is in transition between two careers.","zh":"她正处在两份职业之间的过渡期。"},
+  {"en":"The transition from winter to spring is quick here.","zh":"这里冬去春来很快。"}
+],
+"transportation": [
+  {"en":"Public transportation is cheap here.","zh":"这里的公共交通很便宜。"},
+  {"en":"What kind of transportation will you use?","zh":"你会用什么交通工具？"}
+],
+"treaty": [
+  {"en":"The two countries signed a peace treaty.","zh":"两国签署了和平条约。"},
+  {"en":"Many old treaties were never respected.","zh":"许多旧条约从未被遵守过。"}
+],
+"tremendous": [
+  {"en":"Thanks for your tremendous help.","zh":"非常感谢你的大力帮助。"},
+  {"en":"The concert was a tremendous success.","zh":"这场音乐会取得了巨大成功。"}
+],
+"trend": [
+  {"en":"Short videos are a big trend right now.","zh":"短视频是现在的一大潮流。"},
+  {"en":"She always follows the latest fashion trends.","zh":"她总是追随最新的时尚潮流。"},
+  {"en":"The trend is toward smaller families.","zh":"家庭规模越来越小是一种趋势。"}
+],
+"tribe": [
+  {"en":"The tribe has lived in the forest for centuries.","zh":"这个部落在森林里生活了好几个世纪。"}
+],
+"troop": [
+  {"en":"More troops were sent to the border.","zh":"更多部队被派往边境。"},
+  {"en":"The troops returned home after the war.","zh":"战争结束后，部队回到了家乡。"}
+],
+"typically": [
+  {"en":"I typically go to bed at eleven.","zh":"我通常十一点睡觉。"},
+  {"en":"The trip typically takes two hours.","zh":"这段路程通常需要两个小时。"},
+  {"en":"It's typically very hot here in July.","zh":"这里七月通常很热。"},
+  {"en":"Children typically learn to walk at one.","zh":"孩子们通常一岁学会走路。"},
+  {"en":"We typically eat dinner at six.","zh":"我们一般六点吃晚饭。"}
+],
+"ultimate": [
+  {"en":"Our ultimate goal is to help people.","zh":"我们的最终目标是帮助人们。"},
+  {"en":"This is the ultimate guide to Paris.","zh":"这是一本最全面的巴黎指南。"},
+  {"en":"She made the ultimate decision.","zh":"她做了最终决定。"}
+],
+"ultimately": [
+  {"en":"Ultimately, it's your decision.","zh":"归根结底，这是你的决定。"},
+  {"en":"The plan ultimately failed.","zh":"这个计划最终失败了。"},
+  {"en":"Ultimately, we all want the same thing.","zh":"说到底，我们都想要同样的东西。"},
+  {"en":"She ultimately decided to stay in London.","zh":"她最终决定留在伦敦。"}
+],
+"universal": [
+  {"en":"Music is a universal language.","zh":"音乐是一种世界通用的语言。"},
+  {"en":"Smiling is universal in every culture.","zh":"微笑是全世界通用的。"},
+  {"en":"This charger is universal.","zh":"这个充电器是通用的。"}
+],
+"utility": [
+  {"en":"Utility bills are higher in winter.","zh":"冬天的水电费更高。"},
+  {"en":"Does the rent include utilities?","zh":"房租包括水电费吗？"},
+  {"en":"We have a small utility room.","zh":"我们有一间小杂物间。"},
+  {"en":"The utility company cut off the power.","zh":"公用事业公司停了电。"},
+  {"en":"This app has great utility for travelers.","zh":"这个应用对旅行者非常实用。"}
+],
+"variable": [
+  {"en":"The weather here is very variable.","zh":"这里的天气变化无常。"},
+  {"en":"There are too many variables to predict the result.","zh":"变数太多，无法预测结果。"}
+],
+"variation": [
+  {"en":"There is a lot of variation in prices.","zh":"价格差异很大。"},
+  {"en":"This dish is a variation of a classic recipe.","zh":"这道菜是一个经典菜谱的变体。"},
+  {"en":"Temperatures show little variation here.","zh":"这里温度变化不大。"},
+  {"en":"The song has many variations.","zh":"这首歌有很多不同的版本。"},
+  {"en":"We noticed small variations in color.","zh":"我们注意到颜色有细微差异。"}
+],
+"vehicle": [
+  {"en":"Please do not leave your vehicle here.","zh":"请不要把你的车停在这里。"}
+],
+"vessel": [
+  {"en":"The vessel sailed into the harbor at dawn.","zh":"这艘船黎明时驶入港口。"},
+  {"en":"Fishing vessels leave early in the morning.","zh":"渔船一大早就出海了。"},
+  {"en":"Blood vessels carry blood around the body.","zh":"血管把血液输送到全身。"},
+  {"en":"The museum has ancient vessels made of bronze.","zh":"博物馆里有青铜制的古代器皿。"},
+  {"en":"The coast guard searched the vessel.","zh":"海岸警卫队搜查了这艘船。"}
+],
+"veteran": [
+  {"en":"My grandfather is a war veteran.","zh":"我爷爷是一名退伍老兵。"},
+  {"en":"She is a veteran teacher with thirty years of experience.","zh":"她是一位有三十年经验的资深教师。"},
+  {"en":"The veterans marched in the parade.","zh":"老兵们参加了游行。"},
+  {"en":"He is a veteran of many marathons.","zh":"他是跑过很多次马拉松的老手。"}
+],
+"via": [
+  {"en":"I'll send it to you via email.","zh":"我会通过电子邮件发给你。"}
+],
+"viewer": [
+  {"en":"The show has millions of viewers.","zh":"这个节目有数百万观众。"},
+  {"en":"Viewers can vote by phone.","zh":"观众可以通过电话投票。"},
+  {"en":"The ending surprised many viewers.","zh":"结局让许多观众感到意外。"}
+],
+"violate": [
+  {"en":"You violated the terms of the contract.","zh":"你违反了合同条款。"}
+],
+"violation": [
+  {"en":"Parking here is a violation of the rules.","zh":"在这里停车违反规定。"},
+  {"en":"He got a ticket for a traffic violation.","zh":"他因交通违章被开了罚单。"},
+  {"en":"The report lists several safety violations.","zh":"报告列出了几项违反安全规定的行为。"},
+  {"en":"Reading my messages is a violation of privacy.","zh":"看我的消息是侵犯隐私。"},
+  {"en":"The company was fined for the violation.","zh":"这家公司因违规被罚款。"}
+],
+"violence": [
+  {"en":"There is too much violence in this movie.","zh":"这部电影里暴力镜头太多了。"}
+],
+"violent": [
+  {"en":"The movie is too violent for children.","zh":"这部电影对孩子来说太暴力了。"}
+],
+"virtually": [
+  {"en":"Virtually everyone came to the party.","zh":"几乎所有人都来参加派对了。"},
+  {"en":"The two cars are virtually the same.","zh":"这两辆车几乎一模一样。"},
+  {"en":"It's virtually impossible to get a ticket.","zh":"几乎不可能买到票。"},
+  {"en":"We met virtually because of the snow.","zh":"因为下雪，我们在线上开了会。"},
+  {"en":"She knows virtually nothing about cooking.","zh":"她对做饭几乎一窍不通。"}
+],
+"visible": [
+  {"en":"The mountain is visible from my window.","zh":"从我的窗户能看到那座山。"},
+  {"en":"Make sure your name is clearly visible.","zh":"确保你的名字清晰可见。"}
+],
+"visual": [
+  {"en":"She is a visual learner.","zh":"她是视觉型学习者。"},
+  {"en":"The movie has amazing visual effects.","zh":"这部电影的视觉效果令人惊叹。"},
+  {"en":"I have a good visual memory.","zh":"我的视觉记忆力很好。"},
+  {"en":"Visual aids make a talk easier to follow.","zh":"直观教具让讲座更容易理解。"},
+  {"en":"The design has strong visual appeal.","zh":"这个设计很有视觉吸引力。"}
+],
+"vital": [
+  {"en":"Water is vital for all living things.","zh":"水对所有生物都至关重要。"},
+  {"en":"It's vital that you arrive on time.","zh":"你准时到达非常重要。"},
+  {"en":"She played a vital role in the project.","zh":"她在这个项目中起了关键作用。"},
+  {"en":"The nurse checked his vital signs.","zh":"护士检查了他的生命体征。"}
+],
+"voter": [
+  {"en":"Many voters are unhappy with the government.","zh":"许多选民对政府不满。"},
+  {"en":"Young voters care about jobs and housing.","zh":"年轻选民关心工作和住房。"},
+  {"en":"Every voter must show an ID card.","zh":"每位选民都必须出示身份证。"},
+  {"en":"The voters will decide in November.","zh":"选民们将在十一月做出决定。"},
+  {"en":"She is a first-time voter.","zh":"她是第一次投票的选民。"}
+],
+"vs": [
+  {"en":"Tonight's game is Brazil vs Argentina.","zh":"今晚的比赛是巴西对阿根廷。"},
+  {"en":"Let's compare renting vs buying a house.","zh":"我们来比较一下租房和买房。"},
+  {"en":"It's the old team vs the new team.","zh":"这是老队对新队。"},
+  {"en":"Cats vs dogs: which is the better pet?","zh":"猫和狗，哪个更适合当宠物？"}
+],
+"vulnerable": [
+  {"en":"Old people are more vulnerable to the cold.","zh":"老年人更容易受寒冷影响。"},
+  {"en":"She felt vulnerable after the divorce.","zh":"离婚后她觉得很脆弱。"},
+  {"en":"The software is vulnerable to attacks.","zh":"这个软件容易受到攻击。"}
+],
+"welfare": [
+  {"en":"We care about the welfare of our staff.","zh":"我们关心员工的福利。"},
+  {"en":"She works for an animal welfare group.","zh":"她在一个动物福利组织工作。"},
+  {"en":"Some families depend on welfare to survive.","zh":"有些家庭靠社会福利维持生活。"}
+],
+"whereas": [
+  {"en":"I like the city, whereas my wife prefers the country.","zh":"我喜欢城市，而我妻子更喜欢乡村。"},
+  {"en":"He is quiet, whereas his brother talks all day.","zh":"他很安静，而他哥哥一天到晚说个不停。"},
+  {"en":"Some people learn fast, whereas others need more time.","zh":"有些人学得快，而另一些人需要更多时间。"},
+  {"en":"Rent is high here, whereas food is cheap.","zh":"这里房租贵，而吃的很便宜。"}
+],
+"winner": [
+  {"en":"And the winner is my sister!","zh":"获胜者是我妹妹！"},
+  {"en":"The winners will get a free trip to Paris.","zh":"获胜者将免费去巴黎旅行。"}
+],
+"wire": [
+  {"en":"Don't touch that wire!","zh":"别碰那根电线！"}
+],
+"witness": [
+  {"en":"The police are looking for witnesses.","zh":"警方正在寻找目击者。"},
+  {"en":"I witnessed the accident from my window.","zh":"我从窗户看到了这起事故。"}
+],
+"zone": [
+  {"en":"This is a no-parking zone.","zh":"这是禁止停车区。"}
+]
+}

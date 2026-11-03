@@ -19,7 +19,7 @@ export default function Nav({ current }: { current: string }) {
   return (
     <header className={styles.header}>
       <a className={styles.brand} href={root}>
-        一词两句
+        背单词
       </a>
       <nav className={styles.bar} aria-label="页面">
         {tabs.map((t) => (
