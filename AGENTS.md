@@ -13,7 +13,7 @@
 - 每个人的进度按令牌里的 `sub` 存（`settings`、`progress`、`plans`、`cards`、`answers`、`wrongs`、`tests` 表），后端从不从请求里读用户 id，家人之间互相看不到。复习记录按单词本身（不是序号）保存，词库重新生成、序号变了也接得上。
 - 学习流程：学习计划（按序号往下取词，每个词 2–5 条例句）→ 计划测试 → 答错进错题本；计划测试的结果算作每个词的第一次复习，之后由 FSRS（`go-fsrs`，按天复习，不用短期步骤）安排每日复习。检测答错的词提前到明天复习，答对的不改计划。错题本里连续答对 `wrongClear` 次移出。这些规则都在 `backend/store.go` 的 `Record`。
 - “今天”按浏览器时区算：前端在请求里带 `tz`（`getTimezoneOffset()` 的分钟数），不带时按北京时间。
-- 手机宽度（≤600px）下底部是毛玻璃标签栏 `components/TabBar.tsx`，不显示顶栏，`.content` 底部留出标签栏的高度；新增一级页面时同步改标签栏和首页入口。
+- 导航只有一个组件 `components/Nav.tsx`（在 `App.tsx` 里渲染，页面里不要再放顶栏）：宽屏是顶部居中的毛玻璃胶囊，手机宽度（≤600px）是底部悬浮的毛玻璃标签栏，`.content` 底部留出它的高度；新增一级页面时改 `Nav.tsx` 里的 tabs。图标统一用 `components/Icon.tsx`。
 - 朗读用浏览器的 `speechSynthesis`（`frontend/src/speech.ts`），不接外部语音服务；锁屏后浏览器会停止朗读，自动播放在切到后台时暂停。
 - 后端必须保留 `GET /api/vocab/health`，正常时返回 2xx。
 - 数据只存在 `compose.yaml` 里声明的卷里，默认用 SQLite。改表结构要兼容老数据。

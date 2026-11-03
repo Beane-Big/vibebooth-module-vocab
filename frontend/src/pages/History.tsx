@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, errorText, modeNames, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
-import Topbar, { root } from "../components/Topbar";
+import { root } from "../components/Nav";
 import WordList from "../components/WordList";
 import { TestResult } from "./TestPage";
 import styles from "./pages.module.css";
@@ -38,7 +38,6 @@ export default function History() {
 
   return (
     <>
-      <Topbar title="学习记录" />
       <main className="content stack">
         {error && <p className="error">{error}</p>}
         {test && <TestResult result={test} accent={accent} />}

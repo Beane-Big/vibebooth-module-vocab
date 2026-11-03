@@ -3,7 +3,7 @@ import { api, errorText, modeNames, type Mode, type Plan, type Settings, type Wi
 import ModePicker from "../components/ModePicker";
 import Player from "../components/Player";
 import Quiz from "../components/Quiz";
-import Topbar, { root } from "../components/Topbar";
+import { root } from "../components/Nav";
 import WordList from "../components/WordList";
 import styles from "./pages.module.css";
 
@@ -37,7 +37,6 @@ export default function Study() {
   if (!plan || !settings) {
     return (
       <>
-        <Topbar title="学习" />
         <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">加载中…</p>}</main>
       </>
     );
@@ -46,7 +45,6 @@ export default function Study() {
 
   return (
     <>
-      <Topbar title="学习" />
       <main className="content stack">
         {phase === "learn" && (
           <Player

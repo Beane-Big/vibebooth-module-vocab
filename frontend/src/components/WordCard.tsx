@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { phOf, type Word } from "../api";
 import { showWord } from "./WordPopup";
 import styles from "./WordCard.module.css";
@@ -6,24 +6,33 @@ import styles from "./WordCard.module.css";
 // 一张学习卡片，版式照着视频：单词页是居中的大字单词、音标和释义；例句页顶部一行小字写着单词和释义，
 // 中间是大字例句（目标词加重），下面是中文。example 为 -1 时是单词页，否则是第几条例句。
 // sentencePh 为真时例句下面加一行整句音标（设置里可以关）。
+// progress 显示在右上角（学到第几个词，比如 2 / 20），percent 是卡片顶部细进度条的进度；footer 是卡片底部的按钮行。
 export default function WordCard({
   word,
   example,
   accent,
   sentencePh = false,
   hideText = false,
+  progress,
+  percent,
+  footer,
 }: {
   word: Word;
   example: number;
   accent: string;
   sentencePh?: boolean;
   hideText?: boolean;
+  progress?: string;
+  percent?: number;
+  footer?: ReactNode;
 }) {
   const ex = example >= 0 ? word.ex[example] : undefined;
   const ph = phOf(ex ?? word, accent);
   return (
     <div className={styles.card}>
+      {percent !== undefined && <span className={styles.progressBar} style={{ width: `${percent}%` }} />}
       <span className={styles.no}>{word.n}</span>
+      {progress && <span className={styles.progress}>{progress}</span>}
       {ex ? (
         <>
           <span className={styles.head}>
@@ -46,6 +55,7 @@ export default function WordCard({
           </div>
         </div>
       )}
+      {footer && <div className={styles.footer}>{footer}</div>}
     </div>
   );
 }

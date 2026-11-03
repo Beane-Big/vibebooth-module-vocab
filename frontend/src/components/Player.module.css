@@ -1,15 +1,24 @@
 .player { display: flex; flex-direction: column; gap: 12px; }
 .stage { touch-action: pan-y; cursor: pointer; }
-.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.count { color: var(--muted); font-size: 14px; text-align: center; }
-.ghost {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  font-size: 22px;
-  line-height: 1;
-  width: 48px;
-  padding: 8px 0;
+
+/* 卡片底部的图标按钮：颜色跟卡片的字一样，中间的播放键大一号、实心底。 */
+.controls { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  -webkit-tap-highlight-color: transparent;
 }
-.check { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
+.icon:hover:not(:disabled) { opacity: 1; background: rgba(127, 127, 127, 0.12); }
+.icon:disabled { opacity: 0.25; }
+.active { opacity: 1; }
+.main { width: 52px; height: 52px; opacity: 1; background: var(--ink); color: var(--paper); }
+.main:hover:not(:disabled) { background: var(--ink); opacity: 0.9; }
 .done { margin-left: auto; }

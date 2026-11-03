@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, errorText, type Home as HomeData } from "../api";
-import Topbar, { root } from "../components/Topbar";
+import { root } from "../components/Nav";
 import styles from "./pages.module.css";
 
 // 首页：学习计划（继续或新建）、今天的复习、统计和其他页面的入口。
@@ -39,7 +39,6 @@ export default function Home() {
   if (!data) {
     return (
       <>
-        <Topbar />
         <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">加载中…</p>}</main>
       </>
     );
@@ -48,7 +47,6 @@ export default function Home() {
 
   return (
     <>
-      <Topbar />
       <main className="content stack">
         <section className={styles.stats}>
           <Stat label="已学" value={stats.learned} />

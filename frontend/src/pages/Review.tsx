@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, errorText, type Settings, type Word } from "../api";
 import Quiz, { type Result } from "../components/Quiz";
-import Topbar, { root } from "../components/Topbar";
+import { root } from "../components/Nav";
 import styles from "./pages.module.css";
 
 // 每日复习：今天到期的词，按设置里的题型出题，四档自评交给后端的 FSRS 安排下次复习。
@@ -22,7 +22,6 @@ export default function Review() {
 
   return (
     <>
-      <Topbar title="每日复习" />
       <main className="content stack">
         {error && <p className="error">{error}</p>}
         {!words || !settings ? (
