@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { api, errorText, type Settings } from "../api";
-import Topbar from "../components/Topbar";
 import { canSpeak, speak } from "../speech";
 
 // 个人设置：每个人自己一份，不影响家里其他人。
@@ -19,7 +18,6 @@ export default function SettingsPage() {
   if (!s) {
     return (
       <>
-        <Topbar title="设置" />
         <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">加载中…</p>}</main>
       </>
     );
@@ -45,7 +43,6 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Topbar title="设置" />
       <main className="content stack">
         <section className="card stack">
           <h1>学习计划</h1>

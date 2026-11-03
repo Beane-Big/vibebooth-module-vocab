@@ -1,4 +1,4 @@
-import TabBar from "./components/TabBar";
+import Nav from "./components/Nav";
 import WordPopup from "./components/WordPopup";
 import History from "./pages/History";
 import Home from "./pages/Home";
@@ -23,8 +23,8 @@ export default function App() {
   const Page = pages[name] ?? Home;
   return (
     <>
+      <Nav current={name} />
       <Page />
-      <TabBar current={name} />
       <WordPopup />
     </>
   );

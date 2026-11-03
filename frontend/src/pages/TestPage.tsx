@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, errorText, scopeNames, type Mode, type Settings, type Test, type TestScope, type WithWords } from "../api";
 import ModePicker from "../components/ModePicker";
 import Quiz from "../components/Quiz";
-import Topbar, { root } from "../components/Topbar";
+import { root } from "../components/Nav";
 import WordList from "../components/WordList";
 import styles from "./pages.module.css";
 
@@ -41,7 +41,6 @@ export default function TestPage() {
 
   return (
     <>
-      <Topbar title="检测" />
       <main className="content stack">
         {!settings ? null : result ? (
           <TestResult result={result} accent={settings.accent} />

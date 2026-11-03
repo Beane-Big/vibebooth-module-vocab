@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Settings, Word } from "../api";
 import { canSpeak, plainZh, speak, stopSpeaking, wait } from "../speech";
+import Icon from "./Icon";
 import WordCard, { pagesOf } from "./WordCard";
 import styles from "./Player.module.css";
 
@@ -14,8 +15,12 @@ type Props = {
   doneLabel?: string;
 };
 
+// 翻页后等一会儿再读，卡片换完、眼睛先看到字再听到声音；连续快速翻页时只读最后停下的那一页。
+const readDelay = 500;
+
 // 学习卡片的播放器。手动模式像翻卡片：左右滑动、方向键或按钮翻页，每进一页读一遍英文；
 // 自动模式按“英文（读几遍）→ 中文 → 停顿”一页页往下放，屏幕保持常亮，切到后台就暂停。
+// 翻页、自动播放、再读一遍、翻页时朗读的开关都是卡片底部的图标按钮。
 export default function Player({ words, examples, settings, start = 0, onPos, onDone, doneLabel = "学完了" }: Props) {
   const pages = pagesOf(words, examples);
   const [pos, setPos] = useState(Math.min(start, Math.max(0, pages.length - 1)));
@@ -70,7 +75,9 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
         if (run.current === id) go(pos + 1);
       })();
     } else if (readOnEnter) {
-      read(id, 1, false);
+      wait(readDelay).then(() => {
+        if (run.current === id) read(id, 1, false);
+      });
     }
     return () => {
       run.current++;
@@ -111,12 +118,49 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
 
   if (!page) return <p className="muted">没有要学的词。</p>;
   const wordIndex = words.indexOf(page.word) + 1;
+  const toggleRead = () => {
+    setReadOnEnter(!readOnEnter);
+    localStorage.setItem("vocab.readOnEnter", readOnEnter ? "0" : "1");
+  };
+
+  const controls = (
+    <div className={styles.controls}>
+      <button type="button" className={styles.icon} onClick={() => go(pos - 1)} disabled={pos === 0} aria-label="上一页" title="上一页">
+        <Icon name="prev" />
+      </button>
+      {auto ? (
+        <button type="button" className={`${styles.icon} ${styles.main}`} onClick={stop} aria-label="暂停" title="暂停">
+          <Icon name="pause" />
+        </button>
+      ) : (
+        <button type="button" className={`${styles.icon} ${styles.main}`} onClick={() => setAuto(true)} disabled={!canSpeak} aria-label="自动播放" title="自动播放">
+          <Icon name="play" />
+        </button>
+      )}
+      <button type="button" className={styles.icon} onClick={() => read(++run.current, 1, true)} disabled={!canSpeak || auto} aria-label="再读一遍" title="再读一遍">
+        <Icon name="replay" />
+      </button>
+      <button
+        type="button"
+        className={`${styles.icon} ${readOnEnter ? styles.active : ""}`}
+        onClick={toggleRead}
+        aria-pressed={readOnEnter}
+        aria-label="翻页时朗读"
+        title={readOnEnter ? "翻页时朗读：开" : "翻页时朗读：关"}
+      >
+        <Icon name={readOnEnter ? "sound" : "mute"} />
+      </button>
+      <button type="button" className={styles.icon} onClick={() => go(pos + 1)} aria-label="下一页" title="下一页">
+        <Icon name="next" />
+      </button>
+    </div>
+  );
 
   return (
     <div className={styles.player}>
       <div
         className={styles.stage}
-        onPointerDown={(e) => (touch.current = e.clientX)}
+        onPointerDown={(e) => (touch.current = (e.target as HTMLElement).closest("button") ? null : e.clientX)}
         onPointerUp={(e) => {
           if (touch.current === null) return;
           const dx = e.clientX - touch.current;
@@ -130,47 +174,23 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
           go(dx < 0 ? pos + 1 : pos - 1);
         }}
       >
-        <WordCard word={page.word} example={page.example} accent={settings.accent} sentencePh={settings.sentencePh} />
+        <WordCard
+          word={page.word}
+          example={page.example}
+          accent={settings.accent}
+          sentencePh={settings.sentencePh}
+          progress={`${wordIndex} / ${words.length}`}
+          percent={((pos + 1) / pages.length) * 100}
+          footer={controls}
+        />
       </div>
-      <div className={styles.bar}>
-        <button className={styles.ghost} onClick={() => go(pos - 1)} disabled={pos === 0} aria-label="上一页">
-          ‹
-        </button>
-        <span className={styles.count}>
-          第 {wordIndex}/{words.length} 个词 · {pos + 1}/{pages.length} 页
-        </span>
-        <button className={styles.ghost} onClick={() => go(pos + 1)} aria-label="下一页">
-          ›
-        </button>
-      </div>
-      <div className="actions">
-        {auto ? (
-          <button onClick={stop}>⏸ 暂停</button>
-        ) : (
-          <button onClick={() => setAuto(true)} disabled={!canSpeak}>
-            ▶ 自动播放
-          </button>
-        )}
-        <button className="link" onClick={() => read(++run.current, 1, true)} disabled={!canSpeak || auto}>
-          🔊 再读一遍
-        </button>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={readOnEnter}
-            onChange={(e) => {
-              setReadOnEnter(e.target.checked);
-              localStorage.setItem("vocab.readOnEnter", e.target.checked ? "1" : "0");
-            }}
-          />
-          翻页时朗读
-        </label>
-        {last && !auto && (
+      {last && !auto && (
+        <div className="actions">
           <button className={styles.done} onClick={() => go(pos + 1)}>
             {doneLabel}
           </button>
-        )}
-      </div>
+        </div>
+      )}
       {!canSpeak && <p className="muted">当前浏览器不支持朗读，只能手动翻看。</p>}
     </div>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, errorText, modeNames, type Mode, type Settings, type Wrong } from "../api";
 import Player from "../components/Player";
-import Topbar, { root } from "../components/Topbar";
+import { root } from "../components/Nav";
 import WordList from "../components/WordList";
 import styles from "./pages.module.css";
 
@@ -48,7 +48,6 @@ export default function Wrongs() {
   if (learning && settings) {
     return (
       <>
-        <Topbar title="错题本 · 重学" />
         <main className="content stack">
           <Player words={shown.map((x) => x.data)} examples={settings.examples} settings={settings} doneLabel="学完了" onDone={() => setLearning(false)} />
         </main>
@@ -58,7 +57,6 @@ export default function Wrongs() {
 
   return (
     <>
-      <Topbar title="错题本" />
       <main className="content stack">
         <div className={styles.tabs}>
           <button className={!cleared ? styles.on : ""} onClick={() => setCleared(false)}>
