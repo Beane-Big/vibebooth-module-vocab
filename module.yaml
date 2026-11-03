@@ -1,14 +1,14 @@
 # 模块清单：平台靠它认识这个模块，规则见 https://github.com/Beane-Big/vibebooth/blob/main/docs/module-spec.md
 platform: 1              # 遵循的模块规范版本
 id: vocab                # 全局唯一，也是网址前缀 /apps/vocab/ 和 /api/vocab/
-name: "一词两句"
+name: "背单词"
 description: "按计划背英语单词，每个词配例句，自动复习和错题本"
 icon: icon.svg
-version: 0.1.0           # 发布新版本前改大
+version: 0.2.0           # 发布新版本前改大
 services:                # 哪个容器接哪个网址前缀，安装器据此生成网关路由
   frontend: {port: 80}   # 容器 vocab-frontend → /apps/vocab/
   backend: {port: 8000}  # 容器 vocab-backend → /api/vocab/，健康检查 /api/vocab/health
 menus:                   # 模块的页面；管理员在门户“用户”页按人勾选，default 是默认拥有它的角色
-  - {id: home, name: "一词两句", path: /apps/vocab/, default: [user]}
+  - {id: home, name: "背单词", path: /apps/vocab/, default: [user]}
 # permissions: [{id: edit, name: "编辑", default: [user]}]  # 功能权限；管理员按人开关，后端用 Has("edit") 检查
 # requires: [contacts>=0.2]  # 要调用其他模块的对外接口时写上对方

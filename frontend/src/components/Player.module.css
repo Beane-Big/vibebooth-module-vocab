@@ -1,6 +1,21 @@
 .player { display: flex; flex-direction: column; gap: 12px; }
 .stage { touch-action: pan-y; cursor: pointer; }
 
+/* 翻页动画：新的一页从翻页方向的一侧滑进来，带一点倾斜，像把卡片推过来。 */
+.fromRight { animation: slideFromRight 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.fromLeft { animation: slideFromLeft 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes slideFromRight {
+  from { opacity: 0; transform: translateX(48px) rotate(1.5deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slideFromLeft {
+  from { opacity: 0; transform: translateX(-48px) rotate(-1.5deg); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fromRight, .fromLeft { animation: none; }
+}
+
 /* 卡片底部的图标按钮：颜色跟卡片的字一样，中间的播放键大一号、实心底。 */
 .controls { display: flex; align-items: center; justify-content: center; gap: 14px; }
 .icon {

@@ -94,6 +94,9 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 // “今天”按浏览器所在时区算：复习到期、连续天数都用它。
 const tz = `tz=${new Date().getTimezoneOffset()}`;
 const base = "/api/vocab";
+
+// 朗读音频的网址（GET 返回 MP3，见 speech.ts）。
+export const ttsUrl = (text: string, voice: string) => `${base}/tts?voice=${voice}&text=${encodeURIComponent(text)}`;
 const post = (body: unknown) => ({ method: "POST", body: JSON.stringify(body) });
 
 export const api = {

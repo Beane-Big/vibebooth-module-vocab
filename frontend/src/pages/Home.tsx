@@ -140,7 +140,8 @@ export default function Home() {
         </nav>
         <p className="muted">
           单词和释义来自 <a href="https://github.com/skywind3000/ECDICT">ECDICT</a>（MIT），音标来自 <a href="https://github.com/cmusphinx/cmudict">CMUdict</a>（美音）和{" "}
-          <a href="https://github.com/JoseLlarena/Britfone">Britfone</a>（英音），例句来自 <a href="https://tatoeba.org">Tatoeba</a>（CC BY 2.0 FR）。
+          <a href="https://github.com/JoseLlarena/Britfone">Britfone</a>（英音），例句来自 <a href="https://tatoeba.org">Tatoeba</a>（CC BY 2.0 FR），不够的由 AI 补充；英文朗读用{" "}
+          <a href="https://huggingface.co/hexgrad/Kokoro-82M">Kokoro</a>（Apache 2.0）。
         </p>
       </main>
     </>

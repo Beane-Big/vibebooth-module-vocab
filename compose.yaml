@@ -6,8 +6,16 @@ services:
     build: ./backend
     environment:
       DATA_DIR: /data
+      TTS_URL: http://vocab-tts:8880
     volumes:
       - data:/data
+    depends_on:
+      - vocab-tts
+
+  # 朗读服务（Kokoro 语音），不对外，只有后端调用；模型在构建镜像时下载好，运行时不联网。
+  vocab-tts:
+    image: vb-vocab-tts:${VERSION}
+    build: ./tts
 
   vocab-frontend:
     image: vb-vocab-frontend:${VERSION}

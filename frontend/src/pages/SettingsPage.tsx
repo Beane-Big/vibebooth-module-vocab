@@ -83,12 +83,13 @@ export default function SettingsPage() {
           <label className="field">
             <span>语速</span>
             <select value={s.rate} onChange={(e) => set("rate", Number(e.target.value))}>
-              {[0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2].map((r) => (
+              {[0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5].map((r) => (
                 <option key={r} value={r}>
                   {r === 1 ? "正常" : `${r} 倍`}
                 </option>
               ))}
             </select>
+            <span className="muted">英文用 Kokoro 语音，一句话第一次读时要等一两秒合成，之后全家共用</span>
           </label>
           <label className="field">
             <span>英文读几遍</span>

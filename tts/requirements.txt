@@ -1,0 +1,9 @@
+# 朗读服务的依赖，版本固定。kokoro-onnx 单独用 --no-deps 装：它要的 phonemizer 和 misaki 要的 phonemizer-fork 是同一个模块，只留后者。
+misaki==0.9.4
+num2words==0.5.14
+spacy==3.8.18
+phonemizer-fork==3.3.2
+espeakng-loader==0.2.4
+onnxruntime==1.31.1
+numpy==2.5.4
+soundfile==0.14.0
