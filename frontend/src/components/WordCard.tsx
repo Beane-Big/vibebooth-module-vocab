@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from "react";
 import { phOf, type Word } from "../api";
 import { showWord } from "./WordPopup";
 import styles from "./WordCard.module.css";
@@ -7,7 +7,8 @@ import styles from "./WordCard.module.css";
 // 中间是大字例句（目标词加重），下面是中文。example 为 -1 时是单词页，否则是第几条例句。
 // sentencePh 为真时例句下面加一行整句音标（设置里可以关）。
 // progress 显示在右上角（学到第几个词，比如 2 / 20），percent 是卡片顶部细进度条的进度；footer 是卡片底部的按钮行；
-// corner 放在左上角（专注模式的退出按钮）。字号跟着卡片的宽和高一起变：卡片大（横屏、宽屏）字就大。
+// corner 放在左上角（专注模式的退出按钮）。字号跟着卡片的宽和高一起变：卡片大（横屏、宽屏）字就大；
+// 长句子按这个字号放不下时整体缩小一点（--fit），保证不出滚动条、不被裁掉。
 export default function WordCard({
   word,
   example,
@@ -31,6 +32,23 @@ export default function WordCard({
 }) {
   const ex = example >= 0 ? word.ex[example] : undefined;
   const ph = phOf(ex ?? word, accent);
+  const body = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    const fit = () => {
+      let f = 1;
+      el.style.setProperty("--fit", "1");
+      while (f > 0.5 && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1)) {
+        f -= 0.05;
+        el.style.setProperty("--fit", f.toFixed(2));
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [word, example, sentencePh, hideText, accent]);
   return (
     <div className={styles.card}>
       {percent !== undefined && <span className={styles.progressBar} style={{ width: `${percent}%` }} />}
@@ -48,14 +66,14 @@ export default function WordCard({
       </div>
       {ex ? (
         <>
-          <div className={styles.body}>
+          <div ref={body} className={styles.body}>
             <p className={styles.sentence}>{hideText ? "· · ·" : <Highlight text={ex.en} forms={word.forms} accent={accent} />}</p>
             {sentencePh && ph && !hideText && <p className={styles.sentencePh}>[ {ph} ]</p>}
             <p className={styles.zh}>{ex.zh}</p>
           </div>
         </>
       ) : (
-        <div className={styles.body}>
+        <div ref={body} className={styles.body}>
           <p className={styles.word}>{hideText ? "· · ·" : word.w}</p>
           {ph && !hideText && <p className={styles.ph}>[ {ph} ]</p>}
           <div className={styles.meaning}>

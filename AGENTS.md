@@ -15,7 +15,7 @@
 - 题型：看词选择、听音选择是四选一，干扰项由后端挑（`backend/choices.go`：同词性、词频相近、意思不重叠；听音选拼写时是拼写相近、读音不同的词），复习可以在设置里改回看答案自评（`reviewBy`）；看中文写英文、听写是例句挖空填词，程序判对错；整句翻译是对照原句自评。`speak`（看中文说英文）已不再出题，只留在老记录里。
 - “今天”按浏览器时区算：前端在请求里带 `tz`（`getTimezoneOffset()` 的分钟数），不带时按北京时间。
 - 导航只有一个组件 `components/Nav.tsx`（在 `App.tsx` 里渲染，页面里不要再放顶栏）：宽屏是顶部居中的毛玻璃胶囊，手机宽度（≤600px）是底部悬浮的毛玻璃标签栏，`.content` 底部留出它的高度；新增一级页面时改 `Nav.tsx` 里的 tabs。图标统一用 `components/Icon.tsx`。
-- 朗读（`frontend/src/speech.ts`）：英文用模块自带的 Kokoro 语音，不接外部语音服务。容器 `vocab-tts`（`tts/`，Python）合成 MP3，后端 `GET /api/vocab/tts`（`backend/tts.go`）把结果存在卷里的 `tts/` 目录，同一句只合成一次、所有人共用；只合成词库里的词、例句和 `dict.json` 里的词。语速在前端播放时调（`playbackRate`）。中文、以及语音容器不可用时（独立模式没有这个容器）用浏览器的 `speechSynthesis`。声音列表在 `tts/voices.py`、`backend/tts.go`、`speech.ts` 三处，要一起改。锁屏后浏览器会停止朗读，自动播放在切到后台时暂停。`speak` 返回这句读了几秒，自动播放按它乘设置里的倍数停顿（`pauseBy`/`pauseRatio`，或固定秒数 `autoPause`）。
+- 朗读（`frontend/src/speech.ts`）：英文用模块自带的 Kokoro 语音，不接外部语音服务。容器 `vocab-tts`（`tts/`，Python）合成 MP3，后端 `GET /api/vocab/tts`（`backend/tts.go`）把结果存在卷里的 `tts/` 目录，同一句只合成一次、所有人共用；只合成词库里的词、例句和 `dict.json` 里的词。语速在前端播放时调（`playbackRate`）。中文、以及语音容器不可用时（独立模式没有这个容器）用浏览器的 `speechSynthesis`。声音列表在 `tts/voices.py`、`backend/tts.go`、`speech.ts` 三处，要一起改。锁屏后浏览器会停止朗读，自动播放在切到后台时暂停。`speak` 返回这句读了几秒，自动播放按它乘设置里的倍数停顿（`pauseBy`/`pauseRatio`，或固定秒数 `autoPause`），遍与遍之间、翻页前都用这个停顿。播放顺序在 `Player.tsx` 的 `read`：中文一遍，英文单词 `wordRepeat` 遍、例句 `sentRepeat` 遍，`spellOut` 开时例句第二遍逐词读；逐词读用到的词由 `tts.go` 从例句里拆出来加进允许列表。
 - 朗读服务的模型在构建镜像时下载（`tts/fetch_models.py`），`tts/Dockerfile` 用 `ARG PIP_INDEX_URL`、`ARG HF_ENDPOINT`、`ARG SPACY_MODEL_URL` 换下载源，不要删。
 - 后端必须保留 `GET /api/vocab/health`，正常时返回 2xx。
 - 数据只存在 `compose.yaml` 里声明的卷里，默认用 SQLite。改表结构要兼容老数据。

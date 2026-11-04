@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { api, errorText, orderNames, request, type Order, type Settings } from "../api";
+import { api, errorText, orderNames, request, type Order, type Settings, type Stats } from "../api";
 import Icon from "../components/Icon";
+import Sheet from "../components/Sheet";
 import { canSpeak, speak } from "../speech";
 import styles from "./pages.module.css";
 
@@ -9,14 +10,61 @@ const saveDelay = 500;
 
 // 个人设置：每个人自己一份，不影响家里其他人。改了就自动保存，右下角轻轻提示一下“已保存”，没有保存按钮。
 // 保存失败时提示一直留着，点它重试。离开页面时还没来得及保存的改动也会发出去。
+// 页面最下面是“还原”：还原设置，或清空全部学习进度，都要再确认一次。
 export default function SettingsPage() {
   const [s, setS] = useState<Settings>();
   const [status, setStatus] = useState<"" | "saved" | "failed">("");
+  const [notice, setNotice] = useState("已保存"); // 成功提示的文字
+  const [reset, setReset] = useState<"" | "menu" | "settings" | "progress">("");
+  const [counts, setCounts] = useState<Stats & { tests: number }>(); // 清空进度前列出会清掉多少
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState("");
   const [error, setError] = useState("");
   const pending = useRef<Settings | null>(null); // 还没保存的设置
   const timer = useRef(0);
   const version = useRef(0); // 每次改动加 1；保存回来时已经又改过了，就不用服务器的结果覆盖界面
   const hide = useRef(0);
+
+  function done(text: string) {
+    setNotice(text);
+    setStatus("saved");
+    clearTimeout(hide.current);
+    hide.current = window.setTimeout(() => setStatus((x) => (x === "saved" ? "" : x)), 1500);
+  }
+
+  function openReset(step: "menu" | "settings" | "progress") {
+    setResetError("");
+    setReset(step);
+    if (step === "progress") {
+      setCounts(undefined);
+      Promise.all([api.home(), api.tests()])
+        .then(([h, t]) => setCounts({ ...h.stats, tests: t.length }))
+        .catch((err) => setResetError(errorText(err)));
+    }
+  }
+
+  async function runReset() {
+    setResetting(true);
+    setResetError("");
+    try {
+      if (reset === "settings") {
+        // 还没发出去的改动作废，免得保存回来又把默认值盖掉。
+        clearTimeout(timer.current);
+        pending.current = null;
+        version.current++;
+        setS(await api.resetSettings());
+        done("设置已还原");
+      } else {
+        await api.resetProgress();
+        done("学习进度已清空");
+      }
+      setReset("");
+    } catch (err) {
+      setResetError(errorText(err));
+    } finally {
+      setResetting(false);
+    }
+  }
 
   async function flush() {
     clearTimeout(timer.current);
@@ -28,9 +76,7 @@ export default function SettingsPage() {
       const saved = await api.saveSettings(next);
       // 服务器会把越界的值拉回范围内，没有新改动时用它的结果。
       if (v === version.current) setS(saved);
-      setStatus("saved");
-      clearTimeout(hide.current);
-      hide.current = window.setTimeout(() => setStatus((x) => (x === "saved" ? "" : x)), 1500);
+      done("已保存");
     } catch (err) {
       pending.current ??= next;
       setStatus("failed");
@@ -78,7 +124,7 @@ export default function SettingsPage() {
     timer.current = window.setTimeout(flush, saveDelay);
   };
 
-  const num = (k: "planWords" | "startN" | "autoRepeat" | "wrongClear", min: number, max: number, placeholder?: string) => (
+  const num = (k: "planWords" | "startN" | "wordRepeat" | "sentRepeat" | "wrongClear", min: number, max: number, placeholder?: string) => (
     <input
       type="number"
       min={min}
@@ -162,8 +208,18 @@ export default function SettingsPage() {
             <span className="muted">英文用 Kokoro 语音，一句话第一次读时要等一两秒合成，之后全家共用</span>
           </label>
           <label className="field">
-            <span>英文读几遍</span>
-            {num("autoRepeat", 1, 3)}
+            <span>单词英文读几遍</span>
+            {num("wordRepeat", 1, 5)}
+            <span className="muted">自动播放时先读一遍中文，再读英文</span>
+          </label>
+          <label className="field">
+            <span>例句英文读几遍</span>
+            {num("sentRepeat", 1, 5)}
+          </label>
+          <label className="field">
+            <span>例句第二遍拼读</span>
+            <input type="checkbox" checked={s.spellOut} onChange={(e) => set("spellOut", e.target.checked)} />
+            <span className="muted">{s.sentRepeat >= 2 ? "第一遍正常读，第二遍一个词一个词地读，之后正常读" : "例句读两遍以上才有拼读"}</span>
           </label>
           <label className="field">
             <span>每句后停多久</span>
@@ -188,7 +244,7 @@ export default function SettingsPage() {
                 ))}
               </select>
             )}
-            <span className="muted">{s.pauseBy === "audio" ? "单词停得短、长句停得长，刚好够跟读一遍" : "留时间跟读"}</span>
+            <span className="muted">{s.pauseBy === "audio" ? "每遍之间、翻到下一页前都停这么久；单词停得短、长句停得长" : "每遍之间、翻到下一页前都停这么久"}</span>
           </label>
           <label className="field">
             <span>读中文</span>
@@ -221,7 +277,59 @@ export default function SettingsPage() {
           </label>
         </section>
 
+        <button className={`secondary ${styles.wide}`} onClick={() => openReset("menu")}>
+          还原
+        </button>
       </main>
+
+      <Sheet open={reset === "menu"} onClose={() => setReset("")} title="还原">
+        <button className={styles.sheetOption} onClick={() => openReset("settings")}>
+          <span className={styles.recordIcon}>
+            <Icon name="replay" />
+          </span>
+          <span>
+            <strong>还原设置</strong>
+            <small>所有设置恢复成默认值，学习进度不变</small>
+          </span>
+        </button>
+        <button className={`${styles.sheetOption} ${styles.risky}`} onClick={() => openReset("progress")}>
+          <span className={styles.recordIcon}>
+            <Icon name="trash" />
+          </span>
+          <span>
+            <strong>重置学习进度</strong>
+            <small>清空学过的词、复习安排、错题本、检测记录和学习计划，设置不变</small>
+          </span>
+        </button>
+        <button className="link" onClick={() => setReset("")}>
+          取消
+        </button>
+      </Sheet>
+
+      <Sheet open={reset === "settings" || reset === "progress"} onClose={() => setReset("")} title={reset === "settings" ? "确定还原设置？" : "确定清空学习进度？"}>
+        {reset === "settings" ? (
+          <p className="muted">每次学几个词、学习顺序、口音、语速、自动播放、复习方式等都会恢复成默认值。学习进度不受影响。</p>
+        ) : (
+          <>
+            <p>下面这些会全部清空，不能恢复：</p>
+            <ul className={styles.sheetList}>
+              <li>学过的 {counts?.learned ?? "…"} 个词和它们的复习安排</li>
+              <li>错题本里的 {counts?.wrong ?? "…"} 个词</li>
+              <li>{counts?.tests ?? "…"} 次检测记录、全部学习计划和作答记录</li>
+            </ul>
+            <p className="muted">设置不受影响。清空后从第一个词重新开始学。</p>
+          </>
+        )}
+        {resetError && <p className="error">{resetError}</p>}
+        <div className={styles.sheetActions}>
+          <button className="secondary" onClick={() => setReset("")} disabled={resetting}>
+            取消
+          </button>
+          <button className={reset === "progress" ? "danger" : ""} onClick={runReset} disabled={resetting || (reset === "progress" && !counts)}>
+            {reset === "settings" ? "还原设置" : "清空学习进度"}
+          </button>
+        </div>
+      </Sheet>
       <div className={`${styles.toast} ${status ? styles.toastOn : ""} ${status === "failed" ? styles.toastError : ""}`} role="status" aria-live="polite">
         {status === "failed" ? (
           <button className="link" onClick={flush} title={error}>
@@ -230,7 +338,7 @@ export default function SettingsPage() {
         ) : (
           <>
             <Icon name="check" size={16} />
-            已保存
+            {notice}
           </>
         )}
       </div>

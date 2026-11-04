@@ -70,6 +70,12 @@ export default function Home() {
                 <a className={styles.button} href={root + "study/"}>
                   {plan.learnedAt ? "去做计划测试" : plan.pos > 0 ? "继续学习" : "开始学习"}
                 </a>
+                {/* 学完了还没测完：可以把这批词从头完整地再学一遍，一遍不一定记得住。 */}
+                {plan.learnedAt && (
+                  <a className={`${styles.button} secondary`} href={root + "study/?again"}>
+                    再学一遍
+                  </a>
+                )}
                 {/* 放弃后按现在的设置重建：没学过的词还会排在前面，所以一般还是从这批词开始；设置里指定了从第几个开始时用设置的。 */}
                 <button className="link" onClick={create} disabled={busy}>
                   放弃这个计划，按现在的设置重新开始
@@ -83,9 +89,17 @@ export default function Home() {
               <p>
                 下一个计划：{orderNames[settings.order].replace(/（.*）/, "")}，从{settings.startN ? `第 ${settings.startN} 个词` : ` ${data.nextWord} `}开始，学 {settings.planWords} 个，每个词 {settings.examples} 条例句。
               </p>
-              <button className={styles.wide} onClick={create} disabled={busy}>
-                开始新计划
-              </button>
+              <div className="actions">
+                <button className={styles.wide} onClick={create} disabled={busy}>
+                  开始新计划
+                </button>
+                {/* 上一个计划测试做完了、有答错的词：只学这些错题。 */}
+                {data.lastPlan && data.lastPlan.missed > 0 && (
+                  <a className={`${styles.button} ${styles.wide} secondary`} href={`${root}relearn/?plan=${data.lastPlan.id}&wrong&home`}>
+                    错题学习（{data.lastPlan.missed} 个）
+                  </a>
+                )}
+              </div>
             </>
           )}
           {error && <p className="error">{error}</p>}

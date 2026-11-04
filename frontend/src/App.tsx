@@ -2,6 +2,7 @@ import Nav from "./components/Nav";
 import WordPopup from "./components/WordPopup";
 import History from "./pages/History";
 import Home from "./pages/Home";
+import Relearn from "./pages/Relearn";
 import Review from "./pages/Review";
 import SettingsPage from "./pages/SettingsPage";
 import Study from "./pages/Study";
@@ -11,6 +12,7 @@ import Wrongs from "./pages/Wrongs";
 // 页面不多，用路径区分即可，不引入路由库：/apps/vocab/<页面>/。
 const pages: Record<string, () => React.JSX.Element> = {
   study: Study,
+  relearn: Relearn,
   review: Review,
   test: TestPage,
   wrong: Wrongs,

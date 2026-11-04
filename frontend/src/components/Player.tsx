@@ -28,10 +28,17 @@ const motion = { out: 180, in: 260, swipe: 70, tap: 8 };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const enOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].en : p.word.w);
+const zhOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].zh : plainZh(p.word.zh[0] ?? ""));
+const tokensOf = (en: string) => en.match(/[A-Za-z']+/g) ?? [];
+
+// 中文读完到英文开始之间停多久；拼读时词和词之间停多久（毫秒）。
+const zhGap = 250;
+const spellGap = 180;
 
 // 学习卡片的播放器，卡片撑满播放器的高度。手动模式像翻卡片：卡片跟着手指左右拖、方向键或按钮翻页，每进一页读一遍英文；
-// 自动模式按“英文（读几遍）→ 中文 → 停顿”一页页往下放，屏幕保持常亮，切到后台就暂停。
-// 停顿默认和刚读完的英文一样长（乘以设置里的倍数），短词停得短、长句停得长；也可以在设置里改成固定秒数。
+// 自动模式按“中文一遍 → 英文读几遍 → 停顿”一页页往下放（单词默认读两遍英文，例句三遍，第二遍拼读：一个词一个词地读），
+// 屏幕保持常亮，切到后台、点例句里的词查词时暂停。
+// 英文每遍之间的停顿默认和刚读完的英文一样长（乘以设置里的倍数），也可以在设置里改成固定秒数；翻到下一页前的停顿和它一样长。
 // 翻页、自动播放、再读一遍、翻页时朗读的开关都是卡片底部的图标按钮；最后一页下面多一个“学完了”。
 // 播放器挂着时是专注模式：导航收起，卡片铺满屏幕，左上角 × 退出。
 export default function Player({ words, examples, settings, start = 0, onPos, onDone, doneLabel = "学完了", onExit }: Props) {
@@ -39,7 +46,8 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   const pages = pagesOf(words, examples);
   const [pos, setPos] = useState(Math.min(start, Math.max(0, pages.length - 1)));
   const [auto, setAuto] = useState(false);
-  const [readOnEnter, setReadOnEnter] = useState(() => localStorage.getItem("vocab.readOnEnter") !== "0");
+  // 翻页时朗读的开关记在这台设备上，下次学习沿用；默认关，打开过才读。
+  const [readOnEnter, setReadOnEnter] = useState(() => localStorage.getItem("vocab.readOnEnter") === "1");
   const run = useRef(0); // 每次翻页或停止都加 1，正在进行的朗读看到编号变了就停下
   const stage = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; t: number; dx: number; id: number; moved: boolean } | null>(null);
@@ -103,36 +111,51 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   // 读完一遍英文后停多久（毫秒）：按刚才读了几秒乘倍数，或者固定秒数。至少停 0.3 秒，听得出句子的边界。
   const pauseAfter = (spoken: number) => 1000 * (settings.pauseBy === "fixed" ? settings.autoPause : Math.max(0.3, spoken * settings.pauseRatio));
 
-  // 读当前页：英文读 repeat 遍，需要时再读中文。返回最后停顿该停多久。
-  async function read(id: number, repeat: number, withZh: boolean) {
+  // 读当前页：需要时先读一遍中文，再读 repeat 遍英文；spell 为真时第二遍拼读。返回最后该停多久（和每遍之间的停顿一样）。
+  async function read(id: number, repeat: number, withZh: boolean, spell = false) {
     const { accent, rate } = settings;
     const en = enOf(page);
-    const zh = page.example >= 0 ? page.word.ex[page.example].zh : plainZh(page.word.zh[0] ?? "");
-    let spoken = 0;
+    if (withZh) {
+      await speak(zhOf(page), "zh-CN", 1);
+      if (run.current !== id) return 0;
+      await wait(zhGap);
+    }
+    let spoken = 0; // 最近一遍正常读的时长，停顿按它算
     for (let i = 0; i < repeat && run.current === id; i++) {
       if (i > 0) await wait(pauseAfter(spoken));
-      if (run.current === id) spoken = await speak(en, accent, rate);
-    }
-    if (withZh && run.current === id) {
-      await wait(300);
-      if (run.current === id) await speak(zh, "zh-CN", 1);
+      if (run.current !== id) break;
+      if (spell && i === 1) {
+        for (const [k, w] of tokensOf(en).entries()) {
+          if (run.current !== id) break;
+          if (k > 0) await wait(spellGap);
+          if (run.current === id) await speak(w, accent, rate);
+        }
+      } else spoken = await speak(en, accent, rate);
     }
     return pauseAfter(spoken);
   }
 
-  // 进入新的一页：手动模式读一遍；自动模式读完、停顿后翻到下一页。
+  // 进入新的一页：手动模式读一遍英文；自动模式读完、停顿后翻到下一页。
+  // 只在真的换了页时才“进页读一遍”：点暂停（auto 变成 false）不算换页，不再重读这一句。
+  const shownPos = useRef(-1);
   useEffect(() => {
     const id = ++run.current;
+    const entered = shownPos.current !== pos;
+    shownPos.current = pos;
     stopSpeaking();
     if (pages[pos + 1]) prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
     if (auto) {
+      const isEx = page.example >= 0;
+      const spell = isEx && settings.spellOut;
+      if (spell) for (const w of tokensOf(enOf(page))) prefetchSpeech(w, settings.accent);
       (async () => {
-        const pause = await read(id, settings.autoRepeat, settings.autoZh);
+        const pause = await read(id, isEx ? settings.sentRepeat : settings.wordRepeat, settings.autoZh, spell);
         if (run.current !== id) return;
-        await wait(pause);
+        // 翻页动画也算在停顿里，翻到下一页前停的和每遍之间一样长。
+        await wait(Math.max(0, pause - (reduced() ? 0 : motion.out)));
         if (run.current === id) go(pos + 1);
       })();
-    } else if (readOnEnter) {
+    } else if (readOnEnter && entered) {
       wait(readDelay).then(() => {
         if (run.current === id) read(id, 1, false);
       });
@@ -206,8 +229,10 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     if (!d || d.id !== e.pointerId) return;
     drag.current = null;
     if (!d.moved) {
-      // 轻点卡片再读一遍；点在例句的词上时是查词，不读整句。
-      if (e.type === "pointerup" && !auto && !(e.target as HTMLElement).closest("[data-w]")) read(++run.current, 1, false);
+      // 轻点卡片再读一遍；点在例句的词上时是查词，不读整句，自动播放中就先暂停。
+      const onWord = !!(e.target as HTMLElement).closest("[data-w]");
+      if (e.type === "pointerup" && onWord && auto) stop();
+      else if (e.type === "pointerup" && !auto && !onWord) read(++run.current, 1, false);
       return;
     }
     const fast = Math.abs(d.dx) / Math.max(1, e.timeStamp - d.t) > 0.5 && Math.abs(d.dx) > 30;

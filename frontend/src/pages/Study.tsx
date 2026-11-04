@@ -29,7 +29,9 @@ export default function Study() {
         const p = await api.plan(home.plan.id);
         setPlan(p);
         setStart(p.item.pos);
-        if (p.item.learnedAt) setPhase("pick");
+        // 首页点“再学一遍”带 ?again：从第一页完整地再学一遍；否则学完了的计划直接到测试。
+        if (new URLSearchParams(location.search).has("again")) setStart(0);
+        else if (p.item.learnedAt) setPhase("pick");
       })
       .catch((err) => setError(errorText(err)));
   }, []);
@@ -77,7 +79,7 @@ export default function Study() {
                 开始测试
               </button>
               <button
-                className="link"
+                className="secondary"
                 onClick={() => {
                   setStart(0);
                   setPhase("learn");

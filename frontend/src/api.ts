@@ -3,9 +3,9 @@ export type Phonetic = { us: string; uk: string };
 export type Example = Phonetic & { en: string; zh: string; src: string };
 // n 是序号（按字母顺序），f 是词频名次（1 最常用）。
 export type Word = Phonetic & { n: number; f: number; w: string; zh: string[]; forms: string[]; ex: Example[] };
-// 选择题的干扰项（后端挑好的）：meaning 是同词性、词频相近、意思不重叠的词，spelling 是拼写相近、读音不同的词。
+// 选择题的干扰项（后端挑好的）：meaning 是同词性、词频相近、意思不重叠的词，prefix 是开头字母相同的词（看中文选英文用），spelling 是拼写相近、读音不同的词。
 export type Option = { w: string; zh: string };
-export type Choices = { meaning: Option[]; spelling: Option[] };
+export type Choices = { meaning: Option[]; prefix: Option[]; spelling: Option[] };
 export type Order = "alpha" | "frq" | "random";
 
 export type Settings = {
@@ -16,7 +16,9 @@ export type Settings = {
   sentencePh: boolean;
   accent: "en-US" | "en-GB";
   rate: number;
-  autoRepeat: number;
+  wordRepeat: number; // 自动播放时单词的英文读几遍（中文先读一遍）
+  sentRepeat: number; // 自动播放时例句的英文读几遍
+  spellOut: boolean; // 例句第二遍拼读：一个词一个词地读
   pauseBy: "audio" | "fixed"; // 自动播放每句后的停顿：按这句的朗读时长，或固定秒数
   pauseRatio: number; // 按朗读时长时是几倍
   autoPause: number; // 固定秒数
@@ -42,6 +44,7 @@ export type Plan = {
 export type Test = {
   id: number;
   scope: TestScope;
+  planId: number; // scope 为 plan（计划错题检查）时是哪个计划
   mode: Mode;
   words: string[];
   createdAt: string;
@@ -51,11 +54,12 @@ export type Test = {
 };
 
 export type Stats = { learned: number; due: number; wrong: number; streak: number; today: number };
-export type Home = { settings: Settings; deck: { name: string; total: number }; nextN: number; nextWord: string; plan: Plan | null; stats: Stats };
+export type Home = { settings: Settings; deck: { name: string; total: number }; nextN: number; nextWord: string; plan: Plan | null; lastPlan: { id: number; missed: number } | null; stats: Stats };
 
 // 题型：看词选择、听音选择（四选一）、看中文写英文（例句挖空填词）、听写、整句翻译。speak（看中文说英文）是老版本的题型，只出现在老记录里。
 export type Mode = "look" | "listen" | "write" | "dictation" | "translate" | "speak";
-export type TestScope = "recent" | "range" | "all" | "wrong";
+// plan 是一个学习计划答错过的词（错题检查，从已学习进），不在检测页的范围里选。
+export type TestScope = "recent" | "range" | "all" | "wrong" | "plan";
 export type Kind = "plan" | "review" | "test";
 export type AnswerIn = { word: string; kind: Kind; refId: number; mode: Mode; ok: boolean; rating: number; answer: string };
 
@@ -111,6 +115,9 @@ const post = (body: unknown) => ({ method: "POST", body: JSON.stringify(body) })
 
 export const api = {
   home: () => request<Home>(`${base}/home?${tz}`),
+  // 还原：设置回到默认值（返回默认设置），或清空全部学习进度。
+  resetSettings: () => request<Settings>(`${base}/reset/settings`, { method: "POST" }),
+  resetProgress: () => request<void>(`${base}/reset/progress`, { method: "POST" }),
   saveSettings: (s: Settings) => request<Settings>(`${base}/settings`, { method: "PUT", body: JSON.stringify(s) }),
   lookup: (w: string) => request<Entry>(`${base}/lookup?w=${encodeURIComponent(w)}`),
   words: (from: number, count: number) => request<Word[]>(`${base}/words?from=${from}&count=${count}`),
@@ -129,7 +136,7 @@ export const api = {
   wrongs: (cleared: boolean) => request<Wrong[]>(`${base}/wrongs?cleared=${cleared ? 1 : 0}`),
   clearWrong: (word: string) => request<void>(`${base}/wrongs/${encodeURIComponent(word)}`, { method: "DELETE" }),
 
-  createTest: (t: { scope: TestScope; from?: number; to?: number; count: number; mode: Mode }) => request<WithWords<Test>>(`${base}/tests`, post(t)),
+  createTest: (t: { scope: TestScope; from?: number; to?: number; plan?: number; count: number; mode: Mode }) => request<WithWords<Test>>(`${base}/tests`, post(t)),
   test: (id: number) => request<WithWords<Test>>(`${base}/tests/${id}`),
   tests: () => request<Test[]>(`${base}/tests`),
   finishTest: (id: number) => request<WithWords<Test>>(`${base}/tests/${id}/finish`, { method: "POST" }),
@@ -146,7 +153,7 @@ export const modeNames: Record<Mode, string> = {
 // 能选的题型（speak 已经不出了）。
 export const modes: Mode[] = ["look", "listen", "write", "dictation", "translate"];
 export const orderNames: Record<Order, string> = { alpha: "按字母顺序", frq: "按词频（常用的先学）", random: "随机打乱" };
-export const scopeNames: Record<TestScope, string> = { recent: "最近 7 天学的", range: "按序号范围", all: "全部学过的", wrong: "错题本" };
+export const scopeNames: Record<TestScope, string> = { recent: "最近 7 天学的", range: "按序号范围", all: "全部学过的", wrong: "错题本", plan: "计划错题" };
 
 // 计划学的是哪些词：第一个到最后一个（学习顺序可能是随机的，所以不用序号）。
 export const planSpan = (p: Plan) => (p.words.length > 1 ? `${p.words[0]} – ${p.words[p.words.length - 1]}` : (p.words[0] ?? ""));

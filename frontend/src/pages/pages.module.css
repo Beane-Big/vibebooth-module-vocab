@@ -214,6 +214,30 @@ button.chip.on { color: #fff; background: var(--accent); }
 .recordMain strong { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .score { flex: none; padding: 4px 10px; border-radius: 999px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; background: color-mix(in srgb, currentColor 12%, transparent); }
 
+/* 弹出面板里的选项：一行一个，左边图标，右边名字和一句说明；危险的操作图标用红色。 */
+.sheetOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  text-align: left;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border: 1px solid var(--glass-edge);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(31, 45, 80, 0.05);
+}
+.sheetOption > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+.sheetOption strong { font-size: 16px; }
+.sheetOption small { font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.4; }
+.sheetOption .recordIcon { width: 38px; height: 38px; }
+.sheetOption.risky .recordIcon { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+/* 二次确认：要清掉的东西列出来，按钮左右并排。 */
+.sheetList { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.sheetActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sheetActions button { padding: 13px; }
+
 /* 设置自动保存后的轻提示：右下角一个小胶囊，淡入淡出，不挡操作；手机上在标签栏上面。 */
 .toast {
   position: fixed;
@@ -243,3 +267,7 @@ button.chip.on { color: #fff; background: var(--accent); }
 @media (max-width: 600px) {
   .toast { right: 50%; translate: 50% 0; bottom: calc(96px + env(safe-area-inset-bottom)); }
 }
+
+/* 一行几个等宽按钮（计划详情的错题学习、错题检查、再次学习），手机上也排得下、点得到。 */
+.buttonRow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+.buttonRow > * { padding-left: 8px; padding-right: 8px; text-align: center; }

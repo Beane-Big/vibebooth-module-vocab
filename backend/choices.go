@@ -8,9 +8,11 @@ import (
 )
 
 // 选择题的干扰项。看词选意思、听音选意思都是四选一：正确答案加三个干扰项。
-//   - 意思类干扰项（选中文、或者看中文选英文）：同词性、词频相近，这样不会一眼看出来；
+//   - 意思类干扰项（选中文）：同词性、词频相近，这样不会一眼看出来；
+//   - 开头类干扰项（看中文选英文）：开头字母和正确答案一样的词，越多越好。按字母顺序学时一批词开头都差不多，
+//     选项开头不一样就能一眼认出哪个是这批里的词；
 //   - 拼写类干扰项（听音选拼写）：拼写相近但读音不同的词，读音一样的词（right / write）不能放进来。
-// 两类都排除意思重叠的词（big 和 large 都是“大的”），否则会有两个正确答案；也排除互为词形变化的词。
+// 三类都排除意思重叠的词（big 和 large 都是“大的”），否则会有两个正确答案；也排除互为词形变化的词。
 // 意思重叠按释义里的词条判断：词条去掉“很”“的”“地”这类虚字后，有一条相同或者一条包含另一条，就算重叠
 // （quick 的“快的”和 quickly 的“很快地”、soon 的“快”都算重叠）。宁可多排除一些，词库够大，换别的词就是。
 
@@ -20,9 +22,10 @@ type Option struct {
 	Zh string `json:"zh"`
 }
 
-// Choices 是一个词的两类干扰项，各三个（词库太小凑不够时会少）。
+// Choices 是一个词的三类干扰项，各三个（词库太小凑不够时会少）。
 type Choices struct {
 	Meaning  []Option `json:"meaning"`
+	Prefix   []Option `json:"prefix"`
 	Spelling []Option `json:"spelling"`
 }
 
@@ -117,15 +120,62 @@ func option(w *Word) Option {
 
 func (d *Deck) Choices(w *Word, r *rand.Rand) Choices {
 	meaning := d.meaningDistractors(w, r)
-	spelling := d.spellingDistractors(w, meaning, r)
-	out := Choices{Meaning: []Option{}, Spelling: []Option{}}
-	for _, x := range meaning {
-		out.Meaning = append(out.Meaning, option(x))
+	return Choices{
+		Meaning:  options(meaning),
+		Prefix:   options(d.prefixDistractors(w, meaning, r)),
+		Spelling: options(d.spellingDistractors(w, meaning, r)),
 	}
-	for _, x := range spelling {
-		out.Spelling = append(out.Spelling, option(x))
+}
+
+func options(list []*Word) []Option {
+	out := []Option{}
+	for _, x := range list {
+		out = append(out, option(x))
 	}
 	return out
+}
+
+// 和正确答案开头相同的字母越多越优先，一样多的随机挑；至少要首字母相同，凑不够三个时用意思类干扰项补上。
+func (d *Deck) prefixDistractors(w *Word, fallback []*Word, r *rand.Rand) []*Word {
+	type cand struct {
+		w   *Word
+		lcp int
+	}
+	var pool []cand
+	for i := range d.Words {
+		c := &d.Words[i]
+		if n := commonPrefix(w.W, c.W); n > 0 && !d.clash(w, c) {
+			pool = append(pool, cand{c, n})
+		}
+	}
+	r.Shuffle(len(pool), func(i, j int) { pool[i], pool[j] = pool[j], pool[i] })
+	sort.SliceStable(pool, func(i, j int) bool { return pool[i].lcp > pool[j].lcp })
+	picked := []*Word{w}
+	for _, c := range pool {
+		if len(picked) == 4 {
+			break
+		}
+		if d.usable(c.w, picked) {
+			picked = append(picked, c.w)
+		}
+	}
+	for _, c := range fallback {
+		if len(picked) == 4 {
+			break
+		}
+		if d.usable(c, picked) {
+			picked = append(picked, c)
+		}
+	}
+	return picked[1:]
+}
+
+func commonPrefix(a, b string) int {
+	n := 0
+	for n < len(a) && n < len(b) && a[n] == b[n] {
+		n++
+	}
+	return n
 }
 
 // 同词性里按词频由近到远放宽，凑够一批候选后随机挑三个；

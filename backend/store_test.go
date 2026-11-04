@@ -72,6 +72,43 @@ func TestPlanFlow(t *testing.T) {
 	}
 }
 
+// 计划答错过的词：计划测试和做完的错题检查里答错的取并集去重；没做完的错题检查、别的计划的检测不算。
+func TestPlanMissed(t *testing.T) {
+	ctx := context.Background()
+	s, deck, _ := newTestStore(t)
+	p, _ := s.CreatePlan(ctx, "u1", deck.Range(1, 3), 2)
+	a, b, c := p.Words[0], p.Words[1], p.Words[2]
+	rec := func(w, kind string, ref int, ok bool) {
+		t.Helper()
+		if err := s.Record(ctx, "u1", Answer{Word: w, Kind: kind, RefID: ref, Mode: "look", OK: ok}, cn, 3); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, w := range p.Words {
+		rec(w, "plan", p.ID, w != a)
+	}
+	s.FinishPlan(ctx, "u1", p.ID)
+	check1, _ := s.CreateTest(ctx, "u1", "plan", "look", p.ID, []string{a, b}, 0)
+	rec(a, "test", check1.ID, true)
+	rec(b, "test", check1.ID, false)
+	s.FinishTest(ctx, "u1", check1.ID)
+	check2, _ := s.CreateTest(ctx, "u1", "plan", "look", p.ID, []string{c}, 0)
+	rec(c, "test", check2.ID, false) // 没做完
+	other, _ := s.CreateTest(ctx, "u1", "all", "look", 0, []string{c}, 0)
+	rec(c, "test", other.ID, false)
+	s.FinishTest(ctx, "u1", other.ID)
+	got, err := s.PlanMissed(ctx, "u1", p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0] != a || got[1] != b {
+		t.Fatalf("PlanMissed = %v, want [%s %s]", got, a, b)
+	}
+	if tt, _ := s.Test(ctx, "u1", check1.ID); tt.PlanID != p.ID || tt.Scope != "plan" {
+		t.Fatalf("test = %+v", tt)
+	}
+}
+
 func TestWrongBookClears(t *testing.T) {
 	ctx := context.Background()
 	s, deck, _ := newTestStore(t)
@@ -100,7 +137,7 @@ func TestTestWrongDueTomorrow(t *testing.T) {
 	s, deck, now := newTestStore(t)
 	w := deck.Words[20].W
 	s.Record(ctx, "u1", Answer{Word: w, Kind: "review", Mode: "look", Rating: 4}, cn, 3)
-	tt, err := s.CreateTest(ctx, "u1", "all", "look", []string{w}, 10)
+	tt, err := s.CreateTest(ctx, "u1", "all", "look", 0, []string{w}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,14 +257,18 @@ func TestChoices(t *testing.T) {
 	_, deck, _ := newTestStore(t)
 	rng := rand.New(rand.NewPCG(1, 2))
 	short := 0
+	initials := map[byte]int{}
+	for _, w := range deck.Words {
+		initials[w.W[0]]++
+	}
 	for i := range deck.Words {
 		w := &deck.Words[i]
 		c := deck.Choices(w, rng)
-		if len(c.Meaning) < 3 || len(c.Spelling) < 3 {
+		if len(c.Meaning) < 3 || len(c.Prefix) < 3 || len(c.Spelling) < 3 {
 			short++
-			t.Logf("%s（%s）：%v %v", w.W, deck.meta[w.W].pos, c.Meaning, c.Spelling)
+			t.Logf("%s（%s）：%v %v %v", w.W, deck.meta[w.W].pos, c.Meaning, c.Prefix, c.Spelling)
 		}
-		for _, group := range [][]Option{c.Meaning, c.Spelling} {
+		for _, group := range [][]Option{c.Meaning, c.Prefix, c.Spelling} {
 			picked := []*Word{w}
 			for _, o := range group {
 				x := deck.Get(o.W)
@@ -235,6 +276,14 @@ func TestChoices(t *testing.T) {
 					t.Fatalf("%s 的干扰项 %s 和其他选项冲突", w.W, o.W)
 				}
 				picked = append(picked, x)
+			}
+		}
+		// 同首字母的词够多时（z 开头的只有一两个），开头类干扰项都要和答案首字母相同。
+		if initials[w.W[0]] >= 10 {
+			for _, o := range c.Prefix {
+				if o.W[0] != w.W[0] {
+					t.Fatalf("%s 的开头类干扰项 %s 首字母不同", w.W, o.W)
+				}
 			}
 		}
 		for _, o := range c.Spelling {
@@ -248,5 +297,57 @@ func TestChoices(t *testing.T) {
 	}
 	if !deck.clash(deck.Get("big"), deck.Get("large")) {
 		t.Fatal("big 和 large 意思重叠，不能互为干扰项")
+	}
+}
+
+// 还原：设置回到默认值；清空进度只清自己的计划、复习、错题、检测，别人的和自己的设置都不动。
+func TestReset(t *testing.T) {
+	ctx := context.Background()
+	s, deck, _ := newTestStore(t)
+	st := defaultSettings()
+	st.PlanWords = 7
+	for _, u := range []string{"u1", "u2"} {
+		if _, err := s.SaveSettings(ctx, u, st); err != nil {
+			t.Fatal(err)
+		}
+		p, err := s.CreatePlan(ctx, u, deck.Range(1, 2), 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Record(ctx, u, Answer{Word: p.Words[0], Kind: "plan", RefID: p.ID, Mode: "look", OK: false}, cn, 3); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.CreateTest(ctx, u, "all", "look", 0, p.Words, 2); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.ResetProgress(ctx, "u1"); err != nil {
+		t.Fatal(err)
+	}
+	count := func(u string) (n int) {
+		for _, table := range []string{"plans", "cards", "answers", "wrongs", "tests"} {
+			var c int
+			s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table+` WHERE user_id = ?`, u).Scan(&c)
+			n += c
+		}
+		return n
+	}
+	if n := count("u1"); n != 0 {
+		t.Fatalf("u1 还剩 %d 行进度", n)
+	}
+	if count("u2") == 0 {
+		t.Fatal("别人的进度不该被清掉")
+	}
+	if got, _ := s.Settings(ctx, "u1"); got.PlanWords != 7 {
+		t.Fatal("清空进度不该动设置")
+	}
+	if got, _ := s.ResetSettings(ctx, "u1"); got != defaultSettings() {
+		t.Fatal("还原后应是默认设置")
+	}
+	if got, _ := s.Settings(ctx, "u1"); got != defaultSettings() {
+		t.Fatal("还原后再读应是默认设置")
+	}
+	if got, _ := s.Settings(ctx, "u2"); got.PlanWords != 7 {
+		t.Fatal("别人的设置不该被还原")
 	}
 }
