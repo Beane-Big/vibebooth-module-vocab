@@ -76,10 +76,6 @@ export default function Home() {
                     再学一遍
                   </a>
                 )}
-                {/* 放弃后按现在的设置重建：没学过的词还会排在前面，所以一般还是从这批词开始；设置里指定了从第几个开始时用设置的。 */}
-                <button className="link" onClick={create} disabled={busy}>
-                  放弃这个计划，按现在的设置重新开始
-                </button>
               </div>
             </>
           ) : finished ? (
