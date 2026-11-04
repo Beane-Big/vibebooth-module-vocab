@@ -6,13 +6,13 @@ export const root = "/apps/vocab/";
 
 // 模块的导航，一份数据两种样子：宽屏是顶部居中的玻璃胶囊，手机是底部悬浮的玻璃标签栏。不显示模块名，平台门户里已经有了。
 // 当前页面的标签下面垫着一块玻璃滑块：点别的标签，滑块先滑过去再换页；按住滑块（或栏上任意位置）左右拖，滑块跟着手指走，
-// 松手停在最近的标签上并打开那一页。学习计划这类从首页进的页面算在“学习”下。学习记录只在宽屏的导航里，手机上从首页进。
+// 松手停在最近的标签上并打开那一页。学习计划这类从首页进的页面算在“学习”下。“已学习”（做完的计划和检测记录）只在宽屏的导航里，手机上从首页进。
 const tabs: { page: string; label: string; icon: IconName; wide?: boolean }[] = [
   { page: "", label: "学习", icon: "book" },
   { page: "review", label: "复习", icon: "review" },
   { page: "test", label: "检测", icon: "test" },
   { page: "wrong", label: "错题本", icon: "wrong" },
-  { page: "history", label: "记录", icon: "history", wide: true },
+  { page: "history", label: "已学习", icon: "history", wide: true },
   { page: "settings", label: "设置", icon: "settings" },
 ];
 
@@ -26,7 +26,7 @@ export default function Nav({ current }: { current: string }) {
   const drag = useRef<{ id: number; x: number; left: number; moved: boolean } | null>(null);
   const dragged = useRef(false); // 刚拖完：吞掉松手时浏览器补发的那次点击
 
-  // 看得见的标签（手机上“记录”是隐藏的）。
+  // 看得见的标签（手机上“已学习”是隐藏的）。
   const links = () => [...(bar.current?.querySelectorAll<HTMLAnchorElement>("a") ?? [])].filter((a) => a.offsetWidth > 0);
 
   // 把滑块放到某个标签上（animate 为假时直接跳过去，比如刚打开页面、窗口变大小）。

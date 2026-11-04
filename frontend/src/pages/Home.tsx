@@ -112,7 +112,7 @@ export default function Home() {
           <a href={root + "wrong/"} data-tab>
             错题本
           </a>
-          <a href={root + "history/"}>学习记录</a>
+          <a href={root + "history/"}>已学习</a>
           <a href={root + "settings/"} data-tab>
             设置
           </a>

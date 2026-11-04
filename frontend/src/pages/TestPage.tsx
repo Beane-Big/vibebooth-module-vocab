@@ -108,7 +108,7 @@ export default function TestPage() {
             <button className={styles.wide} onClick={start} disabled={busy}>
               开始检测
             </button>
-            <a className="muted" href={root + "history/"}>
+            <a className="muted" href={root + "history/?tab=tests"}>
               查看检测记录
             </a>
           </section>
