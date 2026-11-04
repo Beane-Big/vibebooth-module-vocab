@@ -1,0 +1,32 @@
+/* 弹出面板：玻璃底的卡片，宽屏居中，手机上贴底、左右撑满。 */
+.sheet {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius);
+  color: var(--text);
+  background: var(--glass-strong);
+  box-shadow: var(--glass-hi), 0 20px 60px rgba(31, 45, 80, 0.25);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+.sheet::backdrop { background: rgba(15, 20, 35, 0.35); }
+.sheet[open] { animation: up 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.body { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
+.body h1 { margin: 0; font-size: 19px; }
+.body p { margin: 0; }
+
+@media (max-width: 600px) {
+  .sheet { width: 100%; max-width: none; margin: auto 0 0; border-radius: var(--radius) var(--radius) 0 0; border-bottom: 0; }
+  .body { padding: 22px 16px calc(16px + env(safe-area-inset-bottom)); }
+}
+
+@keyframes up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] { animation: none; }
+}

@@ -105,9 +105,20 @@ func (h *handlers) register(api *http.ServeMux) {
 		if fail(w, err) {
 			return
 		}
+		// 上一个做完的计划和它答错过几个词：没有进行中的计划时，首页给“错题学习”入口用。
+		var last map[string]any
+		if done, err := h.store.Plans(r.Context(), user); fail(w, err) {
+			return
+		} else if len(done) > 0 {
+			missed, err := h.store.PlanMissed(r.Context(), user, done[0].ID)
+			if fail(w, err) {
+				return
+			}
+			last = map[string]any{"id": done[0].ID, "missed": len(missed)}
+		}
 		writeJSON(w, http.StatusOK, map[string]any{
 			"settings": st, "deck": map[string]any{"name": h.deck.Name, "total": len(h.deck.Words)},
-			"nextN": next, "nextWord": wordOf(nextWord), "plan": plan, "stats": stats,
+			"nextN": next, "nextWord": wordOf(nextWord), "plan": plan, "lastPlan": last, "stats": stats,
 		})
 	})
 
@@ -128,6 +139,21 @@ func (h *handlers) register(api *http.ServeMux) {
 			return
 		}
 		writeJSON(w, http.StatusOK, st)
+	})
+
+	// 还原：设置还原成默认值，或者清空全部学习进度（前端要二次确认）。只动自己的数据。
+	api.HandleFunc("POST /api/vocab/reset/settings", func(w http.ResponseWriter, r *http.Request) {
+		st, err := h.store.ResetSettings(r.Context(), userID(r))
+		if fail(w, err) {
+			return
+		}
+		writeJSON(w, http.StatusOK, st)
+	})
+	api.HandleFunc("POST /api/vocab/reset/progress", func(w http.ResponseWriter, r *http.Request) {
+		if fail(w, h.store.ResetProgress(r.Context(), userID(r))) {
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	// 词库：按序号翻页（选起始位置时用），或按单词取。
@@ -234,7 +260,7 @@ func (h *handlers) register(api *http.ServeMux) {
 		if fail(w, err) {
 			return
 		}
-		missed, err := h.store.Missed(r.Context(), user, "plan", id)
+		missed, err := h.store.PlanMissed(r.Context(), user, id)
 		if fail(w, err) {
 			return
 		}
@@ -261,7 +287,7 @@ func (h *handlers) register(api *http.ServeMux) {
 		if fail(w, err) {
 			return
 		}
-		missed, err := h.store.Missed(r.Context(), user, "plan", id)
+		missed, err := h.store.PlanMissed(r.Context(), user, id)
 		if fail(w, err) {
 			return
 		}
@@ -336,7 +362,8 @@ func (h *handlers) register(api *http.ServeMux) {
 	// ---- 检测
 	api.HandleFunc("POST /api/vocab/tests", func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
-			Scope string `json:"scope"` // recent（最近 7 天学的）、range（序号范围）、all（全部学过的）、wrong（错题本）
+			Scope string `json:"scope"` // recent（最近 7 天学的）、range（序号范围）、all（全部学过的）、wrong（错题本）、plan（一个学习计划答错过的词，全出）
+			Plan  int    `json:"plan"`  // scope 为 plan 时是哪个计划
 			From  int    `json:"from"`
 			To    int    `json:"to"`
 			Count int    `json:"count"`
@@ -366,6 +393,15 @@ func (h *handlers) register(api *http.ServeMux) {
 				}
 				candidates = kept
 			}
+		case "plan":
+			in.Count = 0
+			if _, err = h.store.Plan(r.Context(), user, in.Plan); err == nil {
+				candidates, err = h.store.PlanMissed(r.Context(), user, in.Plan)
+			}
+			if err == nil && len(candidates) == 0 {
+				writeError(w, http.StatusBadRequest, "这个计划没有答错的词")
+				return
+			}
 		case "wrong":
 			var list []Wrong
 			list, err = h.store.Wrongs(r.Context(), user, false)
@@ -379,7 +415,10 @@ func (h *handlers) register(api *http.ServeMux) {
 		if fail(w, err) {
 			return
 		}
-		test, err := h.store.CreateTest(r.Context(), user, in.Scope, in.Mode, h.known(candidates), in.Count)
+		if in.Scope != "plan" {
+			in.Plan = 0
+		}
+		test, err := h.store.CreateTest(r.Context(), user, in.Scope, in.Mode, in.Plan, h.known(candidates), in.Count)
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return

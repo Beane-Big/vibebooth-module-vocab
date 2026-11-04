@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, errorText, modeNames, scopeNames, type Mode, type Settings, type Test, type TestScope, type WithWords } from "../api";
+import { api, errorText, modeNames, planSpan, scopeNames, type Mode, type Plan, type Settings, type Test, type TestScope, type WithWords } from "../api";
+import BackBar from "../components/BackBar";
 import Icon, { type IconName } from "../components/Icon";
 import ModePicker from "../components/ModePicker";
 import Quiz from "../components/Quiz";
@@ -9,13 +10,17 @@ import WordList from "../components/WordList";
 import { RecordRow } from "./History";
 import styles from "./pages.module.css";
 
-const scopeIcons: Record<TestScope, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong" };
+// 检测页上能选的范围；计划错题（plan）从已学习的计划详情进来，不在这里选。
+const scopeIcons: Record<Exclude<TestScope, "plan">, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong" };
 const counts = [10, 20, 30, 50, 100];
 
 // 检测：自己选范围和题型，做完看正确率和答错的词；答错的进错题本，并提前到明天复习。
 // 选题的页面顶部和做完的结果下面有“检测记录”入口：一张卡片，写着做过几次、最近一次的日期和成绩，点进去是全部记录。
+// 带 ?plan=<id> 时是这个计划的错题检查：只选题型，计划答错过的词全出。
 export default function TestPage() {
   const params = new URLSearchParams(location.search);
+  const planId = Number(params.get("plan"));
+  const [plan, setPlan] = useState<WithWords<Plan>>();
   const [settings, setSettings] = useState<Settings>();
   const [scope, setScope] = useState<TestScope>((params.get("scope") as TestScope) || "recent");
   const [from, setFrom] = useState(1);
@@ -34,7 +39,8 @@ export default function TestPage() {
       .then((h) => setSettings(h.settings))
       .catch((err) => setError(errorText(err)));
     api.tests().then(setPast, () => setPast([]));
-  }, []);
+    if (planId) api.plan(planId).then(setPlan, (err) => setError(errorText(err)));
+  }, [planId]);
 
   // 检测记录入口。还没做过检测时不显示（点进去也是空的）。
   const latest = past?.[0];
@@ -53,7 +59,7 @@ export default function TestPage() {
     setBusy(true);
     setError("");
     try {
-      setTest(await api.createTest({ scope, from, to, count, mode }));
+      setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode } : { scope, from, to, count, mode }));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -88,6 +94,25 @@ export default function TestPage() {
               }
             }}
           />
+        ) : planId ? (
+          <>
+            <BackBar href={`${root}history/?plan=${planId}`} label="计划详情" />
+            {plan && (
+              <section className="card stack">
+                <h1>错题检查</h1>
+                <p className="muted">
+                  {planSpan(plan.item)} 这个计划答错过的 {plan.missed.length} 个词（计划测试和之前每次错题检查答错的合在一起），全部出题。
+                </p>
+                <div className={styles.group}>
+                  <h2>题型</h2>
+                  <ModePicker value={mode} onChange={setMode} />
+                </div>
+                <button className={`${styles.wide} ${styles.sticky}`} onClick={start} disabled={busy || plan.missed.length === 0}>
+                  开始检查
+                </button>
+              </section>
+            )}
+          </>
         ) : (
           <>
             {records}
@@ -96,7 +121,7 @@ export default function TestPage() {
               <div className={styles.group}>
                 <h2>范围</h2>
                 <div className={`${styles.tiles} ${styles.compact}`} role="radiogroup" aria-label="范围">
-                  {(Object.keys(scopeNames) as TestScope[]).map((s) => (
+                  {(Object.keys(scopeIcons) as (keyof typeof scopeIcons)[]).map((s) => (
                     <button key={s} type="button" role="radio" aria-checked={s === scope} className={`${styles.tile} ${s === scope ? styles.on : ""}`} onClick={() => setScope(s)}>
                       <Icon name={scopeIcons[s]} />
                       <strong>{scopeNames[s]}</strong>

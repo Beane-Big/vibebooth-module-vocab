@@ -31,24 +31,25 @@
 .head { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .headZh { font-weight: 400; }
 
+/* --fit 是放不下时整体缩小的比例（WordCard 里量出来的），平时是 1。 */
 .body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; min-height: 0; }
 .body p { margin: 0; }
 
-.word { font-size: clamp(40px, min(17cqw, 22cqh), 150px); line-height: 1.15; font-weight: 700; letter-spacing: 0.01em; }
-.ph { font-size: clamp(16px, min(4.4cqw, 6.5cqh), 40px); opacity: 0.85; font-family: "Lucida Sans Unicode", "Segoe UI", "Arial Unicode MS", sans-serif; }
-.meaning { margin-top: 0.4em; font-size: clamp(18px, min(5.6cqw, 6.5cqh), 44px); font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
+.word { font-size: calc(clamp(40px, min(18.5cqw, 24cqh), 160px) * var(--fit, 1)); line-height: 1.15; font-weight: 700; letter-spacing: 0.01em; }
+.ph { font-size: calc(clamp(17px, min(4.8cqw, 7cqh), 44px) * var(--fit, 1)); opacity: 0.85; font-family: "Lucida Sans Unicode", "Segoe UI", "Arial Unicode MS", sans-serif; }
+.meaning { margin-top: 0.4em; font-size: calc(clamp(19px, min(6.2cqw, 7.2cqh), 48px) * var(--fit, 1)); font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
 
-.sentence { font-size: clamp(22px, min(8cqw, 9cqh), 64px); font-weight: 600; line-height: 1.25; }
+.sentence { font-size: calc(clamp(24px, min(8.8cqw, 10cqh), 70px) * var(--fit, 1)); font-weight: 600; line-height: 1.25; }
 .sentence strong { font-weight: 800; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-.sentencePh { font-size: clamp(14px, min(4.2cqw, 5cqh), 32px); opacity: 0.75; line-height: 1.4; font-family: "Lucida Sans Unicode", "Segoe UI", "Arial Unicode MS", sans-serif; }
-.zh { margin-top: 0.4em !important; font-size: clamp(17px, min(5.4cqw, 6.5cqh), 44px); font-weight: 600; }
+.sentencePh { font-size: calc(clamp(15px, min(4.6cqw, 5.5cqh), 35px) * var(--fit, 1)); opacity: 0.75; line-height: 1.4; font-family: "Lucida Sans Unicode", "Segoe UI", "Arial Unicode MS", sans-serif; }
+.zh { margin-top: 0.4em !important; font-size: calc(clamp(18px, min(6cqw, 7.2cqh), 48px) * var(--fit, 1)); font-weight: 600; }
 
 /* 横屏（卡片又宽又矮）：字号主要按高度算，词、音标、释义上下排得下；释义行距收紧。 */
 @container (aspect-ratio > 1.6) {
   .body { gap: 6px; }
-  .word { font-size: clamp(40px, 19cqh, 150px); }
-  .ph { font-size: clamp(16px, 5.5cqh, 40px); }
-  .meaning { font-size: clamp(16px, 6cqh, 44px); gap: 2px; }
+  .word { font-size: calc(clamp(40px, 21cqh, 160px) * var(--fit, 1)); }
+  .ph { font-size: calc(clamp(17px, 6cqh, 44px) * var(--fit, 1)); }
+  .meaning { font-size: calc(clamp(17px, 6.6cqh, 48px) * var(--fit, 1)); gap: 2px; }
 }
 
 /* 例句里的词可以点，点了弹出词典气泡。 */

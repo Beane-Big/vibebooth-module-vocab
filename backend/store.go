@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand/v2"
+	"strings"
 	"time"
 
 	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
@@ -95,6 +96,12 @@ CREATE TABLE IF NOT EXISTS tests (
 CREATE INDEX IF NOT EXISTS tests_user ON tests (user_id, id);
 `
 
+// 后来加的字段，老数据库里没有时补上（已经有了会报 duplicate column，跳过）。
+var migrations = []string{
+	// 错题检查（scope 为 plan）是哪个学习计划的；其他检测为 0。
+	`ALTER TABLE tests ADD COLUMN plan_id INTEGER NOT NULL DEFAULT 0`,
+}
+
 var ErrNotFound = errors.New("没有找到")
 
 // OpenStore 打开模块自己的 SQLite 文件；数据库只属于本模块，放在本模块的卷里。
@@ -108,6 +115,12 @@ func OpenStore(path string) (*Store, error) {
 	if _, err := db.Exec(schema); err != nil {
 		db.Close()
 		return nil, err
+	}
+	for _, m := range migrations {
+		if _, err := db.Exec(m); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			db.Close()
+			return nil, err
+		}
 	}
 	// 按天复习：不用分钟级的短期步骤，答完的词最早明天再出现。
 	params := fsrs.DefaultParam()
@@ -125,7 +138,9 @@ type Settings struct {
 	SentencePh bool    `json:"sentencePh"` // 例句下面显示整句音标
 	Accent     string  `json:"accent"`     // en-US 或 en-GB
 	Rate       float64 `json:"rate"`       // 朗读语速，0.5–1.5
-	AutoRepeat int     `json:"autoRepeat"` // 自动播放时英文读几遍，1–3
+	WordRepeat int     `json:"wordRepeat"` // 自动播放时单词的英文读几遍，1–5（中文先读一遍）
+	SentRepeat int     `json:"sentRepeat"` // 自动播放时例句的英文读几遍，1–5
+	SpellOut   bool    `json:"spellOut"`   // 例句读第二遍时一个词一个词地读（拼读），读两遍以上才有
 	PauseBy    string  `json:"pauseBy"`    // 自动播放每句后停多久：audio 按这句英文朗读时长的倍数，fixed 按固定秒数
 	PauseRatio float64 `json:"pauseRatio"` // pauseBy 为 audio 时，停顿是朗读时长的几倍，0.5–2
 	AutoPause  float64 `json:"autoPause"`  // pauseBy 为 fixed 时停几秒，留给跟读
@@ -137,7 +152,7 @@ type Settings struct {
 }
 
 func defaultSettings() Settings {
-	return Settings{PlanWords: 20, Examples: 2, SentencePh: true, Accent: "en-US", Rate: 0.9, AutoRepeat: 2, PauseBy: "audio", PauseRatio: 1, AutoPause: 2, AutoZh: true, Order: "alpha", ReviewMode: "mix", ReviewBy: "choice", WrongClear: 3}
+	return Settings{PlanWords: 20, Examples: 2, SentencePh: true, Accent: "en-US", Rate: 0.9, WordRepeat: 2, SentRepeat: 3, SpellOut: true, PauseBy: "audio", PauseRatio: 1, AutoPause: 2, AutoZh: true, Order: "alpha", ReviewMode: "mix", ReviewBy: "choice", WrongClear: 3}
 }
 
 // Normalize 把越界的值拉回范围内，老版本存的设置缺字段时补默认值。
@@ -151,7 +166,8 @@ func (s *Settings) Normalize() {
 	}
 	clamp(&s.PlanWords, 1, 100, d.PlanWords)
 	clamp(&s.Examples, 2, 5, d.Examples)
-	clamp(&s.AutoRepeat, 1, 3, d.AutoRepeat)
+	clamp(&s.WordRepeat, 1, 5, d.WordRepeat)
+	clamp(&s.SentRepeat, 1, 5, d.SentRepeat)
 	clamp(&s.WrongClear, 1, 10, d.WrongClear)
 	if s.Accent != "en-GB" {
 		s.Accent = "en-US"
@@ -203,6 +219,27 @@ func (s *Store) SaveSettings(ctx context.Context, user string, st Settings) (Set
 	data, _ := json.Marshal(st)
 	_, err := s.db.ExecContext(ctx, `INSERT INTO settings (user_id, data) VALUES (?, ?) ON CONFLICT (user_id) DO UPDATE SET data = excluded.data`, user, string(data))
 	return st, err
+}
+
+// ResetSettings 把这个人的设置还原成默认值，学习进度不动。
+func (s *Store) ResetSettings(ctx context.Context, user string) (Settings, error) {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE user_id = ?`, user)
+	return defaultSettings(), err
+}
+
+// ResetProgress 清空这个人的全部学习进度：学习计划、复习安排、作答记录、错题本、检测记录。设置不动，别人的数据不动。
+func (s *Store) ResetProgress(ctx context.Context, user string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, table := range []string{"plans", "cards", "answers", "wrongs", "tests", "progress"} {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE user_id = ?`, user); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // ---- 学习计划
@@ -528,6 +565,7 @@ func (s *Store) ClearWrong(ctx context.Context, user, word string) error {
 type Test struct {
 	ID         int        `json:"id"`
 	Scope      string     `json:"scope"`
+	PlanID     int        `json:"planId"` // scope 为 plan（计划错题检查）时是哪个计划
 	Mode       string     `json:"mode"`
 	Words      []string   `json:"words"`
 	CreatedAt  time.Time  `json:"createdAt"`
@@ -536,12 +574,12 @@ type Test struct {
 	Total      int        `json:"total"`
 }
 
-const testCols = `id, scope, mode, words, created_at, finished_at, correct, total`
+const testCols = `id, scope, plan_id, mode, words, created_at, finished_at, correct, total`
 
 func scanTest(row interface{ Scan(...any) error }) (*Test, error) {
 	var t Test
 	var words string
-	if err := row.Scan(&t.ID, &t.Scope, &t.Mode, &words, &t.CreatedAt, &t.FinishedAt, &t.Correct, &t.Total); err != nil {
+	if err := row.Scan(&t.ID, &t.Scope, &t.PlanID, &t.Mode, &words, &t.CreatedAt, &t.FinishedAt, &t.Correct, &t.Total); err != nil {
 		return nil, err
 	}
 	json.Unmarshal([]byte(words), &t.Words)
@@ -570,8 +608,8 @@ func (s *Store) Learned(ctx context.Context, user string, since time.Time) ([]st
 	return collect(rows)
 }
 
-// CreateTest 从候选词里随机抽 count 个出一次检测。
-func (s *Store) CreateTest(ctx context.Context, user, scope, mode string, candidates []string, count int) (*Test, error) {
+// CreateTest 从候选词里随机抽 count 个出一次检测（count 为 0 时全出）；planID 只有计划错题检查才有。
+func (s *Store) CreateTest(ctx context.Context, user, scope, mode string, planID int, candidates []string, count int) (*Test, error) {
 	if len(candidates) == 0 {
 		return nil, errors.New("这个范围里还没有学过的词")
 	}
@@ -581,7 +619,7 @@ func (s *Store) CreateTest(ctx context.Context, user, scope, mode string, candid
 		words = words[:count]
 	}
 	data, _ := json.Marshal(words)
-	res, err := s.db.ExecContext(ctx, `INSERT INTO tests (user_id, scope, mode, words, created_at) VALUES (?, ?, ?, ?, ?)`, user, scope, mode, string(data), s.now())
+	res, err := s.db.ExecContext(ctx, `INSERT INTO tests (user_id, scope, plan_id, mode, words, created_at) VALUES (?, ?, ?, ?, ?, ?)`, user, scope, planID, mode, string(data), s.now())
 	if err != nil {
 		return nil, err
 	}
@@ -639,6 +677,49 @@ func (s *Store) Missed(ctx context.Context, user, kind string, ref int) ([]strin
 		return nil, err
 	}
 	return collect(rows)
+}
+
+// PlanMissed 是一个学习计划答错过的词：计划测试和这个计划后来每次做完的错题检查里答错的，合在一起去重，按第一次答错的先后排。
+// 错题检查里答对了也不移出，要彻底移出看错题本。
+func (s *Store) PlanMissed(ctx context.Context, user string, plan int) ([]string, error) {
+	out, err := s.Missed(ctx, user, "plan", plan)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	for _, w := range out {
+		seen[w] = true
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT id FROM tests WHERE user_id = ? AND scope = 'plan' AND plan_id = ? AND finished_at IS NOT NULL ORDER BY id`, user, plan)
+	if err != nil {
+		return nil, err
+	}
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		list, err := s.Missed(ctx, user, "test", id)
+		if err != nil {
+			return nil, err
+		}
+		for _, w := range list {
+			if !seen[w] {
+				seen[w] = true
+				out = append(out, w)
+			}
+		}
+	}
+	return out, nil
 }
 
 // ---- 首页统计

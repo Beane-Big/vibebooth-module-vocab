@@ -56,9 +56,25 @@ export default function History() {
                 {plan.item.finishedAt && <span className={styles.chip}>{date(plan.item.finishedAt)}</span>}
               </div>
             </div>
+            {/* 错题学习、错题检查只看这个计划答错过的词（计划测试和每次错题检查答错的合在一起）；再次学习是整批词从头学。 */}
+            <div className={styles.buttonRow}>
+              {plan.missed.length > 0 && (
+                <>
+                  <a className={styles.button} href={`${root}relearn/?plan=${plan.item.id}&wrong`}>
+                    错题学习
+                  </a>
+                  <a className={`${styles.button} secondary`} href={`${root}test/?plan=${plan.item.id}`}>
+                    错题检查
+                  </a>
+                </>
+              )}
+              <a className={`${styles.button} secondary`} href={`${root}relearn/?plan=${plan.item.id}`}>
+                再次学习
+              </a>
+            </div>
             {plan.missed.length > 0 && (
               <div className={styles.group}>
-                <h2>答错的词</h2>
+                <h2>答错过的词 · {plan.missed.length} 个</h2>
                 <WordList words={plan.missed} accent={accent} />
               </div>
             )}

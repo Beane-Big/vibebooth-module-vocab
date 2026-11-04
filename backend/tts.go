@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -43,12 +44,19 @@ type speaker struct {
 	gen    sync.Mutex // 语音容器一次只合成一句，这里也一句一句地发，免得请求排队超时
 }
 
+// 小写句子里的词：拼读时一个一个地读。
+var wordRe = regexp.MustCompile(`[a-z']+`)
+
 func newSpeaker(url, dir string, deck *Deck, dict Dict) *speaker {
 	texts := map[string]bool{sampleText: true}
 	for _, w := range deck.Words {
 		texts[w.W] = true
 		for _, e := range w.Ex {
 			texts[e.En] = true
+			// 拼读时例句里的词一个一个地读，每个词都要能合成（和 normalize 一样用小写）。
+			for _, t := range wordRe.FindAllString(strings.ToLower(e.En), -1) {
+				texts[strings.Trim(t, "'")] = true
+			}
 		}
 	}
 	for w := range dict {

@@ -88,7 +88,8 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   const options = useMemo(() => {
     if (!word || !choice || !choices) return [];
     const c = choices[word.w];
-    const distractors = m === "listen" && !dirs[i] ? c?.spelling : c?.meaning;
+    // 听音选拼写用拼写相近的词；看中文选英文用开头相同的词；选中文时用意思相近的词。
+    const distractors = dirs[i] ? c?.meaning : m === "listen" ? c?.spelling : c?.prefix;
     return shuffle([{ w: word.w, zh: word.zh[0] ?? "" }, ...(distractors ?? [])]);
   }, [word, choice, choices, m, dirs, i]);
   const toZh = dirs[i];
