@@ -69,15 +69,16 @@ export default function Study() {
             <h1>计划测试</h1>
             <p className="muted">只测这次学的 {words.length} 个词，答错的会放进错题本。</p>
             <ModePicker value={mode} onChange={setMode} />
-            <div className="actions">
-              <button
-                onClick={() => {
-                  setOrder(shuffle(words));
-                  setPhase("test");
-                }}
-              >
-                开始测试
-              </button>
+            <button
+              className={styles.wide}
+              onClick={() => {
+                setOrder(shuffle(words));
+                setPhase("test");
+              }}
+            >
+              开始测试
+            </button>
+            <div className={styles.buttonRow}>
               <button
                 className="secondary"
                 onClick={() => {
@@ -87,6 +88,9 @@ export default function Study() {
               >
                 再学一遍
               </button>
+              <a className={`${styles.button} secondary`} href={root}>
+                回学习主页
+              </a>
             </div>
           </section>
         )}
