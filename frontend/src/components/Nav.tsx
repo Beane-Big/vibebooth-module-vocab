@@ -3,7 +3,7 @@ import styles from "./Nav.module.css";
 
 export const root = "/apps/vocab/";
 
-// 模块的导航，一份数据两种样子：宽屏是顶部居中的毛玻璃胶囊（左边模块名），手机是底部悬浮的毛玻璃标签栏。
+// 模块的导航，一份数据两种样子：宽屏是顶部居中的毛玻璃胶囊，手机是底部悬浮的毛玻璃标签栏。不显示模块名，平台门户里已经有了。
 // 当前页面的标签带一块玻璃高亮；学习计划这类从首页进的页面算在“学习”下。学习记录只在宽屏的导航里，手机上从首页进。
 const tabs: { page: string; label: string; icon: IconName; wide?: boolean }[] = [
   { page: "", label: "学习", icon: "book" },
@@ -18,9 +18,6 @@ export default function Nav({ current }: { current: string }) {
   const active = tabs.some((t) => t.page === current) ? current : "";
   return (
     <header className={styles.header}>
-      <a className={styles.brand} href={root}>
-        背单词
-      </a>
       <nav className={styles.bar} aria-label="页面">
         {tabs.map((t) => (
           <a
