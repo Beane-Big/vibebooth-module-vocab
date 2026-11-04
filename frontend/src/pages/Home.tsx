@@ -105,17 +105,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* 手机底部的标签栏里没有“已学习”，首页给它留一个入口；宽屏顶部导航里都有，不显示。 */}
         <nav className={styles.links}>
-          <a href={root + "test/"} data-tab>
-            检测
-          </a>
-          <a href={root + "wrong/"} data-tab>
-            错题本
-          </a>
           <a href={root + "history/"}>已学习</a>
-          <a href={root + "settings/"} data-tab>
-            设置
-          </a>
         </nav>
       </main>
     </>

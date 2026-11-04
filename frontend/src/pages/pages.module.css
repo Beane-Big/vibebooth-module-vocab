@@ -40,7 +40,7 @@
   .sticky { bottom: calc(88px + env(safe-area-inset-bottom)); }
 }
 
-.links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.links { display: none; }
 .links a {
   background: var(--glass);
   border: 1px solid var(--glass-edge);
@@ -164,10 +164,9 @@ button.chip.on { color: #fff; background: var(--accent); }
   .compact .tile { padding: 8px 10px; }
 }
 
-/* 手机上检测、错题本、设置在底部标签栏里，首页的入口只留学习记录。 */
+/* 首页的“已学习”入口只在手机上显示（底部标签栏里没有它）。 */
 @media (max-width: 600px) {
-  .links { grid-template-columns: 1fr; }
-  .links a[data-tab] { display: none; }
+  .links { display: grid; grid-template-columns: 1fr; }
 }
 
 /* 错题本：顶部的数量和操作、筛选行、每行的移出按钮和连对圆点。 */
