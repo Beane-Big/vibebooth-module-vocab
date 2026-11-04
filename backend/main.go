@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -91,10 +92,11 @@ func (h *handlers) register(api *http.ServeMux) {
 		if fail(w, err) {
 			return
 		}
-		next, err := h.store.NextN(r.Context(), user)
+		learned, err := h.store.LearnedSet(r.Context(), user)
 		if fail(w, err) {
 			return
 		}
+		next, nextWord := NextPos(h.deck.Ordered(st.Order, user), learned)
 		plan, err := h.store.CurrentPlan(r.Context(), user)
 		if fail(w, err) {
 			return
@@ -105,7 +107,7 @@ func (h *handlers) register(api *http.ServeMux) {
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
 			"settings": st, "deck": map[string]any{"name": h.deck.Name, "total": len(h.deck.Words)},
-			"nextN": next, "plan": plan, "stats": stats,
+			"nextN": next, "nextWord": wordOf(nextWord), "plan": plan, "stats": stats,
 		})
 	})
 
@@ -135,6 +137,26 @@ func (h *handlers) register(api *http.ServeMux) {
 		writeJSON(w, http.StatusOK, h.deck.Range(from, max(1, min(100, count))))
 	})
 
+	// 选择题的干扰项：每个词各给三个意思类、三个拼写类的，前端出题时用。
+	api.HandleFunc("POST /api/vocab/choices", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Words []string `json:"words"`
+		}
+		if !decode(w, r, &in) {
+			return
+		}
+		if len(in.Words) > 200 {
+			writeError(w, http.StatusBadRequest, "一次最多 200 个词")
+			return
+		}
+		rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+		out := map[string]Choices{}
+		for _, x := range h.deck.Lookup(in.Words) {
+			out[x.W] = h.deck.Choices(x, rng)
+		}
+		writeJSON(w, http.StatusOK, out)
+	})
+
 	// 点例句里的词时查音标和释义；查不到返回 404，前端显示“词典里没有这个词”。
 	api.HandleFunc("GET /api/vocab/lookup", func(w http.ResponseWriter, r *http.Request) {
 		e := h.dict.Lookup(h.deck, r.URL.Query().Get("w"))
@@ -147,7 +169,8 @@ func (h *handlers) register(api *http.ServeMux) {
 
 	// ---- 学习计划
 	api.HandleFunc("POST /api/vocab/plans", func(w http.ResponseWriter, r *http.Request) {
-		// 不填的项按个人设置：学几个词、每个词几条例句，以及从第几个词开始（设置里没指定时接着上次）。
+		// 不填的项按个人设置：学几个词、每个词几条例句，以及从学习顺序的第几个词开始（设置里没指定时从第一个没学过的词开始）。
+		// 学过的词跳过，所以换了学习顺序也能接着学。
 		var in struct {
 			From     int `json:"from"`
 			Count    int `json:"count"`
@@ -171,13 +194,6 @@ func (h *handlers) register(api *http.ServeMux) {
 		if usedStart {
 			in.From = st.StartN
 		}
-		if in.From <= 0 {
-			n, err := h.store.NextN(r.Context(), user)
-			if fail(w, err) {
-				return
-			}
-			in.From = n
-		}
 		if in.Count < 1 || in.Count > 100 {
 			writeError(w, http.StatusBadRequest, "每个计划学 1 到 100 个词")
 			return
@@ -186,7 +202,11 @@ func (h *handlers) register(api *http.ServeMux) {
 			writeError(w, http.StatusBadRequest, "每个词 2 到 5 条例句")
 			return
 		}
-		plan, err := h.store.CreatePlan(r.Context(), user, h.deck.Range(in.From, in.Count), in.Examples)
+		learned, err := h.store.LearnedSet(r.Context(), user)
+		if fail(w, err) {
+			return
+		}
+		plan, err := h.store.CreatePlan(r.Context(), user, Pick(h.deck.Ordered(st.Order, user), in.From, in.Count, learned), in.Examples)
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
@@ -418,7 +438,14 @@ func (h *handlers) known(words []string) []string {
 }
 
 func validMode(m string) bool {
-	return m == "listen" || m == "look" || m == "speak" || m == "dictation"
+	return m == "listen" || m == "look" || m == "write" || m == "dictation" || m == "translate"
+}
+
+func wordOf(w *Word) string {
+	if w == nil {
+		return ""
+	}
+	return w.W
 }
 
 func userID(r *http.Request) string { return auth.UserFrom(r.Context()).ID }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api, errorText, request, type Settings } from "../api";
+import { api, errorText, orderNames, request, type Order, type Settings } from "../api";
 import Icon from "../components/Icon";
 import { canSpeak, speak } from "../speech";
 import styles from "./pages.module.css";
@@ -11,7 +11,6 @@ const saveDelay = 500;
 // 保存失败时提示一直留着，点它重试。离开页面时还没来得及保存的改动也会发出去。
 export default function SettingsPage() {
   const [s, setS] = useState<Settings>();
-  const [nextN, setNextN] = useState(1);
   const [status, setStatus] = useState<"" | "saved" | "failed">("");
   const [error, setError] = useState("");
   const pending = useRef<Settings | null>(null); // 还没保存的设置
@@ -57,10 +56,7 @@ export default function SettingsPage() {
   useEffect(() => {
     api
       .home()
-      .then((h) => {
-        setS(h.settings);
-        setNextN(h.nextN);
-      })
+      .then((h) => setS(h.settings))
       .catch((err) => setError(errorText(err)));
   }, []);
 
@@ -106,10 +102,24 @@ export default function SettingsPage() {
             {num("planWords", 1, 100)}
           </label>
           <label className="field">
-            <span>从第几个词开始</span>
-            {num("startN", 0, 99999, `第 ${nextN} 个`)}
-            <span className="muted">只管下一个计划，已经认识的词可以跳过；不填就接着上次学</span>
+            <span>学习顺序</span>
+            <select value={s.order} onChange={(e) => set("order", e.target.value as Order)}>
+              {(Object.keys(orderNames) as Order[]).map((o) => (
+                <option key={o} value={o}>
+                  {orderNames[o]}
+                </option>
+              ))}
+            </select>
+            <span className="muted">学过的词会跳过，随时可以换</span>
           </label>
+          {/* 随机顺序的“第几个”没有意义，不显示。 */}
+          {s.order !== "random" && (
+            <label className="field">
+              <span>从第几个词开始</span>
+              {num("startN", 0, 99999, "不填")}
+              <span className="muted">只管下一个计划；不填就从第一个没学过的词开始</span>
+            </label>
+          )}
           <label className="field">
             <span>每个词几条例句</span>
             <select value={s.examples} onChange={(e) => set("examples", Number(e.target.value))}>
@@ -193,9 +203,17 @@ export default function SettingsPage() {
             <span>复习题型</span>
             <select value={s.reviewMode} onChange={(e) => set("reviewMode", e.target.value as Settings["reviewMode"])}>
               <option value="mix">听音和看词轮换</option>
-              <option value="listen">听音想意思</option>
-              <option value="look">看词想意思</option>
+              <option value="listen">只听音</option>
+              <option value="look">只看词</option>
             </select>
+          </label>
+          <label className="field">
+            <span>复习怎么作答</span>
+            <select value={s.reviewBy} onChange={(e) => set("reviewBy", e.target.value as Settings["reviewBy"])}>
+              <option value="choice">四选一</option>
+              <option value="rate">看答案后自己评（四档）</option>
+            </select>
+            <span className="muted">{s.reviewBy === "choice" ? "答对算记得，答错或不认识算忘了" : "按忘了、模糊、记得、轻松安排下次复习"}</span>
           </label>
           <label className="field">
             <span>连续答对几次移出错题本</span>

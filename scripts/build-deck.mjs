@@ -1,7 +1,7 @@
 // 生成内置词库 backend/deck/core.json：node scripts/build-deck.mjs（npm run deck）。
 // 只在更新词库时运行，平时构建镜像不需要；生成的文件提交到仓库里。
 // 数据来源（许可证见 backend/deck/NOTICE.md）：
-//   - 单词、释义、词形变化：ECDICT（MIT），按词频字段 frq 取前 3000 名里的纯字母词
+//   - 单词、释义、词形变化：ECDICT（MIT），按词频字段 frq 取前 3000 名里的纯字母词，按字母顺序排
 //   - 音标：美音 CMUdict，英音 Britfone，见 scripts/phonetics.mjs
 //   - 例句：Tatoeba 的中英句对（CC BY 2.0 FR），中文统一转成简体
 //   - 例句里点词弹出的小词典 backend/deck/dict.json：例句里出现的每个词的音标和 ECDICT 释义
@@ -82,15 +82,33 @@ function cleanTranslation(tr, pos) {
     return 0;
   };
   const items = [];
-  for (const line of tr.split("\\n")) {
-    const m = line.match(/^([a-z]+)\.\s*(.*)$/);
-    if (!m) continue;
-    const senses = m[2]
+  const senses = (text) =>
+    text
       .split(/[,，;；]/)
       .map((s) => s.trim())
       .filter((s) => s && !s.startsWith("["))
       .slice(0, 3);
-    if (senses.length) items.push({ tag: m[1], text: `${m[1]}. ${senses.join("、")}`, w: weight(m[1]) });
+  // 标了词性的行全是专业义（以 [计]、[医] 这类领域标记开头，比如 a 只有“art. [计] 累加器, 加法器…”）、
+  // 又有没标词性的普通释义（a 的“第一个字母 A; 一个; 第一的”）时，用普通释义，词性借专业义那行的。
+  let general = 0;
+  let domainTag = "";
+  const untagged = [];
+  for (const raw of tr.split("\\n")) {
+    const line = raw.replace(/\\r$/, "").trim();
+    const m = line.match(/^([a-z]+)\.\s*(.*)$/);
+    if (!m) {
+      if (line) untagged.push(line);
+      continue;
+    }
+    if (m[2].startsWith("[")) domainTag ||= m[1];
+    else general++;
+    const list = senses(m[2]);
+    if (list.length) items.push({ tag: m[1], text: `${m[1]}. ${list.join("、")}`, w: weight(m[1]) });
+  }
+  const plain = untagged.map(senses).filter((list) => list.length);
+  if (!general && domainTag && plain.length) {
+    items.length = 0;
+    for (const list of plain) items.push({ tag: domainTag, text: `${domainTag}. ${list.join("、")}`, w: 0 });
   }
   return items
     .map((x, i) => ({ ...x, i }))
@@ -199,8 +217,11 @@ async function main() {
       if (ex.length === PER_WORD) break;
     }
     if (ex.length < PER_WORD) short++;
-    return { n: i + 1, w: x.w, us: x.us, uk: x.uk, zh: x.zh, forms: x.forms, ex };
+    return { n: 0, f: i + 1, w: x.w, us: x.us, uk: x.uk, zh: x.zh, forms: x.forms, ex };
   });
+  // 学习按字母顺序：n 是字母顺序的序号，f 是词频名次（出选择题时挑词频相近的干扰项）。
+  deck.sort((a, b) => (a.w < b.w ? -1 : 1));
+  deck.forEach((x, i) => (x.n = i + 1));
   // 4. 小词典：例句里出现的词（和它们的原形）查 ECDICT，点例句里的词时显示。
   const want = new Set(deck.flatMap((x) => x.ex.flatMap((e) => [...tokens(e.en)])));
   const dict = {};

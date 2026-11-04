@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, errorText, modeNames, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
+import { api, errorText, modeNames, planSpan, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
 import BackBar from "../components/BackBar";
 import Icon, { type IconName } from "../components/Icon";
 import { root } from "../components/Nav";
@@ -36,7 +36,7 @@ export default function History() {
   const accent = settings?.accent ?? "en-US";
   const list = root + "history/" + (tab === "tests" ? "?tab=tests" : "");
   const date = (s: string) => new Date(s).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  const range = (p: Plan) => `第 ${p.firstN}–${p.firstN + p.words.length - 1} 个词`;
+  const range = (p: Plan) => `${planSpan(p)}，${p.words.length} 个词`;
 
   // 详情页
   if (planId || testId) {

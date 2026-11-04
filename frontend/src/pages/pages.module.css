@@ -34,6 +34,11 @@
 }
 /* 撑满一行的主按钮。 */
 .wide { width: 100%; padding: 14px 18px; font-size: 17px; }
+/* 长表单底部的主按钮：滚动时贴在屏幕底部（手机上在标签栏上面），不会被导航挡住。 */
+.sticky { position: sticky; bottom: 16px; z-index: 2; }
+@media (max-width: 600px) {
+  .sticky { bottom: calc(88px + env(safe-area-inset-bottom)); }
+}
 
 .links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .links a {
@@ -99,6 +104,11 @@
 .tile span { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
 .tile.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 18%, transparent); }
 .tile.on svg { background: var(--accent); color: #fff; }
+/* 紧凑的一行：图标和名字并排，说明写在整组下面（检测页、计划测试页，手机一屏放得下）。 */
+.tiles.compact { gap: 8px; }
+.compact .tile { flex-direction: row; align-items: center; gap: 8px; padding: 9px 12px; }
+.compact .tile svg { width: 30px; height: 30px; padding: 6px; flex: none; }
+.compact .tile strong { font-size: 14.5px; }
 
 /* 卡片里的一组设置：小标题 + 内容。 */
 .group { display: flex; flex-direction: column; gap: 10px; }
@@ -151,6 +161,7 @@ button.chip.on { color: #fff; background: var(--accent); }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tile { padding: 12px; }
+  .compact .tile { padding: 8px 10px; }
 }
 
 /* 手机上检测、错题本、设置在底部标签栏里，首页的入口只留学习记录。 */

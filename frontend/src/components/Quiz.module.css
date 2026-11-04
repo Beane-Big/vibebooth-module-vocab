@@ -9,6 +9,7 @@
 
 .prompt { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
 .prompt p { margin: 0; }
+.prompt.short { min-height: 130px; }
 .big { font-size: clamp(36px, 9vw, 52px); font-weight: 700; letter-spacing: 0.01em; }
 .mid { font-size: 22px; font-weight: 600; line-height: 1.5; }
 .label { font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
@@ -56,3 +57,18 @@
 @media (prefers-reduced-motion: reduce) {
   .answer { animation: none; }
 }
+
+/* 选择题：四个选项一格一个，选完后正确的标绿、选错的标红、其他变淡；“不认识”是下面一行小字。 */
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.option { min-height: 56px; padding: 12px 10px; font-size: 16px; font-weight: 500; line-height: 1.35; color: var(--text); background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1.5px solid var(--glass-edge); box-shadow: 0 1px 2px rgba(31, 45, 80, 0.05); }
+.option:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.option:disabled { opacity: 1; }
+.optionRight { color: var(--success); border-color: var(--success); background: color-mix(in srgb, var(--success) 12%, var(--surface)); }
+.optionWrong { color: var(--danger); border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+.optionOff { opacity: 0.45 !important; }
+.dunno { grid-column: 1 / -1; justify-self: center; color: var(--muted); }
+
+/* 整句翻译：输入框和对照原句。 */
+.sentenceInput { width: 100%; max-width: 560px; font-size: 18px; text-align: left; padding: 10px 12px; resize: vertical; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 75%, transparent); color: var(--text); font-family: inherit; }
+.compare { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px dashed var(--border); }
+.matched { color: var(--success); font-weight: 700; }

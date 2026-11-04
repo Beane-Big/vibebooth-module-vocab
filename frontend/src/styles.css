@@ -153,6 +153,8 @@ button.link {
 /* 专注模式（学习卡片、做题时，见 Nav.tsx 的 useImmersive）：导航收起，页面不滚动，内容区占满整个屏幕。 */
 body[data-immersive] { --nav-h: 0px; overflow: hidden; overscroll-behavior: none; }
 body[data-immersive] .content { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+/* 做题的页面内容可能比屏幕高（看完答案），在内容区里面滚动；学习卡片（.fill）正好一屏，不滚。 */
+body[data-immersive] .content:not(.fill) { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; }
 /* 横屏的手机：卡片像视频一样铺满，边距收小。 */
 @media (orientation: landscape) and (max-height: 500px) {
   body[data-immersive] .fill { max-width: none; padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
