@@ -1,5 +1,4 @@
-/* 玻璃导航：半透明底色 + 背景虚化，当前标签是一块更亮的玻璃。宽屏吸在顶部居中，手机悬浮在底部。
-   .liquid 是 liquidglass 接管后的样子：底色、虚化、边框和阴影都交给 WebGL 画，这里去掉。 */
+/* 玻璃导航：半透明底色 + 背景虚化，当前标签下面垫着一块更亮的玻璃滑块（.pill），可以点或拖着移动。宽屏吸在顶部居中，手机悬浮在底部。 */
 .bar {
   --glass-on: rgba(120, 120, 128, 0.14);
   position: sticky;
@@ -16,15 +15,24 @@
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
   box-shadow: var(--glass-hi), 0 6px 22px rgba(31, 45, 80, 0.12);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.liquid {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: transparent;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  box-shadow: none;
+/* 滑块：位置和宽度由 Nav.tsx 设置（transform、width），拖动时稍微放大一点。 */
+.pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--glass-on);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 2px 8px rgba(31, 45, 80, 0.08);
+  pointer-events: none;
 }
+.pill.dragging { scale: 1.06; transition: scale 0.15s; background: color-mix(in srgb, var(--accent) 16%, transparent); }
 
 .tab {
   position: relative;
@@ -38,22 +46,17 @@
   font-weight: 500;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.2s, color 0.2s;
+  transition: color 0.2s;
+  -webkit-user-drag: none;
 }
 
-.tab:hover { background: rgba(120, 120, 128, 0.08); }
+.tab:hover { color: var(--accent); }
 
-.on, .on:hover {
-  color: var(--accent);
-  font-weight: 600;
-  background: var(--glass-on);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
+.on { color: var(--accent); font-weight: 600; }
 
 @media (prefers-color-scheme: dark) {
   .bar { --glass-on: rgba(255, 255, 255, 0.12); box-shadow: var(--glass-hi), 0 6px 22px rgba(0, 0, 0, 0.4); }
-  .liquid { background: rgba(0, 0, 0, 0.12); box-shadow: none; }
-  .on, .on:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+  .pill { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
 }
 
 /* 手机：标签栏悬浮在底部，图标在上、文字在下。 */
@@ -70,10 +73,11 @@
   }
   .tab { flex: 1; min-width: 0; flex-direction: column; gap: 2px; padding: 6px 0 5px; font-size: 11px; }
   .tab svg { width: 24px; height: 24px; }
-  .tab:hover { background: none; }
-  .on, .on:hover { background: var(--glass-on); }
+  .tab:hover { color: var(--text); }
+  .tab.on { color: var(--accent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tab { transition: none; }
+  .pill { transition: none !important; }
 }

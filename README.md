@@ -21,8 +21,6 @@
 
 英文用模块自带的 Kokoro 语音（容器 `vocab-tts`，代码在 `tts/`）合成，后端把每句的 MP3 存在卷里，全家共用；中文用浏览器朗读。模型在构建镜像时下载，镜像约 1GB。
 
-导航栏的液态玻璃效果用 [liquidglass](https://github.com/ybouane/liquidglass)（MIT，内含 html-to-image，MIT），浏览器不支持 WebGL 时用 CSS 毛玻璃。
-
 构建时要下载 Python 包、HuggingFace 上的模型和 GitHub 上的 spaCy 英文模型。服务器在国内时，在构建器设置里加这些构建参数（不加就用官方源）：
 
 | 参数 | 例子 |

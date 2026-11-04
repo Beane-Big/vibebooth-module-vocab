@@ -18,7 +18,7 @@ const pages: Record<string, () => React.JSX.Element> = {
   settings: SettingsPage,
 };
 
-// 背景色块、导航和页面都是 .app 的直接子元素：导航的液态玻璃（Nav 里的 useLiquidGlass）要求这样才能折射到它们。
+// 背景色块固定在最底下，导航和页面在它上面，玻璃面板透出它的颜色。
 export default function App() {
   const name = location.pathname.replace(/^\/apps\/vocab\/?/, "").split("/")[0];
   const Page = pages[name] ?? Home;
