@@ -1,13 +1,58 @@
-import { useEffect, useState } from "react";
-import { api, errorText, type Settings } from "../api";
+import { useEffect, useRef, useState } from "react";
+import { api, errorText, request, type Settings } from "../api";
+import Icon from "../components/Icon";
 import { canSpeak, speak } from "../speech";
+import styles from "./pages.module.css";
 
-// 个人设置：每个人自己一份，不影响家里其他人。
+// 停止改动这么久之后保存（输入数字时不用每敲一个字保存一次）。
+const saveDelay = 500;
+
+// 个人设置：每个人自己一份，不影响家里其他人。改了就自动保存，右下角轻轻提示一下“已保存”，没有保存按钮。
+// 保存失败时提示一直留着，点它重试。离开页面时还没来得及保存的改动也会发出去。
 export default function SettingsPage() {
   const [s, setS] = useState<Settings>();
   const [nextN, setNextN] = useState(1);
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"" | "saved" | "failed">("");
   const [error, setError] = useState("");
+  const pending = useRef<Settings | null>(null); // 还没保存的设置
+  const timer = useRef(0);
+  const version = useRef(0); // 每次改动加 1；保存回来时已经又改过了，就不用服务器的结果覆盖界面
+  const hide = useRef(0);
+
+  async function flush() {
+    clearTimeout(timer.current);
+    const next = pending.current;
+    if (!next) return;
+    pending.current = null;
+    const v = version.current;
+    try {
+      const saved = await api.saveSettings(next);
+      // 服务器会把越界的值拉回范围内，没有新改动时用它的结果。
+      if (v === version.current) setS(saved);
+      setStatus("saved");
+      clearTimeout(hide.current);
+      hide.current = window.setTimeout(() => setStatus((x) => (x === "saved" ? "" : x)), 1500);
+    } catch (err) {
+      pending.current ??= next;
+      setStatus("failed");
+      setError(errorText(err));
+    }
+  }
+
+  useEffect(() => {
+    // 离开页面（换页、关掉）时把没保存的改动发出去；keepalive 让请求在页面关掉后也能发完。
+    const onHide = () => {
+      if (!pending.current) return;
+      request("/api/vocab/settings", { method: "PUT", body: JSON.stringify(pending.current), keepalive: true }).catch(() => {});
+      pending.current = null;
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      clearTimeout(timer.current);
+      clearTimeout(hide.current);
+    };
+  }, []);
 
   useEffect(() => {
     api
@@ -26,23 +71,29 @@ export default function SettingsPage() {
       </>
     );
   }
-  const set = <K extends keyof Settings>(k: K, v: Settings[K]) => {
-    setS({ ...s, [k]: v });
-    setMessage("");
+  // 改一项：界面立刻变，停下 saveDelay 后保存。save 为假时只改界面（数字框还没填完，比如清空了准备重新输入）。
+  const set = <K extends keyof Settings>(k: K, v: Settings[K], save = true) => {
+    const next = { ...s, [k]: v };
+    setS(next);
+    version.current++;
+    if (!save) return;
+    pending.current = next;
+    clearTimeout(timer.current);
+    timer.current = window.setTimeout(flush, saveDelay);
   };
 
-  async function save() {
-    setError("");
-    try {
-      setS(await api.saveSettings(s!));
-      setMessage("已保存。");
-    } catch (err) {
-      setError(errorText(err));
-    }
-  }
-
   const num = (k: "planWords" | "startN" | "autoRepeat" | "wrongClear", min: number, max: number, placeholder?: string) => (
-    <input type="number" min={min} max={max} value={s[k] || (placeholder ? "" : s[k])} placeholder={placeholder} onChange={(e) => set(k, Number(e.target.value))} />
+    <input
+      type="number"
+      min={min}
+      max={max}
+      value={s[k] || (placeholder ? "" : s[k])}
+      placeholder={placeholder}
+      onChange={(e) => {
+        const n = Number(e.target.value);
+        set(k, n, e.target.value === "" ? min === 0 : n >= min && n <= max);
+      }}
+    />
   );
 
   return (
@@ -152,12 +203,19 @@ export default function SettingsPage() {
           </label>
         </section>
 
-        <div className="actions">
-          <button onClick={save}>保存</button>
-          {message && <span className="muted">{message}</span>}
-          {error && <p className="error">{error}</p>}
-        </div>
       </main>
+      <div className={`${styles.toast} ${status ? styles.toastOn : ""} ${status === "failed" ? styles.toastError : ""}`} role="status" aria-live="polite">
+        {status === "failed" ? (
+          <button className="link" onClick={flush} title={error}>
+            保存失败，点这里重试
+          </button>
+        ) : (
+          <>
+            <Icon name="check" size={16} />
+            已保存
+          </>
+        )}
+      </div>
     </>
   );
 }

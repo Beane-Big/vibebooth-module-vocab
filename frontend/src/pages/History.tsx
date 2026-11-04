@@ -1,89 +1,142 @@
 import { useEffect, useState } from "react";
 import { api, errorText, modeNames, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
+import BackBar from "../components/BackBar";
+import Icon from "../components/Icon";
 import { root } from "../components/Nav";
+import Ring from "../components/Ring";
 import WordList from "../components/WordList";
 import { TestResult } from "./TestPage";
 import styles from "./pages.module.css";
 
-type Row = { kind: "plan"; at: string; item: Plan } | { kind: "test"; at: string; item: Test };
+type Tab = "plans" | "tests";
 
-// 学习记录：做完的学习计划和检测，新的在前；点开看答错的词。
+// 已学习：两栏，“已学习”是做完的学习计划，“检测记录”是做完的检测，新的在前；点一行看详情（答错的词、这次学的词）。
+// 列表页左上角返回进来的地方（首页或检测页），详情页返回列表。
 export default function History() {
   const params = new URLSearchParams(location.search);
+  const planId = Number(params.get("plan"));
+  const testId = Number(params.get("test"));
+  const tab: Tab = params.get("tab") === "tests" || testId ? "tests" : "plans";
   const [settings, setSettings] = useState<Settings>();
-  const [rows, setRows] = useState<Row[]>();
+  const [plans, setPlans] = useState<Plan[]>();
+  const [tests, setTests] = useState<Test[]>();
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [test, setTest] = useState<WithWords<Test>>();
   const [error, setError] = useState("");
-  const planId = Number(params.get("plan"));
-  const testId = Number(params.get("test"));
 
   useEffect(() => {
     const fail = (err: unknown) => setError(errorText(err));
     api.home().then((h) => setSettings(h.settings), fail);
     if (planId) api.plan(planId).then(setPlan, fail);
     else if (testId) api.test(testId).then(setTest, fail);
-    else
-      Promise.all([api.plans(), api.tests()]).then(([plans, tests]) => {
-        const all: Row[] = [
-          ...plans.map((p): Row => ({ kind: "plan", at: p.finishedAt ?? p.createdAt, item: p })),
-          ...tests.map((t): Row => ({ kind: "test", at: t.finishedAt ?? t.createdAt, item: t })),
-        ];
-        setRows(all.sort((a, b) => b.at.localeCompare(a.at)));
-      }, fail);
-  }, [planId, testId]);
+    else if (tab === "plans") api.plans().then(setPlans, fail);
+    else api.tests().then(setTests, fail);
+  }, [planId, testId, tab]);
 
   const accent = settings?.accent ?? "en-US";
+  const list = root + "history/" + (tab === "tests" ? "?tab=tests" : "");
   const date = (s: string) => new Date(s).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const range = (p: Plan) => `第 ${p.firstN}–${p.firstN + p.words.length - 1} 个词`;
 
-  return (
-    <>
+  // 详情页
+  if (planId || testId) {
+    return (
       <main className="content stack">
+        <BackBar href={list} label={tab === "tests" ? "检测记录" : "已学习"} />
         {error && <p className="error">{error}</p>}
         {test && <TestResult result={test} accent={accent} />}
         {plan && (
           <section className="card stack">
-            <h1>
-              学习计划：第 {plan.item.firstN}–{plan.item.firstN + plan.item.words.length - 1} 个词
-            </h1>
-            <p className={styles.result}>
-              {plan.item.correct} / {plan.item.total}
-            </p>
+            <div className={styles.hero}>
+              <h1>{range(plan.item)}</h1>
+              <Ring value={plan.item.correct} total={plan.item.total} label={`${plan.item.correct}/${plan.item.total}`} sub="计划测试答对" />
+              <div className={styles.chips}>
+                <span className={styles.chip}>{plan.item.words.length} 个词</span>
+                <span className={styles.chip}>每个词 {plan.item.examples} 条例句</span>
+                {plan.item.finishedAt && <span className={styles.chip}>{date(plan.item.finishedAt)}</span>}
+              </div>
+            </div>
             {plan.missed.length > 0 && (
-              <>
-                <h1>答错的词</h1>
+              <div className={styles.group}>
+                <h2>答错的词</h2>
                 <WordList words={plan.missed} accent={accent} />
-              </>
+              </div>
             )}
-            <h1>这次学的词</h1>
-            <WordList words={plan.words} accent={accent} />
-          </section>
-        )}
-        {(plan || test) && <a href={root + "history/"}>返回学习记录</a>}
-        {rows && (
-          <section className="card stack">
-            {rows.length === 0 ? (
-              <p className="muted">还没有做完的计划或检测。</p>
-            ) : (
-              <ul className="list">
-                {rows.map((r) => (
-                  <li key={r.kind + r.item.id}>
-                    <a href={`${root}history/?${r.kind}=${r.item.id}`}>
-                      {r.kind === "plan"
-                        ? `学习计划 · 第 ${r.item.firstN}–${r.item.firstN + r.item.words.length - 1} 个词`
-                        : `检测 · ${scopeNames[r.item.scope]} · ${modeNames[r.item.mode]}`}
-                    </a>
-                    <span className="muted">
-                      {" "}
-                      · {r.item.correct}/{r.item.total} · {date(r.at)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className={styles.group}>
+              <h2>这次学的词</h2>
+              <WordList words={plan.words} accent={accent} />
+            </div>
           </section>
         )}
       </main>
-    </>
+    );
+  }
+
+  // 列表页
+  const rows = tab === "plans" ? plans : tests;
+  return (
+    <main className="content stack">
+      <BackBar href={tab === "tests" ? root + "test/" : root} label={tab === "tests" ? "检测" : "学习"} />
+      <div className={styles.tabs}>
+        <a className={tab === "plans" ? styles.on : ""} href={root + "history/"}>
+          已学习
+        </a>
+        <a className={tab === "tests" ? styles.on : ""} href={root + "history/?tab=tests"}>
+          检测记录
+        </a>
+      </div>
+      {error && <p className="error">{error}</p>}
+      {!rows ? (
+        !error && <p className="muted">加载中…</p>
+      ) : rows.length === 0 ? (
+        <section className={`card ${styles.empty}`}>
+          <Icon name={tab === "plans" ? "book" : "test"} />
+          <h1>{tab === "plans" ? "还没有学完的计划" : "还没有做完的检测"}</h1>
+          <p className="muted">{tab === "plans" ? "学完一个计划并做完计划测试后，会出现在这里。" : "做完一次检测后，结果会出现在这里。"}</p>
+          <a className={styles.button} href={tab === "plans" ? root : root + "test/"}>
+            {tab === "plans" ? "去学习" : "去检测"}
+          </a>
+        </section>
+      ) : (
+        <ul className={styles.records}>
+          {tab === "plans"
+            ? plans!.map((p) => (
+                <Row key={p.id} href={`${root}history/?plan=${p.id}`} icon="book" title={range(p)} chips={[`${p.words.length} 个词`, date(p.finishedAt ?? p.createdAt)]} correct={p.correct} total={p.total} />
+              ))
+            : tests!.map((t) => (
+                <Row key={t.id} href={`${root}history/?test=${t.id}`} icon="test" title={`${scopeNames[t.scope]} · ${modeNames[t.mode]}`} chips={[`${t.total} 题`, date(t.finishedAt ?? t.createdAt)]} correct={t.correct} total={t.total} />
+              ))}
+        </ul>
+      )}
+    </main>
+  );
+}
+
+// 列表的一行：图标、标题和小标签，右边是答对比例（全对绿色，过半蓝色，不到一半红色），最右一个箭头。
+function Row({ href, icon, title, chips, correct, total }: { href: string; icon: "book" | "test"; title: string; chips: string[]; correct: number; total: number }) {
+  const ratio = total ? correct / total : 0;
+  const tone = ratio === 1 ? styles.good : ratio >= 0.5 ? styles.chipAccent : styles.bad;
+  return (
+    <li>
+      <a className={styles.record} href={href}>
+        <span className={styles.recordIcon}>
+          <Icon name={icon} />
+        </span>
+        <span className={styles.recordMain}>
+          <strong>{title}</strong>
+          <span className={styles.chips}>
+            {chips.map((c) => (
+              <span key={c} className={styles.chip}>
+                {c}
+              </span>
+            ))}
+          </span>
+        </span>
+        <span className={`${styles.score} ${tone}`}>
+          {correct}/{total}
+        </span>
+        <Icon name="next" size={18} />
+      </a>
+    </li>
   );
 }

@@ -85,7 +85,8 @@ body {
 }
 
 /* 页面内容在背景之上。 */
-.app { position: relative; min-height: 100vh; }
+/* flow-root：导航的上边距留在 .app 里面，不穿出去把整页撑高（否则宽屏多出 12px 滚动条）。 */
+.app { position: relative; min-height: 100vh; display: flow-root; }
 .app > main { position: relative; z-index: 1; }
 
 .muted { color: var(--muted); font-size: 14px; }

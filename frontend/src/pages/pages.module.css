@@ -169,3 +169,67 @@ button.chip.on { color: #fff; background: var(--accent); }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--muted) 35%, transparent); }
 .dots i.dotOn { background: var(--success); }
 .button:global(.secondary) { background: var(--glass); color: var(--accent); box-shadow: var(--glass-hi), 0 2px 8px rgba(31, 45, 80, 0.06); }
+
+/* 返回行：左边“‹ 上一级”，右边标题。 */
+.backBar { display: flex; align-items: center; gap: 12px; }
+.backBar h1 { margin: 0; font-size: 20px; }
+.back { display: inline-flex; align-items: center; gap: 2px; padding: 6px 12px 6px 6px; border-radius: 999px; color: var(--accent); text-decoration: none; font-size: 15px; font-weight: 500; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-hi), 0 2px 8px rgba(31, 45, 80, 0.06); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.back:hover { background: var(--glass-strong); }
+
+/* 分段选择里也可以放链接（已学习 / 检测记录 两栏各是一页）。 */
+.tabs a { flex: 1 0 auto; padding: 7px 14px; font-size: 14px; border-radius: 9px; color: var(--text); text-decoration: none; text-align: center; white-space: nowrap; }
+.tabs a.on { background: var(--surface); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+
+/* 记录列表：每行一张玻璃小卡片，整行可点。 */
+.records { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.record {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-hi), var(--shadow);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  transition: transform 0.12s;
+}
+.record:active { transform: scale(0.99); }
+.record > svg { flex: none; color: var(--muted); }
+.recordIcon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.recordMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.recordMain strong { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score { flex: none; padding: 4px 10px; border-radius: 999px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; background: color-mix(in srgb, currentColor 12%, transparent); }
+
+/* 设置自动保存后的轻提示：右下角一个小胶囊，淡入淡出，不挡操作；手机上在标签栏上面。 */
+.toast {
+  position: fixed;
+  z-index: 60;
+  right: 20px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--success);
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-hi), var(--shadow);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.toastOn { opacity: 1; transform: none; pointer-events: auto; }
+.toastError { color: var(--danger); }
+.toastError button { color: var(--danger); }
+@media (max-width: 600px) {
+  .toast { right: 50%; translate: 50% 0; bottom: calc(96px + env(safe-area-inset-bottom)); }
+}
