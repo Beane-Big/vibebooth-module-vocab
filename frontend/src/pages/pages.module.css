@@ -1,23 +1,156 @@
+/* 各页面共用的版块：统计格、进度条、分段选择、图标选项格、小标签、结果环、空状态。 */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
-.statValue { font-size: 26px; font-weight: 700; }
+.stat {
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-hi), var(--shadow);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.statValue { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.progress { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
-.progress > div { height: 100%; background: var(--accent); }
+.progress { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 18%, transparent); overflow: hidden; }
+.progress > div { height: 100%; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #8fb4ff), var(--accent)); transition: width 0.3s; }
 
 /* 链接做成按钮的样子，和 button 一致。 */
-.button { display: inline-block; font-size: 16px; padding: 10px 14px; border-radius: 8px; background: var(--accent); color: #fff; text-decoration: none; }
+.button {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 11px 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent));
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+/* 撑满一行的主按钮。 */
+.wide { width: 100%; padding: 14px 18px; font-size: 17px; }
 
 .links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.links a { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 8px; text-align: center; color: var(--text); text-decoration: none; font-weight: 600; }
+.links a {
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-hi), var(--shadow);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  padding: 14px 8px;
+  text-align: center;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
 
 .result { font-size: 40px; font-weight: 700; margin: 0; }
-.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-.tabs button { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-.tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* 分段选择：一条玻璃槽，选中的一段是浮起来的白片。 */
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.tabs button {
+  flex: 1 0 auto;
+  background: none;
+  color: var(--text);
+  box-shadow: none;
+  padding: 7px 14px;
+  font-size: 14px;
+  border-radius: 9px;
+  white-space: nowrap;
+}
+.tabs button.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+/* 撑满一行、几段等宽的分段选择（题数）。 */
+.tabs.full { width: 100%; }
+.tabs.full button { flex: 1 1 0; padding: 7px 4px; }
+.tabs .count { margin-left: 6px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* 带图标的选项格：题型、检测范围。选中的描强调色边、底色带一点强调色。 */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 14px;
+  text-align: left;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text);
+  border: 1.5px solid var(--glass-edge);
+  box-shadow: 0 1px 2px rgba(31, 45, 80, 0.05);
+}
+.tile svg { color: var(--accent); padding: 6px; width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.tile strong { font-size: 15px; }
+.tile span { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.tile.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 18%, transparent); }
+.tile.on svg { background: var(--accent); color: #fff; }
+
+/* 卡片里的一组设置：小标题 + 内容。 */
+.group { display: flex; flex-direction: column; gap: 10px; }
+
+/* 小标签：题型、错的次数、写错的答案等。 */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  white-space: nowrap;
+}
+.chip svg { width: 14px; height: 14px; }
+.chipDanger { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.chipAccent { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+button.chip { box-shadow: none; padding: 5px 12px; font-size: 13.5px; }
+button.chip.on { color: #fff; background: var(--accent); }
+
+/* 结果页顶部：一个进度环，中间是正确率或个数，下面一行说明。 */
+.hero { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 8px 0 4px; }
+.hero h1 { margin: 0; }
+.ring { position: relative; width: 148px; height: 148px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 10; }
+.ring .track { stroke: color-mix(in srgb, var(--muted) 16%, transparent); }
+.ring .value { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ringText { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ringText strong { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ringText span { font-size: 13px; color: var(--muted); }
+/* 结果页的几个数字。 */
+.figures { display: flex; gap: 28px; justify-content: center; }
+.figures div { display: flex; flex-direction: column; align-items: center; }
+.figures strong { font-size: 22px; font-variant-numeric: tabular-nums; }
+.good { color: var(--success); }
+.bad { color: var(--danger); }
+
+/* 空状态：一个大圆图标 + 一句话 + 按钮。 */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 28px 8px; }
+.empty > svg { width: 64px; height: 64px; padding: 16px; border-radius: 50%; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.empty h1 { margin: 0; font-size: 19px; }
+.empty p { margin: 0; }
 
 @media (max-width: 480px) {
-  .stats, .links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile { padding: 12px; }
 }
 
 /* 手机上检测、错题本、设置在底部标签栏里，首页的入口只留学习记录。 */
@@ -25,3 +158,14 @@
   .links { grid-template-columns: 1fr; }
   .links a[data-tab] { display: none; }
 }
+
+/* 错题本：顶部的数量和操作、筛选行、每行的移出按钮和连对圆点。 */
+.summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.summary strong { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.remove { width: 30px; height: 30px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); box-shadow: none; }
+.remove:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.dots { display: inline-flex; gap: 3px; margin-right: 2px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--muted) 35%, transparent); }
+.dots i.dotOn { background: var(--success); }
+.button:global(.secondary) { background: var(--glass); color: var(--accent); box-shadow: var(--glass-hi), 0 2px 8px rgba(31, 45, 80, 0.06); }

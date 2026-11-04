@@ -45,7 +45,7 @@ export default function Study() {
 
   return (
     <>
-      <main className="content stack">
+      <main className={phase === "learn" ? "content stack fill" : "content stack"}>
         {phase === "learn" && (
           <Player
             words={words}

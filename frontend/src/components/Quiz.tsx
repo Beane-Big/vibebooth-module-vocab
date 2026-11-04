@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { errorText, modeNames, phOf, type Mode, type Settings, type Word } from "../api";
 import { canSpeak, speak, stopSpeaking } from "../speech";
+import Icon from "./Icon";
+import { modeIcons } from "./ModePicker";
 import { Highlight } from "./WordCard";
 import styles from "./Quiz.module.css";
 
@@ -16,11 +18,12 @@ type Props = {
   onDone: (results: Result[]) => void;
 };
 
+// 复习的四档自评，每档一句说明它对下次复习的影响（FSRS 按这个安排间隔）。
 const ratings = [
-  { v: 1, label: "忘了", cls: styles.again },
-  { v: 2, label: "模糊", cls: styles.hard },
-  { v: 3, label: "记得", cls: "" },
-  { v: 4, label: "轻松", cls: styles.easy },
+  { v: 1, label: "忘了", hint: "很快再复习", cls: styles.again },
+  { v: 2, label: "模糊", hint: "间隔短一些", cls: styles.hard },
+  { v: 3, label: "记得", hint: "正常间隔", cls: styles.good },
+  { v: 4, label: "轻松", hint: "间隔长一些", cls: styles.easy },
 ];
 
 // 出题和作答。四种题型：
@@ -96,26 +99,38 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
 
   const correct = results.current.filter((r) => r.ok).length;
 
+  // 听写的空格：没作答时放一个不换行空格占位，下划线和句子的字底对齐（空字符串会让 inline-block 按基线顶上去）。
+  const blank = checked === null ? "\u00a0" : target;
+
   return (
     <section className={`card ${styles.quiz}`}>
+      <span className={styles.bar} style={{ width: `${((i + (shown ? 1 : 0)) / words.length) * 100}%` }} />
       <div className={styles.top}>
-        <span>{modeNames[m]}</span>
-        <span>
+        <span className={styles.mode}>
+          <Icon name={modeIcons[m]} size={16} />
+          {modeNames[m]}
+        </span>
+        <span className={styles.count}>
+          {grading === "ok" && i > 0 && (
+            <span className={styles.score}>
+              <Icon name="check" size={14} />
+              {correct}
+            </span>
+          )}
           {i + 1} / {words.length}
-          {grading === "ok" && i > 0 && ` · 对 ${correct}`}
         </span>
       </div>
 
       <div className={styles.prompt}>
         {m === "look" && <p className={styles.big}>{word.w}</p>}
         {m === "listen" && (
-          <button className="link" onClick={playPrompt} disabled={!canSpeak}>
-            🔊 再听一遍
+          <button className={styles.play} onClick={playPrompt} disabled={!canSpeak} aria-label="再听一遍" title="再听一遍">
+            <Icon name="sound" size={34} />
           </button>
         )}
         {m === "speak" && (
           <>
-            <p className="muted">大声说出英文</p>
+            <span className={styles.label}>大声说出英文</span>
             <p className={styles.mid}>{ex ? ex.zh : word.zh.join("；")}</p>
           </>
         )}
@@ -125,8 +140,8 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
               <p className={styles.mid}>
                 {ex.en.split(/([A-Za-z']+)/).map((part, k) =>
                   part === target ? (
-                    <span key={k} className={styles.blank}>
-                      {checked === null ? " " : target}
+                    <span key={k} className={`${styles.blank} ${checked === null ? "" : checked ? styles.blankRight : styles.blankWrong}`}>
+                      {blank}
                     </span>
                   ) : (
                     part
@@ -137,10 +152,11 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
               <p className={styles.mid}>{word.zh.join("；")}</p>
             )}
             {ex && target && <p className="muted">{ex.zh}</p>}
-            <button className="link" onClick={playPrompt} disabled={!canSpeak}>
-              🔊 再听一遍
+            <button className={styles.replay} onClick={playPrompt} disabled={!canSpeak}>
+              <Icon name="sound" size={18} />
+              再听一遍
             </button>
-            <form className="actions" onSubmit={check}>
+            <form className={styles.write} onSubmit={check}>
               <input
                 ref={input}
                 className={styles.input}
@@ -164,49 +180,57 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
 
       {shown && (
         <div className={styles.answer}>
-          {checked !== null && <p className={checked ? styles.right : styles.wrong}>{checked ? "答对了" : `正确答案：${target ?? word.w}`}</p>}
-          <p className={styles.mid}>
-            {word.w} {phOf(word, settings.accent) && <span className="muted">[ {phOf(word, settings.accent)} ]</span>}
+          {checked !== null && (
+            <p className={`${styles.verdict} ${checked ? styles.right : styles.wrong}`}>
+              <Icon name={checked ? "check" : "cross"} size={18} />
+              {checked ? "答对了" : `正确答案：${target ?? word.w}`}
+            </p>
+          )}
+          <p className={styles.word}>
+            {word.w} {phOf(word, settings.accent) && <span className={styles.wordPh}>[ {phOf(word, settings.accent)} ]</span>}
           </p>
-          <p>{word.zh.join("；")}</p>
+          <p className={styles.meaning}>{word.zh.join("；")}</p>
           {ex && m !== "dictation" && (
-            <>
+            <div className={styles.example}>
               <p>
                 <Highlight text={ex.en} forms={word.forms} accent={settings.accent} />
               </p>
               {settings.sentencePh && phOf(ex, settings.accent) && <p className={styles.ph}>[ {phOf(ex, settings.accent)} ]</p>}
               <p className="muted">{ex.zh}</p>
-            </>
+            </div>
           )}
         </div>
       )}
 
       {!shown && m !== "dictation" && (
-        <button onClick={reveal} disabled={busy}>
+        <button className={styles.reveal} onClick={reveal} disabled={busy}>
           {m === "speak" ? "说好了，播放原句" : "看答案"}
         </button>
       )}
       {shown && m !== "dictation" && grading === "rating" && (
         <div className={styles.grades}>
           {ratings.map((r) => (
-            <button key={r.v} className={r.cls} onClick={() => submit(r.v > 1, r.v)} disabled={busy}>
-              {r.label}
+            <button key={r.v} className={`${styles.grade} ${r.cls}`} onClick={() => submit(r.v > 1, r.v)} disabled={busy}>
+              <strong>{r.label}</strong>
+              <span>{r.hint}</span>
             </button>
           ))}
         </div>
       )}
       {shown && m !== "dictation" && grading === "ok" && (
         <div className={styles.grades}>
-          <button className={styles.again} onClick={() => submit(false)} disabled={busy}>
-            不认识
+          <button className={`${styles.grade} ${styles.again}`} onClick={() => submit(false)} disabled={busy}>
+            <Icon name="cross" />
+            <strong>不认识</strong>
           </button>
-          <button className={styles.easy} onClick={() => submit(true)} disabled={busy}>
-            认识
+          <button className={`${styles.grade} ${styles.easy}`} onClick={() => submit(true)} disabled={busy}>
+            <Icon name="check" />
+            <strong>认识</strong>
           </button>
         </div>
       )}
       {checked !== null && (
-        <button onClick={() => submit(checked, grading === "rating" ? (checked ? 3 : 1) : 0, typed.trim())} disabled={busy}>
+        <button className={styles.reveal} onClick={() => submit(checked, grading === "rating" ? (checked ? 3 : 1) : 0, typed.trim())} disabled={busy}>
           下一题
         </button>
       )}

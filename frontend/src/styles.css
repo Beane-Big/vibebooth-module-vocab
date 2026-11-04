@@ -1,25 +1,49 @@
-/* 与 Vibebooth 门户和其他模块共用同一套颜色变量和基础控件样式。 */
+/* 与 Vibebooth 门户和其他模块共用同一套颜色变量和基础控件样式；本模块在这之上加了一层玻璃质感：
+   背景是几团柔和的色块（App 里的 .backdrop），卡片、标签栏、次要按钮是半透明的毛玻璃。 */
 :root {
-  --bg: #f5f6f8;
+  --bg: #eef1f7;
   --surface: #ffffff;
   --text: #1d2129;
   --muted: #6b7280;
   --border: #e5e7eb;
   --accent: #2f6fde;
   --danger: #d93025;
-  --radius: 12px;
+  --success: #1f8f5a;
+  --warn: #c77700;
+  --radius: 18px;
+  /* 玻璃：底色、亮边、阴影。--glass-strong 用在需要读字的大块面板上。 */
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-strong: rgba(255, 255, 255, 0.72);
+  --glass-edge: rgba(255, 255, 255, 0.85);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow: 0 10px 30px rgba(31, 45, 80, 0.08), 0 1px 3px rgba(31, 45, 80, 0.06);
+  --blur: blur(22px) saturate(170%);
+  /* 宽屏顶部导航占的高度，学习页的卡片按它算能撑多高。 */
+  --nav-h: 68px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #15171c;
+    --bg: #111318;
     --surface: #1f2228;
     --text: #e8eaed;
     --muted: #9aa0a6;
     --border: #2e3239;
     --accent: #6b9cf5;
     --danger: #f28b82;
+    --success: #5fcf98;
+    --warn: #f0b35a;
+    --glass: rgba(40, 44, 54, 0.5);
+    --glass-strong: rgba(36, 40, 49, 0.72);
+    --glass-edge: rgba(255, 255, 255, 0.09);
+    --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   }
+}
+
+/* 不支持背景虚化的浏览器用不透明的底，保证字看得清。 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass: var(--surface); --glass-strong: var(--surface); }
 }
 
 * { box-sizing: border-box; }
@@ -27,84 +51,131 @@
 /* 让 hidden 属性总能生效，不被 .stack 等 display 样式盖掉。 */
 [hidden] { display: none !important; }
 
-html, body, #root { height: 100%; }
+html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* 背景色块：固定在视口里，不随页面滚动。玻璃面板透出它们的颜色。 */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38vmax 38vmax at 8% 6%, rgba(98, 140, 255, 0.32), transparent 70%),
+    radial-gradient(34vmax 34vmax at 96% 18%, rgba(186, 120, 255, 0.24), transparent 70%),
+    radial-gradient(40vmax 40vmax at 78% 100%, rgba(64, 200, 180, 0.22), transparent 70%),
+    radial-gradient(30vmax 30vmax at 0% 92%, rgba(255, 170, 110, 0.18), transparent 70%),
+    var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  .backdrop {
+    background:
+      radial-gradient(38vmax 38vmax at 8% 6%, rgba(70, 110, 255, 0.22), transparent 70%),
+      radial-gradient(34vmax 34vmax at 96% 18%, rgba(150, 90, 255, 0.16), transparent 70%),
+      radial-gradient(40vmax 40vmax at 78% 100%, rgba(40, 170, 150, 0.14), transparent 70%),
+      var(--bg);
+  }
+}
+
+/* 页面内容在背景之上。 */
+.app { position: relative; min-height: 100vh; }
+.app > main { position: relative; z-index: 1; }
 
 .muted { color: var(--muted); font-size: 14px; }
 .error { color: var(--danger); font-size: 14px; margin: 0; }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-edge);
   border-radius: var(--radius);
+  box-shadow: var(--glass-hi), var(--shadow);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
   padding: 24px;
 }
 
 .card h1 { margin: 0 0 12px; font-size: 20px; }
+.stack > h1 { font-size: 20px; }
+/* 卡片里的小标题。 */
+.card h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
 
 button {
   font-size: 16px;
-  padding: 10px 14px;
+  font-weight: 500;
+  padding: 11px 18px;
   border: 0;
-  border-radius: 8px;
-  background: var(--accent);
+  border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent));
   color: #fff;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+  transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-button:disabled { opacity: 0.6; }
-button.danger { background: var(--danger); }
+button:active:not(:disabled) { transform: scale(0.97); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.danger { background: var(--danger); box-shadow: none; }
 
 button.link {
   background: none;
   color: var(--accent);
   padding: 4px 0;
   font-size: 14px;
+  box-shadow: none;
+}
+
+/* 次要按钮：玻璃底、强调色的字。 */
+.secondary {
+  background: var(--glass);
+  color: var(--accent);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-hi), 0 2px 8px rgba(31, 45, 80, 0.06);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
 }
 
 .content { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
 
 .stack { display: flex; flex-direction: column; gap: 16px; }
+/* 学习卡片的页面：内容区正好是屏幕减去导航的高度，卡片（Player）撑满里面剩下的空间。宽屏放宽一些。 */
+.fill { max-width: 1000px; height: calc(100dvh - var(--nav-h)); min-height: 460px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .stack > h1, .stack > p { margin: 0; }
 
-input {
+input, select {
   font-size: 16px;
-  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
   color: var(--text);
-  flex: 1;
-  min-width: 0;
 }
+input { padding: 10px 12px; flex: 1; min-width: 0; }
+select { padding: 9px 10px; }
+input:focus, select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 1px; }
+input[type="checkbox"] { flex: none; width: 20px; height: 20px; accent-color: var(--accent); }
 
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.list li { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
-
-
-select {
-  font-size: 16px;
-  padding: 9px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-}
+.list li { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; }
 
 /* 表单的一行：左边说明、右边控件，窄屏换行。 */
 .field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .field > span:first-child { min-width: 7em; }
 .field input[type="number"] { flex: 0 0 7em; }
+
 /* 手机上导航（Nav）是底部悬浮的标签栏，页面底部给它留出位置。 */
 @media (max-width: 600px) {
+  :root { --nav-h: 0px; }
   .content { padding: 16px 16px calc(96px + env(safe-area-inset-bottom)); }
 }
 
-.secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+}

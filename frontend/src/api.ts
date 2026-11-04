@@ -5,12 +5,15 @@ export type Word = Phonetic & { n: number; w: string; zh: string[]; forms: strin
 
 export type Settings = {
   planWords: number;
+  startN: number; // 下一个计划从第几个词开始，0 表示接着上次；建计划时用掉就回到 0
   examples: number;
   sentencePh: boolean;
   accent: "en-US" | "en-GB";
   rate: number;
   autoRepeat: number;
-  autoPause: number;
+  pauseBy: "audio" | "fixed"; // 自动播放每句后的停顿：按这句的朗读时长，或固定秒数
+  pauseRatio: number; // 按朗读时长时是几倍
+  autoPause: number; // 固定秒数
   autoZh: boolean;
   reviewMode: "listen" | "look" | "mix";
   wrongClear: number;
@@ -105,7 +108,8 @@ export const api = {
   lookup: (w: string) => request<Entry>(`${base}/lookup?w=${encodeURIComponent(w)}`),
   words: (from: number, count: number) => request<Word[]>(`${base}/words?from=${from}&count=${count}`),
 
-  createPlan: (from: number, count: number, examples: number) => request<WithWords<Plan>>(`${base}/plans`, post({ from, count, examples })),
+  // 不传的项按个人设置（学几个词、几条例句、从第几个开始）。
+  createPlan: (p: { from?: number; count?: number; examples?: number } = {}) => request<WithWords<Plan>>(`${base}/plans`, post(p)),
   plan: (id: number) => request<WithWords<Plan>>(`${base}/plans/${id}`),
   plans: () => request<Plan[]>(`${base}/plans`),
   savePlanPos: (id: number, pos: number, learned = false) => request<void>(`${base}/plans/${id}`, { method: "PUT", body: JSON.stringify({ pos, learned }) }),

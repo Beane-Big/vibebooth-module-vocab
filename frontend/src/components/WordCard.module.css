@@ -1,4 +1,4 @@
-/* 学习卡片：浅色纸面、深蓝大字，照着视频的版式；深色模式换成深底浅字。 */
+/* 学习卡片：浅色纸面、深蓝大字，照着视频的版式；深色模式换成深底浅字。卡片撑满父元素（Player 的 stage）。 */
 .card {
   --ink: #283470;
   --paper: #fbfbf8;
@@ -6,30 +6,25 @@
   container-type: inline-size;
   background: var(--paper);
   color: var(--ink);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  aspect-ratio: 16 / 10;
-  max-height: 70vh;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px rgba(31, 45, 80, 0.12), 0 2px 6px rgba(31, 45, 80, 0.06);
   width: 100%;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
-  padding: 16px 20px 12px;
+  padding: 18px 20px 16px;
   overflow: hidden;
   user-select: none;
 }
 
 @media (prefers-color-scheme: dark) {
-  .card { --ink: #d7ddff; --paper: #1c2033; box-shadow: none; }
+  .card { --ink: #d7ddff; --paper: #1c2033; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4); }
 }
 
-@media (orientation: portrait) and (max-width: 600px) {
-  .card { aspect-ratio: 3 / 4; }
-}
-
-.no { position: absolute; top: 14px; left: 18px; font-size: 15px; opacity: 0.7; }
-.progress { position: absolute; top: 14px; right: 18px; font-size: 14px; font-variant-numeric: tabular-nums; opacity: 0.7; }
-.progressBar { position: absolute; top: 0; left: 0; height: 3px; background: var(--ink); opacity: 0.35; border-top-left-radius: var(--radius); transition: width 0.3s; }
+.no { position: absolute; top: 16px; left: 20px; font-size: 15px; opacity: 0.7; }
+.progress { position: absolute; top: 16px; right: 20px; font-size: 14px; font-variant-numeric: tabular-nums; opacity: 0.7; }
+.progressBar { position: absolute; top: 0; left: 0; height: 3px; background: var(--ink); opacity: 0.35; transition: width 0.3s; }
 .footer { display: flex; justify-content: center; }
 .head { margin: 0 64px 0 44px; font-size: 15px; font-weight: 600; }
 .headZh { font-weight: 400; }

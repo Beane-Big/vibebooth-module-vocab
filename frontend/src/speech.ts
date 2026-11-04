@@ -47,20 +47,23 @@ function pickVoice(lang: string) {
 // 正在读的这一句；stopSpeaking 调它提前结束。
 let current: (() => void) | null = null;
 
-// speak 读一段文字，读完（或出错、或被 stop 打断）时返回。
-export function speak(text: string, lang: string, rate = 1): Promise<void> {
-  if (!text) return Promise.resolve();
+// speak 读一段文字，读完（或出错、或被 stop 打断）时返回，结果是从开始出声到读完用了几秒（自动播放按它定停顿）。
+export function speak(text: string, lang: string, rate = 1): Promise<number> {
+  if (!text) return Promise.resolve(0);
   current?.();
   const voice = kokoroVoice[lang];
-  if (voice && audio && Date.now() >= kokoroDownUntil) return speakKokoro(text, voice, lang, rate);
-  return speakBrowser(text, lang, rate);
+  const spoken = voice && audio && Date.now() >= kokoroDownUntil ? speakKokoro(text, voice, lang, rate) : speakBrowser(text, lang, rate);
+  return spoken.then((start) => (start ? (performance.now() - start) / 1000 : 0));
 }
 
-function speakKokoro(text: string, voice: string, lang: string, rate: number): Promise<void> {
+// 下面两个函数在读完时返回开始出声的时刻（performance.now），没出声时返回 0。
+
+function speakKokoro(text: string, voice: string, lang: string, rate: number): Promise<number> {
   return new Promise((resolve) => {
     const ctrl = new AbortController();
     let url = "";
     let done = false;
+    let start = 0;
     const finish = () => {
       if (done) return;
       done = true;
@@ -69,7 +72,7 @@ function speakKokoro(text: string, voice: string, lang: string, rate: number): P
       audio!.pause();
       if (url) URL.revokeObjectURL(url);
       if (current === finish) current = null;
-      resolve();
+      resolve(start);
     };
     current = finish;
     // 合成失败就用浏览器把这一句读完，不让自动播放卡住。
@@ -95,6 +98,7 @@ function speakKokoro(text: string, voice: string, lang: string, rate: number): P
         audio!.playbackRate = rate;
         audio!.onended = finish;
         audio!.onerror = fallback;
+        start = performance.now();
         await audio!.play();
       })
       .catch((err) => {
@@ -110,18 +114,19 @@ function speakKokoro(text: string, voice: string, lang: string, rate: number): P
 }
 
 // 有的浏览器不触发 onend，按字数估一个超时兜底。
-function speakBrowser(text: string, lang: string, rate: number): Promise<void> {
-  if (!canBrowserSpeak) return Promise.resolve();
+function speakBrowser(text: string, lang: string, rate: number): Promise<number> {
+  if (!canBrowserSpeak) return Promise.resolve(0);
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
-    const timer = setTimeout(resolve, (1500 + 160 * text.length) / rate);
+    const start = performance.now();
+    const timer = setTimeout(() => resolve(start), (1500 + 160 * text.length) / rate);
     u.lang = lang;
     u.rate = rate;
     const voice = pickVoice(lang);
     if (voice) u.voice = voice;
     u.onend = u.onerror = () => {
       clearTimeout(timer);
-      resolve();
+      resolve(start);
     };
     speechSynthesis.speak(u);
   });

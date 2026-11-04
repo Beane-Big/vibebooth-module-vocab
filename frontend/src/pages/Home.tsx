@@ -4,31 +4,25 @@ import { root } from "../components/Nav";
 import styles from "./pages.module.css";
 
 // 首页：学习计划（继续或新建）、今天的复习、统计和其他页面的入口。
+// 新计划学几个词、每个词几条例句、从第几个词开始都在设置里改，这里只显示下一个计划会是什么样。
 export default function Home() {
   const [data, setData] = useState<HomeData>();
-  const [from, setFrom] = useState(1);
-  const [count, setCount] = useState(20);
-  const [examples, setExamples] = useState(2);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     api
       .home()
-      .then((d) => {
-        setData(d);
-        setFrom(d.nextN);
-        setCount(d.settings.planWords);
-        setExamples(d.settings.examples);
-      })
+      .then(setData)
       .catch((err) => setError(errorText(err)));
   }, []);
 
-  async function create() {
+  // from 不传时按设置：设置里指定了从第几个开始就用它，否则接着上次。
+  async function create(from?: number) {
     setBusy(true);
     setError("");
     try {
-      await api.createPlan(from, count, examples);
+      await api.createPlan({ from });
       location.href = root + "study/";
     } catch (err) {
       setError(errorText(err));
@@ -43,7 +37,9 @@ export default function Home() {
       </>
     );
   }
-  const { plan, stats, deck } = data;
+  const { plan, stats, deck, settings } = data;
+  const nextFrom = settings.startN || data.nextN;
+  const finished = !plan && nextFrom > deck.total;
 
   return (
     <>
@@ -61,7 +57,7 @@ export default function Home() {
             <div style={{ width: `${(100 * stats.learned) / deck.total}%` }} />
           </div>
           <p className="muted">
-            {deck.name}：共 {deck.total} 个，已学 {stats.learned} 个{!plan && data.nextN <= deck.total ? `，下一个计划从第 ${data.nextN} 个开始` : ""}
+            {deck.name}：共 {deck.total} 个，已学 {stats.learned} 个
           </p>
           {plan ? (
             <>
@@ -73,40 +69,23 @@ export default function Home() {
                 <a className={styles.button} href={root + "study/"}>
                   {plan.learnedAt ? "去做计划测试" : plan.pos > 0 ? "继续学习" : "开始学习"}
                 </a>
-                <button className="link" onClick={() => {
-                    setFrom(plan.firstN);
-                    setData({ ...data, plan: null });
-                  }}>
-                  放弃这个计划，重新建一个
+                {/* 放弃后按现在的设置重建：从这个计划的第一个词重新开始，设置里指定了从第几个开始时用设置的。 */}
+                <button className="link" onClick={() => create(settings.startN ? undefined : plan.firstN)} disabled={busy}>
+                  放弃这个计划，按现在的设置重新开始
                 </button>
               </div>
             </>
+          ) : finished ? (
+            <p>词库已经学完了。可以在设置里指定从第几个词重新开始。</p>
           ) : (
             <>
-              <label className="field">
-                <span>从第几个词开始</span>
-                <input type="number" min={1} max={deck.total} value={from} onChange={(e) => setFrom(Number(e.target.value))} />
-                <span className="muted">已经认识的词可以跳过</span>
-              </label>
-              <label className="field">
-                <span>这次学几个词</span>
-                <input type="number" min={1} max={100} value={count} onChange={(e) => setCount(Number(e.target.value))} />
-              </label>
-              <label className="field">
-                <span>每个词几条例句</span>
-                <select value={examples} onChange={(e) => setExamples(Number(e.target.value))}>
-                  {[2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n} 条
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="actions">
-                <button onClick={create} disabled={busy || count < 1 || from < 1 || from > deck.total}>
-                  开始新计划
-                </button>
-              </div>
+              <p>
+                下一个计划：从第 {nextFrom} 个词开始，学 {settings.planWords} 个，每个词 {settings.examples} 条例句。{" "}
+                <a href={root + "settings/"}>在设置里改</a>
+              </p>
+              <button className={styles.wide} onClick={() => create()} disabled={busy}>
+                开始新计划
+              </button>
             </>
           )}
           {error && <p className="error">{error}</p>}
