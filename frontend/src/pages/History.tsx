@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, errorText, modeNames, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
 import BackBar from "../components/BackBar";
-import Icon from "../components/Icon";
+import Icon, { type IconName } from "../components/Icon";
 import { root } from "../components/Nav";
 import Ring from "../components/Ring";
 import WordList from "../components/WordList";
@@ -101,10 +101,21 @@ export default function History() {
         <ul className={styles.records}>
           {tab === "plans"
             ? plans!.map((p) => (
-                <Row key={p.id} href={`${root}history/?plan=${p.id}`} icon="book" title={range(p)} chips={[`${p.words.length} 个词`, date(p.finishedAt ?? p.createdAt)]} correct={p.correct} total={p.total} />
+                <li key={p.id}>
+                  <RecordRow href={`${root}history/?plan=${p.id}`} icon="book" title={range(p)} chips={[`${p.words.length} 个词`, date(p.finishedAt ?? p.createdAt)]} correct={p.correct} total={p.total} />
+                </li>
               ))
             : tests!.map((t) => (
-                <Row key={t.id} href={`${root}history/?test=${t.id}`} icon="test" title={`${scopeNames[t.scope]} · ${modeNames[t.mode]}`} chips={[`${t.total} 题`, date(t.finishedAt ?? t.createdAt)]} correct={t.correct} total={t.total} />
+                <li key={t.id}>
+                  <RecordRow
+                    href={`${root}history/?test=${t.id}`}
+                    icon="test"
+                    title={`${scopeNames[t.scope]} · ${modeNames[t.mode]}`}
+                    chips={[`${t.total} 题`, date(t.finishedAt ?? t.createdAt)]}
+                    correct={t.correct}
+                    total={t.total}
+                  />
+                </li>
               ))}
         </ul>
       )}
@@ -112,31 +123,30 @@ export default function History() {
   );
 }
 
-// 列表的一行：图标、标题和小标签，右边是答对比例（全对绿色，过半蓝色，不到一半红色），最右一个箭头。
-function Row({ href, icon, title, chips, correct, total }: { href: string; icon: "book" | "test"; title: string; chips: string[]; correct: number; total: number }) {
+// 记录的一行（一张整行可点的卡片）：图标、标题和小标签，右边是答对比例（全对绿色，过半蓝色，不到一半红色），最右一个箭头。
+// 检测页顶部的“检测记录”入口也用它。
+export function RecordRow({ href, icon, title, chips, correct, total }: { href: string; icon: IconName; title: string; chips: string[]; correct: number; total: number }) {
   const ratio = total ? correct / total : 0;
   const tone = ratio === 1 ? styles.good : ratio >= 0.5 ? styles.chipAccent : styles.bad;
   return (
-    <li>
-      <a className={styles.record} href={href}>
-        <span className={styles.recordIcon}>
-          <Icon name={icon} />
+    <a className={styles.record} href={href}>
+      <span className={styles.recordIcon}>
+        <Icon name={icon} />
+      </span>
+      <span className={styles.recordMain}>
+        <strong>{title}</strong>
+        <span className={styles.chips}>
+          {chips.map((c) => (
+            <span key={c} className={styles.chip}>
+              {c}
+            </span>
+          ))}
         </span>
-        <span className={styles.recordMain}>
-          <strong>{title}</strong>
-          <span className={styles.chips}>
-            {chips.map((c) => (
-              <span key={c} className={styles.chip}>
-                {c}
-              </span>
-            ))}
-          </span>
-        </span>
-        <span className={`${styles.score} ${tone}`}>
-          {correct}/{total}
-        </span>
-        <Icon name="next" size={18} />
-      </a>
-    </li>
+      </span>
+      <span className={`${styles.score} ${tone}`}>
+        {correct}/{total}
+      </span>
+      <Icon name="next" size={18} />
+    </a>
   );
 }

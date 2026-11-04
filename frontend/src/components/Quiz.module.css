@@ -1,7 +1,8 @@
 /* 出题卡片：顶部一条细进度条和题型标签，中间是题目，下面是答案面板和作答按钮。 */
 .quiz { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px; }
 .bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.3s; }
-.top { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; }
+.top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+.top .count { margin-left: auto; }
 .mode { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; color: var(--accent); font-weight: 600; font-size: 13px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .count { display: inline-flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; }
 .score { display: inline-flex; align-items: center; gap: 3px; color: var(--success); font-weight: 600; }

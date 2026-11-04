@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { Settings, Word } from "../api";
 import { canSpeak, plainZh, prefetchSpeech, speak, stopSpeaking, wait } from "../speech";
+import ExitButton from "./ExitButton";
 import Icon from "./Icon";
+import { useImmersive } from "./Nav";
 import WordCard, { pagesOf, type Page } from "./WordCard";
 import styles from "./Player.module.css";
 
@@ -14,6 +16,7 @@ type Props = {
   onPos?: (pos: number) => void; // 翻页时调用，用来记住学到第几页
   onDone: () => void; // 翻过最后一页（或自动播放完）
   doneLabel?: string;
+  onExit: () => void; // 左上角的 × ：不学了（位置已经随翻页记下）
 };
 
 // 翻页后等一会儿再读，卡片换完、眼睛先看到字再听到声音；连续快速翻页时只读最后停下的那一页。
@@ -30,7 +33,9 @@ const enOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].en : p.word.w);
 // 自动模式按“英文（读几遍）→ 中文 → 停顿”一页页往下放，屏幕保持常亮，切到后台就暂停。
 // 停顿默认和刚读完的英文一样长（乘以设置里的倍数），短词停得短、长句停得长；也可以在设置里改成固定秒数。
 // 翻页、自动播放、再读一遍、翻页时朗读的开关都是卡片底部的图标按钮；最后一页下面多一个“学完了”。
-export default function Player({ words, examples, settings, start = 0, onPos, onDone, doneLabel = "学完了" }: Props) {
+// 播放器挂着时是专注模式：导航收起，卡片铺满屏幕，左上角 × 退出。
+export default function Player({ words, examples, settings, start = 0, onPos, onDone, doneLabel = "学完了", onExit }: Props) {
+  useImmersive(true);
   const pages = pagesOf(words, examples);
   const [pos, setPos] = useState(Math.min(start, Math.max(0, pages.length - 1)));
   const [auto, setAuto] = useState(false);
@@ -276,6 +281,15 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
           progress={`${wordIndex} / ${words.length}`}
           percent={((pos + 1) / pages.length) * 100}
           footer={footer}
+          corner={
+            <ExitButton
+              label="退出学习"
+              onExit={() => {
+                stop();
+                onExit();
+              }}
+            />
+          }
         />
       </div>
       {!canSpeak && <p className="muted">当前浏览器不支持朗读，只能手动翻看。</p>}

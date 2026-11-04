@@ -6,12 +6,14 @@ import Quiz from "../components/Quiz";
 import { root } from "../components/Nav";
 import Ring from "../components/Ring";
 import WordList from "../components/WordList";
+import { RecordRow } from "./History";
 import styles from "./pages.module.css";
 
 const scopeIcons: Record<TestScope, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong" };
 const counts = [10, 20, 30, 50, 100];
 
 // 检测：自己选范围和题型，做完看正确率和答错的词；答错的进错题本，并提前到明天复习。
+// 选题的页面顶部和做完的结果下面有“检测记录”入口：一张卡片，写着做过几次、最近一次的日期和成绩，点进去是全部记录。
 export default function TestPage() {
   const params = new URLSearchParams(location.search);
   const [settings, setSettings] = useState<Settings>();
@@ -24,13 +26,28 @@ export default function TestPage() {
   const [result, setResult] = useState<WithWords<Test>>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [past, setPast] = useState<Test[]>();
 
   useEffect(() => {
     api
       .home()
       .then((h) => setSettings(h.settings))
       .catch((err) => setError(errorText(err)));
+    api.tests().then(setPast, () => setPast([]));
   }, []);
+
+  // 检测记录入口。还没做过检测时不显示（点进去也是空的）。
+  const latest = past?.[0];
+  const records = latest && (
+    <RecordRow
+      href={root + "history/?tab=tests"}
+      icon="history"
+      title="检测记录"
+      chips={[`共 ${past!.length} 次`, `最近 ${new Date(latest.finishedAt ?? latest.createdAt).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}`]}
+      correct={latest.correct}
+      total={latest.total}
+    />
+  );
 
   async function start() {
     setBusy(true);
@@ -48,7 +65,10 @@ export default function TestPage() {
     <>
       <main className="content stack">
         {!settings ? null : result ? (
-          <TestResult result={result} accent={settings.accent} />
+          <>
+            <TestResult result={result} accent={settings.accent} />
+            {records}
+          </>
         ) : test ? (
           <Quiz
             words={test.words}
@@ -56,62 +76,65 @@ export default function TestPage() {
             grading="ok"
             examples={settings.examples}
             settings={settings}
+            exitConfirm="这次检测不记成绩"
+            onExit={() => setTest(undefined)}
             onAnswer={(r) => api.answer({ word: r.word.w, kind: "test", refId: test.item.id, mode: r.mode, ok: r.ok, rating: 0, answer: r.answer })}
             onDone={async () => {
               try {
                 setResult(await api.finishTest(test.item.id));
+                api.tests().then(setPast, () => {});
               } catch (err) {
                 setError(errorText(err));
               }
             }}
           />
         ) : (
-          <section className="card stack">
-            <div>
-              <h1>开始一次检测</h1>
-              <p className="muted">答错的词会放进错题本，并提前到明天复习。</p>
-            </div>
-            <div className={styles.group}>
-              <h2>范围</h2>
-              <div className={styles.tiles} role="radiogroup" aria-label="范围">
-                {(Object.keys(scopeNames) as TestScope[]).map((s) => (
-                  <button key={s} type="button" role="radio" aria-checked={s === scope} className={`${styles.tile} ${s === scope ? styles.on : ""}`} onClick={() => setScope(s)}>
-                    <Icon name={scopeIcons[s]} />
-                    <strong>{scopeNames[s]}</strong>
-                  </button>
-                ))}
+          <>
+            {records}
+            <section className="card stack">
+              <div>
+                <h1>开始一次检测</h1>
+                <p className="muted">答错的词会放进错题本，并提前到明天复习。</p>
               </div>
-              {scope === "range" && (
-                <label className="field">
-                  <span>序号</span>
-                  <input type="number" min={1} value={from} onChange={(e) => setFrom(Number(e.target.value))} />
-                  到
-                  <input type="number" min={1} value={to} onChange={(e) => setTo(Number(e.target.value))} />
-                </label>
-              )}
-            </div>
-            <div className={styles.group}>
-              <h2>题数</h2>
-              <div className={`${styles.tabs} ${styles.full}`} role="radiogroup" aria-label="题数">
-                {counts.map((n) => (
-                  <button key={n} type="button" role="radio" aria-checked={n === count} className={n === count ? styles.on : ""} onClick={() => setCount(n)}>
-                    {n} 题
-                  </button>
-                ))}
+              <div className={styles.group}>
+                <h2>范围</h2>
+                <div className={styles.tiles} role="radiogroup" aria-label="范围">
+                  {(Object.keys(scopeNames) as TestScope[]).map((s) => (
+                    <button key={s} type="button" role="radio" aria-checked={s === scope} className={`${styles.tile} ${s === scope ? styles.on : ""}`} onClick={() => setScope(s)}>
+                      <Icon name={scopeIcons[s]} />
+                      <strong>{scopeNames[s]}</strong>
+                    </button>
+                  ))}
+                </div>
+                {scope === "range" && (
+                  <label className="field">
+                    <span>序号</span>
+                    <input type="number" min={1} value={from} onChange={(e) => setFrom(Number(e.target.value))} />
+                    到
+                    <input type="number" min={1} value={to} onChange={(e) => setTo(Number(e.target.value))} />
+                  </label>
+                )}
               </div>
-              <p className="muted">范围里的词不够时全部出。</p>
-            </div>
-            <div className={styles.group}>
-              <h2>题型</h2>
-              <ModePicker value={mode} onChange={setMode} />
-            </div>
-            <button className={styles.wide} onClick={start} disabled={busy}>
-              开始检测
-            </button>
-            <a className="muted" href={root + "history/?tab=tests"}>
-              查看检测记录
-            </a>
-          </section>
+              <div className={styles.group}>
+                <h2>题数</h2>
+                <div className={`${styles.tabs} ${styles.full}`} role="radiogroup" aria-label="题数">
+                  {counts.map((n) => (
+                    <button key={n} type="button" role="radio" aria-checked={n === count} className={n === count ? styles.on : ""} onClick={() => setCount(n)}>
+                      {n} 题
+                    </button>
+                  ))}
+                </div>
+                <p className="muted">范围里的词不够时全部出。</p>
+              </div>
+              <div className={styles.group}>
+                <h2>题型</h2>
+                <ModePicker value={mode} onChange={setMode} />
+              </div>
+              <button className={styles.wide} onClick={start} disabled={busy}>
+                开始检测
+              </button>
+            </section>
+          </>
         )}
         {error && <p className="error">{error}</p>}
       </main>

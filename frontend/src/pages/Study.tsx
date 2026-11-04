@@ -54,6 +54,7 @@ export default function Study() {
             start={start}
             onPos={(pos) => api.savePlanPos(item.id, pos).catch(() => {})}
             doneLabel="学完了，去测试"
+            onExit={() => (location.href = root)}
             onDone={() => {
               api.savePlanPos(item.id, 0, true).catch(() => {});
               setPhase("pick");
@@ -95,6 +96,8 @@ export default function Study() {
             grading="ok"
             examples={item.examples}
             settings={settings}
+            exitConfirm="计划测试下次要从头做"
+            onExit={() => (location.href = root)}
             onAnswer={(r) => api.answer({ word: r.word.w, kind: "plan", refId: item.id, mode: r.mode, ok: r.ok, rating: 0, answer: r.answer })}
             onDone={async () => {
               try {

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { errorText, modeNames, phOf, type Mode, type Settings, type Word } from "../api";
 import { canSpeak, speak, stopSpeaking } from "../speech";
+import ExitButton from "./ExitButton";
 import Icon from "./Icon";
+import { useImmersive } from "./Nav";
 import { modeIcons } from "./ModePicker";
 import { Highlight } from "./WordCard";
 import styles from "./Quiz.module.css";
@@ -16,6 +18,8 @@ type Props = {
   settings: Settings;
   onAnswer: (r: Result) => Promise<void>;
   onDone: (results: Result[]) => void;
+  onExit: () => void; // 左上角的 × ：不做了
+  exitConfirm?: string; // 退出前要再确认时的提示（比如“这次检测不算成绩”）
 };
 
 // 复习的四档自评，每档一句说明它对下次复习的影响（FSRS 按这个安排间隔）。
@@ -30,7 +34,9 @@ const ratings = [
 //   听音想意思：只播放读音，想好后看答案自评；看词想意思：只显示单词，想好后看答案自评；
 //   看中文说英文：显示一条例句的中文，大声说出英文，再播放原句对照自评；
 //   听写：播放例句，句中目标词挖空，输入这个词，程序判对错（接受词形变化）。
-export default function Quiz({ words, mode, grading, examples, settings, onAnswer, onDone }: Props) {
+// 做题时是专注模式：导航收起，左上角 × 退出。
+export default function Quiz({ words, mode, grading, examples, settings, onAnswer, onDone, onExit, exitConfirm }: Props) {
+  useImmersive(true);
   const [i, setI] = useState(0);
   const [shown, setShown] = useState(false);
   const [typed, setTyped] = useState("");
@@ -106,6 +112,7 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     <section className={`card ${styles.quiz}`}>
       <span className={styles.bar} style={{ width: `${((i + (shown ? 1 : 0)) / words.length) * 100}%` }} />
       <div className={styles.top}>
+        <ExitButton label="退出" confirm={exitConfirm} onExit={() => { stopSpeaking(); onExit(); }} />
         <span className={styles.mode}>
           <Icon name={modeIcons[m]} size={16} />
           {modeNames[m]}

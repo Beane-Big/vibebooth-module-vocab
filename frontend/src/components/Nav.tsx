@@ -16,6 +16,18 @@ const tabs: { page: string; label: string; icon: IconName; wide?: boolean }[] = 
   { page: "settings", label: "设置", icon: "settings" },
 ];
 
+// 专注模式：学习卡片和做题的时候收起导航（宽屏顶部、手机底部都收起），页面不滚动，退出按钮在卡片左上角（ExitButton）。
+// 选题、看结果、列表这些页面照常显示导航。on 为真的组件挂着时生效，卸载或 on 变假时恢复。
+export function useImmersive(on: boolean) {
+  useEffect(() => {
+    if (!on) return;
+    document.body.dataset.immersive = "";
+    return () => {
+      delete document.body.dataset.immersive;
+    };
+  }, [on]);
+}
+
 const slideMs = 220; // 滑块滑到点中的标签用的时间，滑完再换页
 const dragStart = 6; // 移动超过这么多像素才算拖动，否则是点击
 

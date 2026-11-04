@@ -86,7 +86,8 @@ body {
 
 /* 页面内容在背景之上。 */
 /* flow-root：导航的上边距留在 .app 里面，不穿出去把整页撑高（否则宽屏多出 12px 滚动条）。 */
-.app { position: relative; min-height: 100vh; display: flow-root; }
+/* 用 100dvh（可见区域的高度）：手机浏览器的 100vh 算上了地址栏，页面会多出一截能滚。 */
+.app { position: relative; min-height: 100vh; min-height: 100dvh; display: flow-root; }
 .app > main { position: relative; z-index: 1; }
 
 .muted { color: var(--muted); font-size: 14px; }
@@ -147,7 +148,15 @@ button.link {
 
 .stack { display: flex; flex-direction: column; gap: 16px; }
 /* 学习卡片的页面：内容区正好是屏幕减去导航的高度，卡片（Player）撑满里面剩下的空间。宽屏放宽一些。 */
-.fill { max-width: 1000px; height: calc(100dvh - var(--nav-h)); min-height: 460px; }
+.fill { max-width: 1000px; height: calc(100dvh - var(--nav-h)); }
+
+/* 专注模式（学习卡片、做题时，见 Nav.tsx 的 useImmersive）：导航收起，页面不滚动，内容区占满整个屏幕。 */
+body[data-immersive] { --nav-h: 0px; overflow: hidden; overscroll-behavior: none; }
+body[data-immersive] .content { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+/* 横屏的手机：卡片像视频一样铺满，边距收小。 */
+@media (orientation: landscape) and (max-height: 500px) {
+  body[data-immersive] .fill { max-width: none; padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
+}
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .stack > h1, .stack > p { margin: 0; }
 
