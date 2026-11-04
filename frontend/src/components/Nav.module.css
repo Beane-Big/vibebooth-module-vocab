@@ -77,6 +77,9 @@
   .tab.on { color: var(--accent); }
 }
 
+/* 专注模式（useImmersive）下收起。 */
+:global(body[data-immersive]) .bar { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .tab { transition: none; }
   .pill { transition: none !important; }

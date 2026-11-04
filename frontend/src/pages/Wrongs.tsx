@@ -52,7 +52,7 @@ export default function Wrongs() {
     return (
       <>
         <main className="content stack fill">
-          <Player words={shown.map((x) => x.data)} examples={settings.examples} settings={settings} doneLabel="学完了" onDone={() => setLearning(false)} />
+          <Player words={shown.map((x) => x.data)} examples={settings.examples} settings={settings} doneLabel="学完了" onDone={() => setLearning(false)} onExit={() => setLearning(false)} />
         </main>
       </>
     );

@@ -5,6 +5,7 @@ import styles from "./pages.module.css";
 
 // 首页：学习计划（继续或新建）、今天的复习、统计和其他页面的入口。
 // 新计划学几个词、每个词几条例句、从第几个词开始都在设置里改，这里只显示下一个计划会是什么样。
+// 数据来源和许可证写在 backend/deck/NOTICE.md，页面上不显示。
 export default function Home() {
   const [data, setData] = useState<HomeData>();
   const [busy, setBusy] = useState(false);
@@ -80,8 +81,7 @@ export default function Home() {
           ) : (
             <>
               <p>
-                下一个计划：从第 {nextFrom} 个词开始，学 {settings.planWords} 个，每个词 {settings.examples} 条例句。{" "}
-                <a href={root + "settings/"}>在设置里改</a>
+                下一个计划：从第 {nextFrom} 个词开始，学 {settings.planWords} 个，每个词 {settings.examples} 条例句。
               </p>
               <button className={styles.wide} onClick={() => create()} disabled={busy}>
                 开始新计划
@@ -117,11 +117,6 @@ export default function Home() {
             设置
           </a>
         </nav>
-        <p className="muted">
-          单词和释义来自 <a href="https://github.com/skywind3000/ECDICT">ECDICT</a>（MIT），音标来自 <a href="https://github.com/cmusphinx/cmudict">CMUdict</a>（美音）和{" "}
-          <a href="https://github.com/JoseLlarena/Britfone">Britfone</a>（英音），例句来自 <a href="https://tatoeba.org">Tatoeba</a>（CC BY 2.0 FR），不够的由 AI 补充；英文朗读用{" "}
-          <a href="https://huggingface.co/hexgrad/Kokoro-82M">Kokoro</a>（Apache 2.0）。
-        </p>
       </main>
     </>
   );

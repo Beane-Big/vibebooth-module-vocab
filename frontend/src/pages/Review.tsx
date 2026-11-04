@@ -66,6 +66,7 @@ export default function Review() {
             examples={settings.examples}
             settings={settings}
             onAnswer={(r) => api.answer({ word: r.word.w, kind: "review", refId: 0, mode: r.mode, ok: r.ok, rating: r.rating, answer: r.answer })}
+            onExit={() => (location.href = root)}
             onDone={setDone}
           />
         )}
