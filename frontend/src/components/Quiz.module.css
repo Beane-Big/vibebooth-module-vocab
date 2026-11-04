@@ -1,18 +1,57 @@
-.quiz { display: flex; flex-direction: column; gap: 16px; }
-.top { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; }
-.prompt { min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+/* 出题卡片：顶部一条细进度条和题型标签，中间是题目，下面是答案面板和作答按钮。 */
+.quiz { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px; }
+.bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.3s; }
+.top { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; }
+.mode { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; color: var(--accent); font-weight: 600; font-size: 13px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.count { display: inline-flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; }
+.score { display: inline-flex; align-items: center; gap: 3px; color: var(--success); font-weight: 600; }
+
+.prompt { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
 .prompt p { margin: 0; }
-.big { font-size: 40px; font-weight: 700; }
-.mid { font-size: 22px; font-weight: 600; line-height: 1.35; }
-.answer { border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; text-align: center; }
+.big { font-size: clamp(36px, 9vw, 52px); font-weight: 700; letter-spacing: 0.01em; }
+.mid { font-size: 22px; font-weight: 600; line-height: 1.5; }
+.label { font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
+
+/* 听音题的大播放键。 */
+.play { width: 88px; height: 88px; border-radius: 50%; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 35%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.replay { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 14px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); box-shadow: none; }
+
+/* 听写：挖掉的词是一段下划线，和句子的字底对齐，宽度至少 3 个字；判完显示正确的词。 */
+.blank { display: inline-block; min-width: 3.2em; margin: 0 2px; padding: 0 4px; line-height: 1.15; border-bottom: 2.5px solid color-mix(in srgb, var(--accent) 70%, transparent); vertical-align: baseline; text-align: center; }
+.blankRight { color: var(--success); border-color: var(--success); }
+.blankWrong { color: var(--danger); border-color: var(--danger); }
+.write { display: flex; gap: 10px; width: 100%; max-width: 420px; }
+.input { font-size: 22px; text-align: center; border-radius: 12px; }
+
+/* 答案面板：浅色底，单词、音标、释义、例句。 */
+.answer { display: flex; flex-direction: column; gap: 6px; text-align: center; padding: 16px; border-radius: 14px; background: color-mix(in srgb, var(--surface) 60%, transparent); border: 1px solid var(--glass-edge); animation: rise 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .answer p { margin: 0; }
-.grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
-.grades button { padding: 12px 8px; }
-.again { background: var(--danger); }
-.hard { background: #c77700; }
-.easy { background: #1f8f5a; }
-.right { color: #1f8f5a; font-weight: 600; }
-.wrong { color: var(--danger); font-weight: 600; }
+.word { font-size: 24px; font-weight: 700; }
+.wordPh { font-size: 15px; font-weight: 400; color: var(--muted); }
+.meaning { font-size: 16px; }
+.example { margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 4px; }
+.verdict { display: inline-flex; align-self: center; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-weight: 600; }
+.right { color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent); }
+.wrong { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .ph { color: var(--muted); font-size: 14px; line-height: 1.4; }
-.input { font-size: 22px; text-align: center; }
-.blank { display: inline-block; min-width: 3em; border-bottom: 2px solid currentColor; }
+
+.reveal { width: 100%; padding: 14px; font-size: 17px; }
+
+/* 作答格：浅色底、彩色字，一格一个选项（复习四档，测试两档）。 */
+.grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 10px; }
+.grade { --c: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 14px 6px; border-radius: 14px; color: var(--c); background: color-mix(in srgb, var(--c) 11%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--c) 30%, transparent); box-shadow: none; }
+.grade:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 18%, var(--surface)); }
+.grade strong { font-size: 16px; }
+.grade span { font-size: 12px; opacity: 0.8; }
+.again { --c: var(--danger); }
+.hard { --c: var(--warn); }
+.good { --c: var(--accent); }
+.easy { --c: var(--success); }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .answer { animation: none; }
+}

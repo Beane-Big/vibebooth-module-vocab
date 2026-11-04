@@ -1,29 +1,33 @@
-/* 毛玻璃导航：半透明底色 + 背景虚化，当前标签是一块更亮的玻璃。宽屏在顶部，手机在底部。 */
-.header {
-  --glass: rgba(255, 255, 255, 0.62);
-  --glass-edge: rgba(255, 255, 255, 0.75);
+/* 玻璃导航：半透明底色 + 背景虚化，当前标签是一块更亮的玻璃。宽屏吸在顶部居中，手机悬浮在底部。
+   .liquid 是 liquidglass 接管后的样子：底色、虚化、边框和阴影都交给 WebGL 画，这里去掉。 */
+.bar {
   --glass-on: rgba(120, 120, 128, 0.14);
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 50;
   display: flex;
-  justify-content: center;
-  padding: 12px 20px;
-}
-
-.bar {
-  display: flex;
   gap: 2px;
+  width: fit-content;
+  margin: 12px auto;
   padding: 4px;
   border-radius: 999px;
   background: var(--glass);
   border: 1px solid var(--glass-edge);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 18px rgba(0, 0, 0, 0.08);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--glass-hi), 0 6px 22px rgba(31, 45, 80, 0.12);
+}
+
+.liquid {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .tab {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -47,29 +51,22 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .header {
-    --glass: rgba(42, 45, 52, 0.6);
-    --glass-edge: rgba(255, 255, 255, 0.1);
-    --glass-on: rgba(255, 255, 255, 0.12);
-  }
-  .bar { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 18px rgba(0, 0, 0, 0.35); }
+  .bar { --glass-on: rgba(255, 255, 255, 0.12); box-shadow: var(--glass-hi), 0 6px 22px rgba(0, 0, 0, 0.4); }
+  .liquid { background: rgba(0, 0, 0, 0.12); box-shadow: none; }
   .on, .on:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .header { --glass: var(--surface); }
 }
 
 /* 手机：标签栏悬浮在底部，图标在上、文字在下。 */
 @media (max-width: 600px) {
-  .header { position: static; display: block; padding: 0; }
   .wide { display: none; }
   .bar {
     position: fixed;
     left: 12px;
     right: 12px;
+    top: auto;
     bottom: max(12px, env(safe-area-inset-bottom));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 28px rgba(0, 0, 0, 0.14);
+    width: auto;
+    margin: 0;
   }
   .tab { flex: 1; min-width: 0; flex-direction: column; gap: 2px; padding: 6px 0 5px; font-size: 11px; }
   .tab svg { width: 24px; height: 24px; }

@@ -5,13 +5,17 @@ import { canSpeak, speak } from "../speech";
 // 个人设置：每个人自己一份，不影响家里其他人。
 export default function SettingsPage() {
   const [s, setS] = useState<Settings>();
+  const [nextN, setNextN] = useState(1);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     api
       .home()
-      .then((h) => setS(h.settings))
+      .then((h) => {
+        setS(h.settings);
+        setNextN(h.nextN);
+      })
       .catch((err) => setError(errorText(err)));
   }, []);
 
@@ -37,8 +41,8 @@ export default function SettingsPage() {
     }
   }
 
-  const num = (k: "planWords" | "autoRepeat" | "wrongClear", min: number, max: number) => (
-    <input type="number" min={min} max={max} value={s[k]} onChange={(e) => set(k, Number(e.target.value))} />
+  const num = (k: "planWords" | "startN" | "autoRepeat" | "wrongClear", min: number, max: number, placeholder?: string) => (
+    <input type="number" min={min} max={max} value={s[k] || (placeholder ? "" : s[k])} placeholder={placeholder} onChange={(e) => set(k, Number(e.target.value))} />
   );
 
   return (
@@ -47,8 +51,13 @@ export default function SettingsPage() {
         <section className="card stack">
           <h1>学习计划</h1>
           <label className="field">
-            <span>默认学几个词</span>
+            <span>每次学几个词</span>
             {num("planWords", 1, 100)}
+          </label>
+          <label className="field">
+            <span>从第几个词开始</span>
+            {num("startN", 0, 99999, `第 ${nextN} 个`)}
+            <span className="muted">只管下一个计划，已经认识的词可以跳过；不填就接着上次学</span>
           </label>
           <label className="field">
             <span>每个词几条例句</span>
@@ -96,15 +105,29 @@ export default function SettingsPage() {
             {num("autoRepeat", 1, 3)}
           </label>
           <label className="field">
-            <span>每句后停几秒</span>
-            <select value={s.autoPause} onChange={(e) => set("autoPause", Number(e.target.value))}>
-              {[0, 1, 2, 3, 5, 8].map((n) => (
-                <option key={n} value={n}>
-                  {n} 秒
-                </option>
-              ))}
+            <span>每句后停多久</span>
+            <select value={s.pauseBy} onChange={(e) => set("pauseBy", e.target.value as Settings["pauseBy"])}>
+              <option value="audio">按这句的朗读时长</option>
+              <option value="fixed">固定秒数</option>
             </select>
-            <span className="muted">留时间跟读</span>
+            {s.pauseBy === "audio" ? (
+              <select value={s.pauseRatio} onChange={(e) => set("pauseRatio", Number(e.target.value))} aria-label="朗读时长的几倍">
+                {[0.5, 1, 1.5, 2].map((r) => (
+                  <option key={r} value={r}>
+                    {r === 1 ? "一样长" : `${r} 倍`}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select value={s.autoPause} onChange={(e) => set("autoPause", Number(e.target.value))} aria-label="停几秒">
+                {[0, 1, 2, 3, 5, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n} 秒
+                  </option>
+                ))}
+              </select>
+            )}
+            <span className="muted">{s.pauseBy === "audio" ? "单词停得短、长句停得长，刚好够跟读一遍" : "留时间跟读"}</span>
           </label>
           <label className="field">
             <span>读中文</span>

@@ -119,20 +119,23 @@ func OpenStore(path string) (*Store, error) {
 
 // Settings 是每个人自己的设置，前端整份读写。
 type Settings struct {
-	PlanWords  int     `json:"planWords"`  // 新建学习计划默认学几个词
+	PlanWords  int     `json:"planWords"`  // 每个学习计划学几个词
+	StartN     int     `json:"startN"`     // 下一个计划从第几个词开始，0 表示接着上次；用过一次就回到 0
 	Examples   int     `json:"examples"`   // 每个词几条例句，2–5
 	SentencePh bool    `json:"sentencePh"` // 例句下面显示整句音标
 	Accent     string  `json:"accent"`     // en-US 或 en-GB
 	Rate       float64 `json:"rate"`       // 朗读语速，0.5–1.5
 	AutoRepeat int     `json:"autoRepeat"` // 自动播放时英文读几遍，1–3
-	AutoPause  float64 `json:"autoPause"`  // 自动播放每句之间停几秒，留给跟读
+	PauseBy    string  `json:"pauseBy"`    // 自动播放每句后停多久：audio 按这句英文朗读时长的倍数，fixed 按固定秒数
+	PauseRatio float64 `json:"pauseRatio"` // pauseBy 为 audio 时，停顿是朗读时长的几倍，0.5–2
+	AutoPause  float64 `json:"autoPause"`  // pauseBy 为 fixed 时停几秒，留给跟读
 	AutoZh     bool    `json:"autoZh"`     // 自动播放时读不读中文
 	ReviewMode string  `json:"reviewMode"` // 复习题型：listen、look 或 mix（轮换）
 	WrongClear int     `json:"wrongClear"` // 错题本里连续答对几次移出
 }
 
 func defaultSettings() Settings {
-	return Settings{PlanWords: 20, Examples: 2, SentencePh: true, Accent: "en-US", Rate: 0.9, AutoRepeat: 2, AutoPause: 2, AutoZh: true, ReviewMode: "mix", WrongClear: 3}
+	return Settings{PlanWords: 20, Examples: 2, SentencePh: true, Accent: "en-US", Rate: 0.9, AutoRepeat: 2, PauseBy: "audio", PauseRatio: 1, AutoPause: 2, AutoZh: true, ReviewMode: "mix", WrongClear: 3}
 }
 
 // Normalize 把越界的值拉回范围内，老版本存的设置缺字段时补默认值。
@@ -156,6 +159,15 @@ func (s *Settings) Normalize() {
 	}
 	s.Rate = max(0.5, min(1.5, s.Rate))
 	s.AutoPause = max(0, min(10, s.AutoPause))
+	// 老版本没有这两项：默认按朗读时长停顿。
+	if s.PauseBy != "fixed" {
+		s.PauseBy = "audio"
+	}
+	if s.PauseRatio == 0 {
+		s.PauseRatio = d.PauseRatio
+	}
+	s.PauseRatio = max(0.5, min(2, s.PauseRatio))
+	s.StartN = max(0, s.StartN)
 	if s.ReviewMode != "listen" && s.ReviewMode != "look" {
 		s.ReviewMode = "mix"
 	}

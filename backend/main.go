@@ -147,8 +147,9 @@ func (h *handlers) register(api *http.ServeMux) {
 
 	// ---- 学习计划
 	api.HandleFunc("POST /api/vocab/plans", func(w http.ResponseWriter, r *http.Request) {
+		// 不填的项按个人设置：学几个词、每个词几条例句，以及从第几个词开始（设置里没指定时接着上次）。
 		var in struct {
-			From     int `json:"from"` // 从第几个词开始，不填时接着上次
+			From     int `json:"from"`
 			Count    int `json:"count"`
 			Examples int `json:"examples"`
 		}
@@ -156,6 +157,20 @@ func (h *handlers) register(api *http.ServeMux) {
 			return
 		}
 		user := userID(r)
+		st, err := h.store.Settings(r.Context(), user)
+		if fail(w, err) {
+			return
+		}
+		if in.Count == 0 {
+			in.Count = st.PlanWords
+		}
+		if in.Examples == 0 {
+			in.Examples = st.Examples
+		}
+		usedStart := in.From <= 0 && st.StartN > 0
+		if usedStart {
+			in.From = st.StartN
+		}
 		if in.From <= 0 {
 			n, err := h.store.NextN(r.Context(), user)
 			if fail(w, err) {
@@ -175,6 +190,13 @@ func (h *handlers) register(api *http.ServeMux) {
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
+		}
+		// “从第几个词开始”只管下一个计划，用过就回到接着学。
+		if usedStart {
+			st.StartN = 0
+			if _, err := h.store.SaveSettings(r.Context(), user, st); fail(w, err) {
+				return
+			}
 		}
 		writeJSON(w, http.StatusCreated, h.withWords(plan, plan.Words, nil))
 	})
