@@ -92,13 +92,10 @@ export default function TestPage() {
           <>
             {records}
             <section className="card stack">
-              <div>
-                <h1>开始一次检测</h1>
-                <p className="muted">答错的词会放进错题本，并提前到明天复习。</p>
-              </div>
+              <h1>开始一次检测</h1>
               <div className={styles.group}>
                 <h2>范围</h2>
-                <div className={styles.tiles} role="radiogroup" aria-label="范围">
+                <div className={`${styles.tiles} ${styles.compact}`} role="radiogroup" aria-label="范围">
                   {(Object.keys(scopeNames) as TestScope[]).map((s) => (
                     <button key={s} type="button" role="radio" aria-checked={s === scope} className={`${styles.tile} ${s === scope ? styles.on : ""}`} onClick={() => setScope(s)}>
                       <Icon name={scopeIcons[s]} />
@@ -124,13 +121,12 @@ export default function TestPage() {
                     </button>
                   ))}
                 </div>
-                <p className="muted">范围里的词不够时全部出。</p>
               </div>
               <div className={styles.group}>
                 <h2>题型</h2>
                 <ModePicker value={mode} onChange={setMode} />
               </div>
-              <button className={styles.wide} onClick={start} disabled={busy}>
+              <button className={`${styles.wide} ${styles.sticky}`} onClick={start} disabled={busy}>
                 开始检测
               </button>
             </section>

@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS settings (
 	user_id TEXT PRIMARY KEY,
 	data    TEXT NOT NULL
 );
--- next_n：下一个学习计划从词库第几个词开始。
+-- 老版本记下一个计划从第几个词开始；现在按学习顺序找第一个没学过的词，这张表不再使用。
 CREATE TABLE IF NOT EXISTS progress (
 	user_id TEXT PRIMARY KEY,
 	next_n  INTEGER NOT NULL
@@ -120,7 +120,7 @@ func OpenStore(path string) (*Store, error) {
 // Settings 是每个人自己的设置，前端整份读写。
 type Settings struct {
 	PlanWords  int     `json:"planWords"`  // 每个学习计划学几个词
-	StartN     int     `json:"startN"`     // 下一个计划从第几个词开始，0 表示接着上次；用过一次就回到 0
+	StartN     int     `json:"startN"`     // 下一个计划从学习顺序的第几个词开始，0 表示从第一个没学过的词开始；用过一次就回到 0
 	Examples   int     `json:"examples"`   // 每个词几条例句，2–5
 	SentencePh bool    `json:"sentencePh"` // 例句下面显示整句音标
 	Accent     string  `json:"accent"`     // en-US 或 en-GB
@@ -130,12 +130,14 @@ type Settings struct {
 	PauseRatio float64 `json:"pauseRatio"` // pauseBy 为 audio 时，停顿是朗读时长的几倍，0.5–2
 	AutoPause  float64 `json:"autoPause"`  // pauseBy 为 fixed 时停几秒，留给跟读
 	AutoZh     bool    `json:"autoZh"`     // 自动播放时读不读中文
+	Order      string  `json:"order"`      // 学习顺序：alpha 按字母、frq 按词频、random 随机打乱
 	ReviewMode string  `json:"reviewMode"` // 复习题型：listen、look 或 mix（轮换）
+	ReviewBy   string  `json:"reviewBy"`   // 复习怎么作答：choice 四选一，rate 看答案后四档自评
 	WrongClear int     `json:"wrongClear"` // 错题本里连续答对几次移出
 }
 
 func defaultSettings() Settings {
-	return Settings{PlanWords: 20, Examples: 2, SentencePh: true, Accent: "en-US", Rate: 0.9, AutoRepeat: 2, PauseBy: "audio", PauseRatio: 1, AutoPause: 2, AutoZh: true, ReviewMode: "mix", WrongClear: 3}
+	return Settings{PlanWords: 20, Examples: 2, SentencePh: true, Accent: "en-US", Rate: 0.9, AutoRepeat: 2, PauseBy: "audio", PauseRatio: 1, AutoPause: 2, AutoZh: true, Order: "alpha", ReviewMode: "mix", ReviewBy: "choice", WrongClear: 3}
 }
 
 // Normalize 把越界的值拉回范围内，老版本存的设置缺字段时补默认值。
@@ -170,6 +172,12 @@ func (s *Settings) Normalize() {
 	s.StartN = max(0, s.StartN)
 	if s.ReviewMode != "listen" && s.ReviewMode != "look" {
 		s.ReviewMode = "mix"
+	}
+	if s.Order != "frq" && s.Order != "random" {
+		s.Order = "alpha"
+	}
+	if s.ReviewBy != "rate" {
+		s.ReviewBy = "choice"
 	}
 }
 
@@ -224,16 +232,6 @@ func scanPlan(row interface{ Scan(...any) error }) (*Plan, error) {
 	return &p, nil
 }
 
-// NextN 是下一个计划默认的起始序号。
-func (s *Store) NextN(ctx context.Context, user string) (int, error) {
-	n := 1
-	err := s.db.QueryRowContext(ctx, `SELECT next_n FROM progress WHERE user_id = ?`, user).Scan(&n)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 1, nil
-	}
-	return n, err
-}
-
 // CreatePlan 新建学习计划。上一个没做完的计划直接作废（不影响已经记下的作答）。
 func (s *Store) CreatePlan(ctx context.Context, user string, words []*Word, examples int) (*Plan, error) {
 	if len(words) == 0 {
@@ -255,10 +253,6 @@ func (s *Store) CreatePlan(ctx context.Context, user string, words []*Word, exam
 	}
 	res, err := tx.ExecContext(ctx, `INSERT INTO plans (user_id, first_n, words, examples, created_at) VALUES (?, ?, ?, ?, ?)`, user, words[0].N, string(data), examples, now)
 	if err != nil {
-		return nil, err
-	}
-	next := words[len(words)-1].N + 1
-	if _, err := tx.ExecContext(ctx, `INSERT INTO progress (user_id, next_n) VALUES (?, ?) ON CONFLICT (user_id) DO UPDATE SET next_n = excluded.next_n`, user, next); err != nil {
 		return nil, err
 	}
 	id, _ := res.LastInsertId()
@@ -353,7 +347,7 @@ type Answer struct {
 	Word   string `json:"word"`
 	Kind   string `json:"kind"`
 	RefID  int    `json:"refId"`
-	Mode   string `json:"mode"` // listen、look、speak、dictation
+	Mode   string `json:"mode"` // listen、look、write、dictation、translate（老记录里还有 speak）
 	OK     bool   `json:"ok"`
 	Rating int    `json:"rating"`
 	Answer string `json:"answer"`
@@ -555,6 +549,19 @@ func scanTest(row interface{ Scan(...any) error }) (*Test, error) {
 }
 
 // Learned 是学过的词（有复习记录的），since 不为零时只要这之后学的。
+// LearnedSet 是学过的词（有复习记录的）。
+func (s *Store) LearnedSet(ctx context.Context, user string) (map[string]bool, error) {
+	list, err := s.Learned(ctx, user, time.Time{})
+	if err != nil {
+		return nil, err
+	}
+	set := make(map[string]bool, len(list))
+	for _, w := range list {
+		set[w] = true
+	}
+	return set, nil
+}
+
 func (s *Store) Learned(ctx context.Context, user string, since time.Time) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT word FROM cards WHERE user_id = ? AND learned_at >= ? ORDER BY learned_at`, user, since)
 	if err != nil {

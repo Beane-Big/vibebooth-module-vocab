@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, errorText, type Home as HomeData } from "../api";
+import { api, errorText, orderNames, planSpan, type Home as HomeData } from "../api";
 import { root } from "../components/Nav";
 import styles from "./pages.module.css";
 
@@ -18,12 +18,12 @@ export default function Home() {
       .catch((err) => setError(errorText(err)));
   }, []);
 
-  // from 不传时按设置：设置里指定了从第几个开始就用它，否则接着上次。
-  async function create(from?: number) {
+  // 按设置建计划：设置里指定了从第几个开始就用它，否则从学习顺序里第一个没学过的词开始。
+  async function create() {
     setBusy(true);
     setError("");
     try {
-      await api.createPlan({ from });
+      await api.createPlan();
       location.href = root + "study/";
     } catch (err) {
       setError(errorText(err));
@@ -63,15 +63,15 @@ export default function Home() {
           {plan ? (
             <>
               <p>
-                正在学第 {plan.firstN}–{plan.firstN + plan.words.length - 1} 个词，共 {plan.words.length} 个，每个词 {plan.examples} 条例句
+                正在学 {planSpan(plan)} 这 {plan.words.length} 个词，每个词 {plan.examples} 条例句
                 {plan.learnedAt ? "，已学完，还差计划测试" : ""}。
               </p>
               <div className="actions">
                 <a className={styles.button} href={root + "study/"}>
                   {plan.learnedAt ? "去做计划测试" : plan.pos > 0 ? "继续学习" : "开始学习"}
                 </a>
-                {/* 放弃后按现在的设置重建：从这个计划的第一个词重新开始，设置里指定了从第几个开始时用设置的。 */}
-                <button className="link" onClick={() => create(settings.startN ? undefined : plan.firstN)} disabled={busy}>
+                {/* 放弃后按现在的设置重建：没学过的词还会排在前面，所以一般还是从这批词开始；设置里指定了从第几个开始时用设置的。 */}
+                <button className="link" onClick={create} disabled={busy}>
                   放弃这个计划，按现在的设置重新开始
                 </button>
               </div>
@@ -81,9 +81,9 @@ export default function Home() {
           ) : (
             <>
               <p>
-                下一个计划：从第 {nextFrom} 个词开始，学 {settings.planWords} 个，每个词 {settings.examples} 条例句。
+                下一个计划：{orderNames[settings.order].replace(/（.*）/, "")}，从{settings.startN ? `第 ${settings.startN} 个词` : ` ${data.nextWord} `}开始，学 {settings.planWords} 个，每个词 {settings.examples} 条例句。
               </p>
-              <button className={styles.wide} onClick={() => create()} disabled={busy}>
+              <button className={styles.wide} onClick={create} disabled={busy}>
                 开始新计划
               </button>
             </>

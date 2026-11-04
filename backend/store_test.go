@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"math/rand/v2"
 	"path/filepath"
 	"testing"
 	"time"
@@ -31,12 +32,6 @@ func TestPlanFlow(t *testing.T) {
 	p, err := s.CreatePlan(ctx, "u1", deck.Range(1, 3), 2)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if next, _ := s.NextN(ctx, "u1"); next != 4 {
-		t.Fatalf("next = %d, want 4", next)
-	}
-	if next, _ := s.NextN(ctx, "u2"); next != 1 {
-		t.Fatalf("别人的进度不该受影响: %d", next)
 	}
 	if err := s.SavePlanPos(ctx, "u1", p.ID, 9, true); err != nil {
 		t.Fatal(err)
@@ -179,5 +174,79 @@ func TestRecordBadInput(t *testing.T) {
 	}
 	if err := s.Record(context.Background(), "u", Answer{Word: w, Kind: "review", Mode: "look", Rating: 5}, -480, 3); !errors.As(err, &bad) {
 		t.Fatalf("自评越界应返回 BadInput，得到 %v", err)
+	}
+}
+
+// 学习顺序：学过的词跳过；从某个位置往后都学过了就从那里重新学；随机顺序每个人固定、是整个词库的一种排列。
+func TestLearningOrder(t *testing.T) {
+	_, deck, _ := newTestStore(t)
+	alpha := deck.Ordered("alpha", "u1")
+	if alpha[0].W != "a" || alpha[0].N != 1 {
+		t.Fatalf("按字母第一个应是 a，实际 %s", alpha[0].W)
+	}
+	if frq := deck.Ordered("frq", "u1"); frq[0].F != 1 || frq[1].F != 2 {
+		t.Fatalf("按词频应从最常用的开始")
+	}
+	learned := map[string]bool{alpha[0].W: true, alpha[2].W: true}
+	got := Pick(alpha, 1, 3, learned)
+	if len(got) != 3 || got[0] != alpha[1] || got[1] != alpha[3] || got[2] != alpha[4] {
+		t.Fatalf("应跳过学过的词，实际 %v %v %v", got[0].W, got[1].W, got[2].W)
+	}
+	if n, w := NextPos(alpha, learned); n != 2 || w != alpha[1] {
+		t.Fatalf("下一个应是第 2 个，实际 %d", n)
+	}
+	last := len(alpha)
+	all := map[string]bool{alpha[last-1].W: true}
+	if got := Pick(alpha, last, 5, all); len(got) != 1 || got[0] != alpha[last-1] {
+		t.Fatalf("往后都学过了应从那里重新学")
+	}
+	r1, r2, r3 := deck.Ordered("random", "u1"), deck.Ordered("random", "u1"), deck.Ordered("random", "u2")
+	seen := map[string]bool{}
+	same := true
+	for i := range r1 {
+		seen[r1[i].W] = true
+		if r1[i] != r2[i] {
+			t.Fatal("同一个人的随机顺序每次应一样")
+		}
+		same = same && r1[i] == r3[i]
+	}
+	if len(seen) != len(deck.Words) || same {
+		t.Fatal("随机顺序应是整个词库的一种排列，且不同的人不一样")
+	}
+}
+
+// 干扰项：每类三个，和正确答案、彼此都不冲突（不同词、意思不重叠），拼写类读音和正确答案不同。
+func TestChoices(t *testing.T) {
+	_, deck, _ := newTestStore(t)
+	rng := rand.New(rand.NewPCG(1, 2))
+	short := 0
+	for i := range deck.Words {
+		w := &deck.Words[i]
+		c := deck.Choices(w, rng)
+		if len(c.Meaning) < 3 || len(c.Spelling) < 3 {
+			short++
+			t.Logf("%s（%s）：%v %v", w.W, deck.meta[w.W].pos, c.Meaning, c.Spelling)
+		}
+		for _, group := range [][]Option{c.Meaning, c.Spelling} {
+			picked := []*Word{w}
+			for _, o := range group {
+				x := deck.Get(o.W)
+				if !deck.usable(x, picked) {
+					t.Fatalf("%s 的干扰项 %s 和其他选项冲突", w.W, o.W)
+				}
+				picked = append(picked, x)
+			}
+		}
+		for _, o := range c.Spelling {
+			if sameSound(w, deck.Get(o.W)) {
+				t.Fatalf("%s 的拼写干扰项 %s 读音相同", w.W, o.W)
+			}
+		}
+	}
+	if short > 0 {
+		t.Fatalf("%d 个词凑不够三个干扰项", short)
+	}
+	if !deck.clash(deck.Get("big"), deck.Get("large")) {
+		t.Fatal("big 和 large 意思重叠，不能互为干扰项")
 	}
 }

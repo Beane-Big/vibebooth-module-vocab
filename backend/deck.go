@@ -4,6 +4,9 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
+	"math/rand/v2"
+	"sort"
 	"strings"
 )
 
@@ -22,10 +25,11 @@ type Example struct {
 	Src string `json:"src"`
 }
 
-// Word 是词库里的一个词。N 是序号（按词频从 1 开始），学习进度按 N 往前走；
+// Word 是词库里的一个词。N 是序号（按字母顺序从 1 开始），F 是词频名次（1 最常用）；
 // 每个人的复习记录按 W（单词本身）保存，词库更新、序号变了也接得上。
 type Word struct {
 	N     int       `json:"n"`
+	F     int       `json:"f"`
 	W     string    `json:"w"`
 	Us    string    `json:"us"` // 美音音标（CMUdict）
 	Uk    string    `json:"uk"` // 英音音标（Britfone）
@@ -39,6 +43,9 @@ type Deck struct {
 	Name  string `json:"name"`
 	Words []Word `json:"words"`
 	byW   map[string]*Word
+	byF   []*Word              // 按词频排
+	meta  map[string]*wordMeta // 出选择题用：词性、释义词条、词形，见 choices.go
+	byPos map[string][]*Word   // 同词性的词，按词频排
 }
 
 func LoadDeck(data []byte) (*Deck, error) {
@@ -47,9 +54,13 @@ func LoadDeck(data []byte) (*Deck, error) {
 		return nil, fmt.Errorf("解析词库失败: %w", err)
 	}
 	d.byW = make(map[string]*Word, len(d.Words))
+	d.byF = make([]*Word, len(d.Words))
 	for i := range d.Words {
 		d.byW[d.Words[i].W] = &d.Words[i]
+		d.byF[i] = &d.Words[i]
 	}
+	sort.Slice(d.byF, func(i, j int) bool { return d.byF[i].F < d.byF[j].F })
+	d.prepareChoices()
 	return &d, nil
 }
 
@@ -77,6 +88,56 @@ func (d *Deck) Range(from, count int) []*Word {
 		out = append(out, &d.Words[i])
 	}
 	return out
+}
+
+// Ordered 是按学习顺序排好的整个词库：alpha 按字母（词库本身的顺序）、frq 按词频、
+// random 是每个人各自的一种打乱顺序（按账号 id 生成，每次都一样，所以计划能接着往下学）。
+func (d *Deck) Ordered(order, user string) []*Word {
+	switch order {
+	case "frq":
+		return d.byF
+	case "random":
+		h := fnv.New64a()
+		h.Write([]byte(user))
+		out := make([]*Word, len(d.Words))
+		for i, k := range rand.New(rand.NewPCG(h.Sum64(), 0)).Perm(len(d.Words)) {
+			out[i] = &d.Words[k]
+		}
+		return out
+	}
+	out := make([]*Word, len(d.Words))
+	for i := range d.Words {
+		out[i] = &d.Words[i]
+	}
+	return out
+}
+
+// Pick 从学习顺序的第 from 个（从 1 数）起，挑 count 个还没学过的词。
+// 从 from 往后都学过了就不再跳过，从 from 起重新学（词库学完后在设置里指定从第几个重新开始）。
+func Pick(list []*Word, from, count int, learned map[string]bool) []*Word {
+	from = max(1, from)
+	out := []*Word{}
+	for i := from - 1; i < len(list) && len(out) < count; i++ {
+		if !learned[list[i].W] {
+			out = append(out, list[i])
+		}
+	}
+	if len(out) == 0 {
+		for i := from - 1; i < len(list) && len(out) < count; i++ {
+			out = append(out, list[i])
+		}
+	}
+	return out
+}
+
+// NextPos 是学习顺序里第一个没学过的词的位置（从 1 数）和这个词；全学过了返回 len+1 和 nil。
+func NextPos(list []*Word, learned map[string]bool) (int, *Word) {
+	for i, w := range list {
+		if !learned[w.W] {
+			return i + 1, w
+		}
+	}
+	return len(list) + 1, nil
 }
 
 // 例句里点词时查的小词典：例句里出现的词在 ECDICT 里的音标和释义，同样由 scripts/build-deck.mjs 生成。

@@ -1,11 +1,17 @@
 // us、uk 是美音、英音音标，按口音设置显示其中一个（phOf）。
 export type Phonetic = { us: string; uk: string };
 export type Example = Phonetic & { en: string; zh: string; src: string };
-export type Word = Phonetic & { n: number; w: string; zh: string[]; forms: string[]; ex: Example[] };
+// n 是序号（按字母顺序），f 是词频名次（1 最常用）。
+export type Word = Phonetic & { n: number; f: number; w: string; zh: string[]; forms: string[]; ex: Example[] };
+// 选择题的干扰项（后端挑好的）：meaning 是同词性、词频相近、意思不重叠的词，spelling 是拼写相近、读音不同的词。
+export type Option = { w: string; zh: string };
+export type Choices = { meaning: Option[]; spelling: Option[] };
+export type Order = "alpha" | "frq" | "random";
 
 export type Settings = {
   planWords: number;
-  startN: number; // 下一个计划从第几个词开始，0 表示接着上次；建计划时用掉就回到 0
+  startN: number; // 下一个计划从学习顺序的第几个词开始，0 表示从第一个没学过的词开始；建计划时用掉就回到 0
+  order: Order; // 学习顺序：按字母、按词频、随机打乱（每个人固定的一种顺序）
   examples: number;
   sentencePh: boolean;
   accent: "en-US" | "en-GB";
@@ -16,6 +22,7 @@ export type Settings = {
   autoPause: number; // 固定秒数
   autoZh: boolean;
   reviewMode: "listen" | "look" | "mix";
+  reviewBy: "choice" | "rate"; // 复习怎么作答：四选一，或看答案后四档自评
   wrongClear: number;
 };
 
@@ -44,10 +51,10 @@ export type Test = {
 };
 
 export type Stats = { learned: number; due: number; wrong: number; streak: number; today: number };
-export type Home = { settings: Settings; deck: { name: string; total: number }; nextN: number; plan: Plan | null; stats: Stats };
+export type Home = { settings: Settings; deck: { name: string; total: number }; nextN: number; nextWord: string; plan: Plan | null; stats: Stats };
 
-// 题型：听音想意思、看词想意思、看中文说英文、听写。
-export type Mode = "listen" | "look" | "speak" | "dictation";
+// 题型：看词选择、听音选择（四选一）、看中文写英文（例句挖空填词）、听写、整句翻译。speak（看中文说英文）是老版本的题型，只出现在老记录里。
+export type Mode = "look" | "listen" | "write" | "dictation" | "translate" | "speak";
 export type TestScope = "recent" | "range" | "all" | "wrong";
 export type Kind = "plan" | "review" | "test";
 export type AnswerIn = { word: string; kind: Kind; refId: number; mode: Mode; ok: boolean; rating: number; answer: string };
@@ -107,6 +114,7 @@ export const api = {
   saveSettings: (s: Settings) => request<Settings>(`${base}/settings`, { method: "PUT", body: JSON.stringify(s) }),
   lookup: (w: string) => request<Entry>(`${base}/lookup?w=${encodeURIComponent(w)}`),
   words: (from: number, count: number) => request<Word[]>(`${base}/words?from=${from}&count=${count}`),
+  choices: (words: string[]) => request<Record<string, Choices>>(`${base}/choices`, post({ words })),
 
   // 不传的项按个人设置（学几个词、几条例句、从第几个开始）。
   createPlan: (p: { from?: number; count?: number; examples?: number } = {}) => request<WithWords<Plan>>(`${base}/plans`, post(p)),
@@ -127,8 +135,21 @@ export const api = {
   finishTest: (id: number) => request<WithWords<Test>>(`${base}/tests/${id}/finish`, { method: "POST" }),
 };
 
-export const modeNames: Record<Mode, string> = { listen: "听音想意思", look: "看词想意思", speak: "看中文说英文", dictation: "听写" };
+export const modeNames: Record<Mode, string> = {
+  look: "看词选择",
+  listen: "听音选择",
+  write: "看中文写英文",
+  dictation: "听写",
+  translate: "整句翻译",
+  speak: "看中文说英文",
+};
+// 能选的题型（speak 已经不出了）。
+export const modes: Mode[] = ["look", "listen", "write", "dictation", "translate"];
+export const orderNames: Record<Order, string> = { alpha: "按字母顺序", frq: "按词频（常用的先学）", random: "随机打乱" };
 export const scopeNames: Record<TestScope, string> = { recent: "最近 7 天学的", range: "按序号范围", all: "全部学过的", wrong: "错题本" };
+
+// 计划学的是哪些词：第一个到最后一个（学习顺序可能是随机的，所以不用序号）。
+export const planSpan = (p: Plan) => (p.words.length > 1 ? `${p.words[0]} – ${p.words[p.words.length - 1]}` : (p.words[0] ?? ""));
 
 // 按口音取音标：英音显示 Britfone 的读音，美音显示 CMUdict 的读音。
 export const phOf = (x: Phonetic, accent: string) => (accent === "en-GB" ? x.uk : x.us);
