@@ -37,4 +37,4 @@
 | 4 用平台数据 | 平台的人员接口 `http://core:8080/api/platform/ext/v1/` | `npx github:Beane-Big/create-vibebooth add persons` |
 
 离开平台也能运行：`npm run standalone`。后端开独立模式（环境变量 `STANDALONE=1`），所有请求都当成一个拥有全部权限的本地用户；不要在 `compose.yaml` 里设这个变量，装到平台里时 SDK 会拒绝请求。第 4 级在独立模式下取不到平台的人员，要自己降级（`backend/persons.go` 里有示例）。
-- 样式：全局的玻璃变量（`--glass`、`--glass-strong`、`--blur` 等）和背景色块 `.backdrop` 在 `frontend/src/styles.css`；页面共用的分段选择、图标选项格、小标签、结果环、空状态在 `pages/pages.module.css`（结果环是 `components/Ring.tsx`）。导航栏的液态玻璃用 `frontend/src/vendor/liquidglass.js`（@ybouane/liquidglass 1.0.3 的打包文件原样复制）：这个 npm 包的 postinstall 要跑 patch-package，作为依赖装时 `npm ci` 会失败，所以不走 npm；升级时从 npm 包的 `dist/index.js` 重新复制。它要求导航是 `.app` 的直接子元素，页面内容变了由 `Nav.tsx` 的 `useLiquidGlass` 通知它重截。
+- 样式：全局的玻璃变量（`--glass`、`--glass-strong`、`--blur` 等）和背景色块 `.backdrop` 在 `frontend/src/styles.css`；页面共用的分段选择、图标选项格、小标签、结果环、空状态在 `pages/pages.module.css`（结果环是 `components/Ring.tsx`）。

@@ -5,8 +5,8 @@ import styles from "./Nav.module.css";
 export const root = "/apps/vocab/";
 
 // 模块的导航，一份数据两种样子：宽屏是顶部居中的玻璃胶囊，手机是底部悬浮的玻璃标签栏。不显示模块名，平台门户里已经有了。
-// 当前页面的标签带一块玻璃高亮；学习计划这类从首页进的页面算在“学习”下。学习记录只在宽屏的导航里，手机上从首页进。
-// 玻璃默认是 CSS 的毛玻璃；浏览器支持 WebGL 时换成 liquidglass 渲染的液态玻璃（会折射下面的内容），见 useLiquidGlass。
+// 当前页面的标签下面垫着一块玻璃滑块：点别的标签，滑块先滑过去再换页；按住滑块（或栏上任意位置）左右拖，滑块跟着手指走，
+// 松手停在最近的标签上并打开那一页。学习计划这类从首页进的页面算在“学习”下。学习记录只在宽屏的导航里，手机上从首页进。
 const tabs: { page: string; label: string; icon: IconName; wide?: boolean }[] = [
   { page: "", label: "学习", icon: "book" },
   { page: "review", label: "复习", icon: "review" },
@@ -16,18 +16,110 @@ const tabs: { page: string; label: string; icon: IconName; wide?: boolean }[] = 
   { page: "settings", label: "设置", icon: "settings" },
 ];
 
+const slideMs = 220; // 滑块滑到点中的标签用的时间，滑完再换页
+const dragStart = 6; // 移动超过这么多像素才算拖动，否则是点击
+
 export default function Nav({ current }: { current: string }) {
   const active = tabs.some((t) => t.page === current) ? current : "";
   const bar = useRef<HTMLElement>(null);
-  useLiquidGlass(bar);
+  const pill = useRef<HTMLSpanElement>(null);
+  const drag = useRef<{ id: number; x: number; left: number; moved: boolean } | null>(null);
+  const dragged = useRef(false); // 刚拖完：吞掉松手时浏览器补发的那次点击
+
+  // 看得见的标签（手机上“记录”是隐藏的）。
+  const links = () => [...(bar.current?.querySelectorAll<HTMLAnchorElement>("a") ?? [])].filter((a) => a.offsetWidth > 0);
+
+  // 把滑块放到某个标签上（animate 为假时直接跳过去，比如刚打开页面、窗口变大小）。
+  function moveTo(a: HTMLAnchorElement | undefined, animate: boolean) {
+    const p = pill.current;
+    if (!a || !p) return;
+    p.style.transition = animate ? `transform ${slideMs}ms cubic-bezier(0.2, 0.8, 0.2, 1), width ${slideMs}ms cubic-bezier(0.2, 0.8, 0.2, 1)` : "none";
+    p.style.width = `${a.offsetWidth}px`;
+    p.style.transform = `translateX(${a.offsetLeft}px)`;
+    highlight(a);
+  }
+  // 滑块停在哪个标签上，哪个标签的字变成强调色。
+  function highlight(a: HTMLAnchorElement | undefined) {
+    for (const l of links()) l.classList.toggle(styles.on, l === a);
+  }
+  const activeLink = () => links().find((a) => a.dataset.page === active);
+  // 离滑块中心最近的标签。
+  function nearest(center: number) {
+    let best: HTMLAnchorElement | undefined;
+    for (const a of links()) if (!best || Math.abs(a.offsetLeft + a.offsetWidth / 2 - center) < Math.abs(best.offsetLeft + best.offsetWidth / 2 - center)) best = a;
+    return best;
+  }
+
+  function open(a: HTMLAnchorElement | undefined) {
+    if (!a) return;
+    moveTo(a, true);
+    if (a.dataset.page !== active) setTimeout(() => (location.href = a.href), slideMs);
+  }
+
+  useEffect(() => {
+    moveTo(activeLink(), false);
+    const onResize = () => moveTo(activeLink(), false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 || !pill.current) return;
+    drag.current = { id: e.pointerId, x: e.clientX, left: pill.current.offsetLeft + new DOMMatrix(getComputedStyle(pill.current).transform).m41, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    const p = pill.current;
+    if (!d || d.id !== e.pointerId || !p || !bar.current) return;
+    const dx = e.clientX - d.x;
+    if (!d.moved) {
+      if (Math.abs(dx) < dragStart) return;
+      d.moved = true;
+      bar.current.setPointerCapture(e.pointerId);
+      p.classList.add(styles.dragging);
+    }
+    // 滑块中心跟着手指，不拖出第一个和最后一个标签。
+    const list = links();
+    const w = p.offsetWidth;
+    const min = list[0].offsetLeft;
+    const max = list[list.length - 1].offsetLeft + list[list.length - 1].offsetWidth - w;
+    const left = Math.max(min, Math.min(max, d.left + dx));
+    p.style.transition = "none";
+    p.style.transform = `translateX(${left}px)`;
+    highlight(nearest(left + w / 2));
+  };
+  const onPointerEnd = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    if (!d.moved) return; // 点击交给标签的 onClick
+    pill.current?.classList.remove(styles.dragging);
+    dragged.current = true;
+    setTimeout(() => (dragged.current = false), 0);
+    const p = pill.current!;
+    const left = new DOMMatrix(getComputedStyle(p).transform).m41;
+    if (e.type === "pointerup") open(nearest(left + p.offsetWidth / 2));
+    else moveTo(activeLink(), true);
+  };
+
   return (
-    <nav ref={bar} className={styles.bar} aria-label="页面">
+    <nav ref={bar} className={styles.bar} aria-label="页面" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
+      <span ref={pill} className={styles.pill} aria-hidden="true" />
       {tabs.map((t) => (
         <a
           key={t.page}
+          data-page={t.page}
           href={root + (t.page ? t.page + "/" : "")}
           className={[styles.tab, t.page === active && styles.on, t.wide && styles.wide].filter(Boolean).join(" ")}
           aria-current={t.page === active ? "page" : undefined}
+          draggable={false}
+          onClick={(e) => {
+            // 普通点击：滑块先滑过去再换页；按着 Ctrl/⌘ 等新开标签页的点击照常。
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            if (!dragged.current) open(e.currentTarget);
+          }}
         >
           <Icon name={t.icon} size={20} />
           <span>{t.label}</span>
@@ -35,78 +127,4 @@ export default function Nav({ current }: { current: string }) {
       ))}
     </nav>
   );
-}
-
-const hasWebGL = () => {
-  try {
-    return !!document.createElement("canvas").getContext("webgl");
-  } catch {
-    return false;
-  }
-};
-
-// 用 liquidglass 把导航栏渲染成液态玻璃。它要求玻璃是 root 的直接子元素，root 的其他子元素（背景色块、页面内容）
-// 截成图后做折射；截图默认只截一次，所以页面内容变了（翻卡片、答题）要让它重截，这里合并成每 300 毫秒最多一次。
-// 下面的字透过玻璃会被虚化（blurAmount），免得和标签的字叠在一起看不清。
-// 不支持 WebGL、用户要求减少透明效果、或初始化失败时什么都不做，导航保持 CSS 毛玻璃。
-function useLiquidGlass(bar: React.RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const el = bar.current;
-    const host = el?.parentElement;
-    if (!el || !host || !hasWebGL() || matchMedia("(prefers-reduced-transparency: reduce)").matches) return;
-    let stopped = false;
-    let lg: import("../vendor/liquidglass").LiquidGlass | undefined;
-    let observer: MutationObserver | undefined;
-    let timer = 0;
-    const changed = new Set<HTMLElement>();
-
-    const config = () => {
-      // 圆角跟着栏高变（宽屏和手机不一样高），保持胶囊形。
-      el.dataset.config = JSON.stringify({ cornerRadius: el.offsetHeight / 2, zRadius: 18, refraction: 0.5, blurAmount: 0.55, brightness: 0.1, saturation: 0.2, edgeHighlight: 0.15, specular: 0.3, shadowOpacity: 0.18, shadowSpread: 14 });
-    };
-    // 正在截图的元素先不重截（liquidglass 会直接忽略），等它截完再来；截图期间内容又变了也会再截一次。
-    const flush = () => {
-      timer = 0;
-      if (!lg) return;
-      for (const child of [...changed]) {
-        if (lg.capture._capturing.has(child)) continue;
-        changed.delete(child);
-        lg.capture.captureElement(child, true).finally(later);
-      }
-      later();
-    };
-    const later = () => {
-      if (changed.size && !timer && !stopped) timer = window.setTimeout(flush, 300);
-    };
-
-    import("../vendor/liquidglass")
-      .then(async ({ LiquidGlass }) => {
-        config();
-        const inst = await LiquidGlass.init({ root: host, glassElements: [el] });
-        if (stopped) return inst.destroy();
-        lg = inst;
-        el.classList.add(styles.liquid);
-        observer = new MutationObserver((records) => {
-          for (const r of records) {
-            let node: Node | null = r.target;
-            while (node && node.parentNode !== host) node = node.parentNode;
-            if (node instanceof HTMLElement && node !== el) changed.add(node);
-          }
-          later();
-        });
-        // 不看 style 的变化：拖卡片时每一帧都改 style，没必要每次重截；换页后的内容变化会触发重截。
-        observer.observe(host, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["class"] });
-      })
-      .catch((err) => console.warn("液态玻璃不可用，导航用 CSS 毛玻璃：", err));
-
-    window.addEventListener("resize", config);
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-      observer?.disconnect();
-      window.removeEventListener("resize", config);
-      el.classList.remove(styles.liquid);
-      lg?.destroy();
-    };
-  }, [bar]);
 }
