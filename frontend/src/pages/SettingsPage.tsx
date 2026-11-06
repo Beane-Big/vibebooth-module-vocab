@@ -209,7 +209,7 @@ export default function SettingsPage() {
             </Row>
             {s.pauseBy === "audio" ? (
               <Row label="停顿是朗读时长的">
-                <Select value={s.pauseRatio} onChange={(v) => set("pauseRatio", v)} options={[0.5, 1, 1.5, 2].map((r) => [r, r === 1 ? "一样长" : `${r} 倍`])} />
+                <Select value={s.pauseRatio} onChange={(v) => set("pauseRatio", v)} options={[0.5, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.5, 2].map((r) => [r, r === 1 ? "一样长" : `${r} 倍`])} />
               </Row>
             ) : (
               <Row label="停几秒">
