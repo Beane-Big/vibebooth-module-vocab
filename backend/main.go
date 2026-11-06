@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Beane-Big/vibebooth/packages/sdk-go/auth"
@@ -280,6 +281,26 @@ func (h *handlers) register(api *http.ServeMux) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+	// 记学习时长：{"secs": 30}。
+	api.HandleFunc("POST /api/vocab/plans/{id}/time", func(w http.ResponseWriter, r *http.Request) {
+		var in struct {
+			Secs int `json:"secs"`
+		}
+		if !decode(w, r, &in) {
+			return
+		}
+		id, _ := strconv.Atoi(r.PathValue("id"))
+		err := h.store.AddStudyTime(r.Context(), userID(r), id, in.Secs)
+		var bad BadInput
+		if errors.As(err, &bad) {
+			writeError(w, http.StatusBadRequest, bad.Error())
+			return
+		}
+		if fail(w, err) {
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 	api.HandleFunc("POST /api/vocab/plans/{id}/finish", func(w http.ResponseWriter, r *http.Request) {
 		user := userID(r)
 		id, _ := strconv.Atoi(r.PathValue("id"))
@@ -367,12 +388,12 @@ func (h *handlers) register(api *http.ServeMux) {
 			From  int    `json:"from"`
 			To    int    `json:"to"`
 			Count int    `json:"count"`
-			Mode  string `json:"mode"`
+			Mode  string `json:"mode"` // 题型，几种用逗号隔开
 		}
 		if !decode(w, r, &in) {
 			return
 		}
-		if !validMode(in.Mode) {
+		if !validModes(in.Mode) {
 			writeError(w, http.StatusBadRequest, "未知的题型")
 			return
 		}
@@ -478,6 +499,18 @@ func (h *handlers) known(words []string) []string {
 
 func validMode(m string) bool {
 	return m == "listen" || m == "look" || m == "write" || m == "dictation" || m == "translate"
+}
+
+// validModes 是检测选的题型：一种或几种，用逗号隔开（look,write），每题按顺序轮流出。
+func validModes(list string) bool {
+	seen := map[string]bool{}
+	for _, m := range strings.Split(list, ",") {
+		if !validMode(m) || seen[m] {
+			return false
+		}
+		seen[m] = true
+	}
+	return true
 }
 
 func wordOf(w *Word) string {

@@ -1,0 +1,91 @@
+/* iOS 设置那样的分组列表：组标题在外面、灰色小字；一组是一块圆角面板，一行一项，左边名字、右边控件，行间是缩进的细线；
+   说明写在组下面。面板沿用本模块的玻璃底色，颜色都用 styles.css 的变量，深色模式跟着变。 */
+.page { display: flex; flex-direction: column; gap: 26px; }
+.title { margin: 0 4px; font-size: 32px; font-weight: 700; letter-spacing: 0.01em; }
+
+.group { display: flex; flex-direction: column; gap: 7px; }
+.header { margin: 0 16px; font-size: 13px; font-weight: 400; color: var(--muted); }
+.footer { margin: 0 16px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+
+.list {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-edge);
+  border-radius: 14px;
+  box-shadow: var(--glass-hi), var(--shadow);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  overflow: hidden;
+}
+
+.row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 8px 16px; }
+.list > * + *::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; border-top: 1px solid var(--border); }
+.label { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 16px; }
+.label small { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.control { flex: none; display: flex; align-items: center; gap: 8px; max-width: 60%; color: var(--muted); }
+.disabled .label { color: var(--muted); }
+
+/* 下拉框：没有边框，值靠右灰色，后面一个小箭头。 */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  max-width: 100%;
+  border: none;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16' viewBox='0 0 10 16'%3E%3Cpath d='M2 5l3-3 3 3M2 11l3 3 3-3' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right center;
+  padding: 6px 18px 6px 0;
+  color: var(--muted);
+  font-size: 16px;
+  text-align: right;
+  text-align-last: right;
+  cursor: pointer;
+}
+.select:focus { outline: none; color: var(--accent); }
+
+/* 数字：靠右、没有边框，像 iOS 里能直接改的值。 */
+.number { flex: none; width: 5.5em; border: none; background: transparent; padding: 6px 0; text-align: right; color: var(--muted); font-size: 16px; }
+.number:focus { outline: none; color: var(--accent); }
+.number::placeholder { color: var(--muted); opacity: 0.7; }
+
+/* 开关：iOS 的绿色拨动开关。写成 input[type="checkbox"].switch，盖过 styles.css 里勾选框的默认尺寸。 */
+input[type="checkbox"].switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+input[type="checkbox"].switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+input[type="checkbox"].switch:checked { background: #34c759; }
+input[type="checkbox"].switch:checked::before { transform: translateX(20px); }
+input[type="checkbox"].switch:disabled { opacity: 0.45; cursor: default; }
+input[type="checkbox"].switch:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+
+/* 步进器：值在左边，右边一对 − +。 */
+.stepperValue { min-width: 1.5em; text-align: right; font-variant-numeric: tabular-nums; }
+.stepper { display: flex; border-radius: 9px; overflow: hidden; background: color-mix(in srgb, var(--muted) 16%, transparent); }
+.stepper button { width: 46px; height: 32px; padding: 0; border-radius: 0; background: none; box-shadow: none; color: var(--text); font-size: 20px; font-weight: 400; line-height: 1; }
+.stepper button + button { border-left: 1px solid color-mix(in srgb, var(--muted) 25%, transparent); }
+.stepper button:active:not(:disabled) { transform: none; background: color-mix(in srgb, var(--muted) 20%, transparent); }
+
+/* 整行是一个按钮：蓝字的操作（试听），红字居中的危险操作（还原）。 */
+.action { position: relative; display: block; width: 100%; min-height: 50px; padding: 8px 16px; border-radius: 0; background: none; box-shadow: none; color: var(--accent); font-weight: 400; text-align: left; }
+.action:active:not(:disabled) { transform: none; background: color-mix(in srgb, var(--muted) 12%, transparent); }
+.destructive { color: var(--danger); text-align: center; }

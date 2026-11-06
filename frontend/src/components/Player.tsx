@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { Settings, Word } from "../api";
-import { canSpeak, plainZh, prefetchSpeech, speak, stopSpeaking, wait } from "../speech";
+import { canSpeak, keepAudioAwake, plainZh, prefetchSpeech, speak, stopSpeaking, wait } from "../speech";
 import ExitButton from "./ExitButton";
 import Icon from "./Icon";
 import { useImmersive } from "./Nav";
@@ -107,6 +107,11 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     setAuto(false);
     stopSpeaking();
   };
+  // 开始自动播放要在点击里调（iPhone 只允许在点击里打开 Web Audio），保持蓝牙音频通道的声音也在这里打开。
+  const play = () => {
+    keepAudioAwake(true);
+    setAuto(true);
+  };
 
   // 读完一遍英文后停多久（毫秒）：按刚才读了几秒乘倍数，或者固定秒数。至少停 0.3 秒，听得出句子的边界。
   const pauseAfter = (spoken: number) => 1000 * (settings.pauseBy === "fixed" ? settings.autoPause : Math.max(0.3, spoken * settings.pauseRatio));
@@ -143,7 +148,10 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     const entered = shownPos.current !== pos;
     shownPos.current = pos;
     stopSpeaking();
-    if (pages[pos + 1]) prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
+    if (pages[pos + 1]) {
+      prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
+      if (auto && settings.autoZh) prefetchSpeech(zhOf(pages[pos + 1]), "zh-CN");
+    }
     if (auto) {
       const isEx = page.example >= 0;
       const spell = isEx && settings.spellOut;
@@ -166,14 +174,16 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pos, auto]);
 
-  // 自动播放时保持屏幕常亮；切到后台（锁屏、切应用）就停下，回来再点播放。
+  // 自动播放时保持屏幕常亮、保持蓝牙音频通道不断（见 speech.ts 的 keepAudioAwake）；切到后台（锁屏、切应用）就停下，回来再点播放。
   useEffect(() => {
     if (!auto) return;
+    keepAudioAwake(true);
     let lock: WakeLockSentinel | undefined;
     navigator.wakeLock?.request("screen").then((l) => (lock = l)).catch(() => {});
     const onHide = () => document.hidden && stop();
     document.addEventListener("visibilitychange", onHide);
     return () => {
+      keepAudioAwake(false);
       lock?.release().catch(() => {});
       document.removeEventListener("visibilitychange", onHide);
     };
@@ -188,7 +198,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
       else if (e.key === " ") {
         e.preventDefault();
         if (auto) stop();
-        else setAuto(true);
+        else play();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -262,7 +272,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
           <Icon name="pause" />
         </button>
       ) : (
-        <button type="button" className={`${styles.icon} ${styles.main}`} onClick={() => setAuto(true)} disabled={!canSpeak} aria-label="自动播放" title="自动播放">
+        <button type="button" className={`${styles.icon} ${styles.main}`} onClick={play} disabled={!canSpeak} aria-label="自动播放" title="自动播放">
           <Icon name="play" />
         </button>
       )}

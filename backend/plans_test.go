@@ -51,3 +51,12 @@ func TestCreatePlanFromSettings(t *testing.T) {
 		t.Fatalf("第二个计划应接着上次，而不是又从第 100 个开始")
 	}
 }
+
+// 检测可以选几种题型，逗号隔开，不能重复，speak 已经不出了。
+func TestValidModes(t *testing.T) {
+	for list, want := range map[string]bool{"look": true, "look,write,translate": true, "look,look": false, "": false, "speak": false, "look,": false} {
+		if got := validModes(list); got != want {
+			t.Errorf("validModes(%q) = %v", list, got)
+		}
+	}
+}

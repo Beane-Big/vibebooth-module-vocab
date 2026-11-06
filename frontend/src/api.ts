@@ -39,13 +39,14 @@ export type Plan = {
   finishedAt: string | null;
   correct: number;
   total: number;
+  studySecs: number; // 学习时长（秒）
 };
 
 export type Test = {
   id: number;
   scope: TestScope;
   planId: number; // scope 为 plan（计划错题检查）时是哪个计划
-  mode: Mode;
+  mode: string; // 题型，几种时用逗号隔开（look,write），见 modesOf
   words: string[];
   createdAt: string;
   finishedAt: string | null;
@@ -128,6 +129,8 @@ export const api = {
   plan: (id: number) => request<WithWords<Plan>>(`${base}/plans/${id}`),
   plans: () => request<Plan[]>(`${base}/plans`),
   savePlanPos: (id: number, pos: number, learned = false) => request<void>(`${base}/plans/${id}`, { method: "PUT", body: JSON.stringify({ pos, learned }) }),
+  // 记学习时长；keepalive 让离开页面时发的这一次也能发完。
+  studyTime: (id: number, secs: number) => request<void>(`${base}/plans/${id}/time`, { method: "POST", body: JSON.stringify({ secs }), keepalive: true }),
   finishPlan: (id: number) => request<WithWords<Plan>>(`${base}/plans/${id}/finish`, { method: "POST" }),
 
   answer: (a: AnswerIn) => request<void>(`${base}/answers?${tz}`, post(a)),
@@ -136,7 +139,7 @@ export const api = {
   wrongs: (cleared: boolean) => request<Wrong[]>(`${base}/wrongs?cleared=${cleared ? 1 : 0}`),
   clearWrong: (word: string) => request<void>(`${base}/wrongs/${encodeURIComponent(word)}`, { method: "DELETE" }),
 
-  createTest: (t: { scope: TestScope; from?: number; to?: number; plan?: number; count: number; mode: Mode }) => request<WithWords<Test>>(`${base}/tests`, post(t)),
+  createTest: (t: { scope: TestScope; from?: number; to?: number; plan?: number; count: number; mode: string }) => request<WithWords<Test>>(`${base}/tests`, post(t)),
   test: (id: number) => request<WithWords<Test>>(`${base}/tests/${id}`),
   tests: () => request<Test[]>(`${base}/tests`),
   finishTest: (id: number) => request<WithWords<Test>>(`${base}/tests/${id}/finish`, { method: "POST" }),
@@ -152,8 +155,19 @@ export const modeNames: Record<Mode, string> = {
 };
 // 能选的题型（speak 已经不出了）。
 export const modes: Mode[] = ["look", "listen", "write", "dictation", "translate"];
+// 检测记录里的题型（一种或几种，逗号隔开）。
+export const modesOf = (s: string) => s.split(",") as Mode[];
+export const modesText = (s: string) => modesOf(s).map((m) => modeNames[m]).join("、");
 export const orderNames: Record<Order, string> = { alpha: "按字母顺序", frq: "按词频（常用的先学）", random: "随机打乱" };
 export const scopeNames: Record<TestScope, string> = { recent: "最近 7 天学的", range: "按序号范围", all: "全部学过的", wrong: "错题本", plan: "计划错题" };
+
+// 学习时长：不到一分钟、几分钟、几小时几分钟。
+export function durationText(secs: number) {
+  const m = Math.floor(secs / 60);
+  if (m < 1) return "不到 1 分钟";
+  if (m < 60) return `${m} 分钟`;
+  return `${Math.floor(m / 60)} 小时${m % 60 ? ` ${m % 60} 分钟` : ""}`;
+}
 
 // 计划学的是哪些词：第一个到最后一个（学习顺序可能是随机的，所以不用序号）。
 export const planSpan = (p: Plan) => (p.words.length > 1 ? `${p.words[0]} – ${p.words[p.words.length - 1]}` : (p.words[0] ?? ""));
