@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { api, errorText, modeNames, type Mode, type Plan, type Settings, type WithWords, type Word } from "../api";
+import { api, durationText, errorText, modeNames, type Mode, type Plan, type Settings, type WithWords, type Word } from "../api";
 import ModePicker from "../components/ModePicker";
 import Player from "../components/Player";
 import Quiz from "../components/Quiz";
+import { useStudyTimer } from "../components/useStudyTimer";
 import { root } from "../components/Nav";
 import WordList from "../components/WordList";
 import styles from "./pages.module.css";
@@ -12,10 +13,11 @@ export default function Study() {
   const [settings, setSettings] = useState<Settings>();
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [phase, setPhase] = useState<"learn" | "pick" | "test" | "result">("learn");
-  const [mode, setMode] = useState<Mode>("look");
+  const [mode, setMode] = useState<Mode[]>(["look"]);
   const [order, setOrder] = useState<Word[]>([]); // 测试时打乱顺序，开始测试时定下来
   const [start, setStart] = useState(0);
   const [error, setError] = useState("");
+  useStudyTimer(plan?.item.id, phase === "learn");
 
   useEffect(() => {
     api
@@ -123,7 +125,7 @@ export default function Study() {
               {item.correct} / {item.total}
             </p>
             <p className="muted">
-              {modeNames[mode]}，答对 {item.correct} 个。这批词已经加进每日复习，之后按遗忘规律再出现。
+              {mode.map((m) => modeNames[m]).join("、")}，答对 {item.correct} 个{item.studySecs > 0 ? `，学习用了 ${durationText(item.studySecs)}` : ""}。这批词已经加进每日复习，之后按遗忘规律再出现。
             </p>
             {plan.missed.length > 0 && (
               <>

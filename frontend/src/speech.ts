@@ -1,16 +1,16 @@
 import { ttsUrl } from "./api";
 
-// 朗读：英文用模块自带的 Kokoro 语音（后端合成 MP3 并存起来，全家共用），中文用浏览器自带的 speechSynthesis。
-// Kokoro 不可用时（独立模式没有语音容器，或者语音容器出错）英文也退回浏览器朗读。
+// 朗读：用模块自带的语音（英文 Kokoro，中文 Piper；后端合成 MP3 并存起来，全家共用）。
+// 语音容器不可用时（独立模式没有语音容器，或者语音容器出错）退回浏览器自带的 speechSynthesis。
 // 语速在播放时调（playbackRate，浏览器默认保持音调不变），同一句只存一份音频。
 export const canSpeak = typeof window !== "undefined" && ("speechSynthesis" in window || "Audio" in window);
 const canBrowserSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
 
-// 口音对应的 Kokoro 声音，要和 tts/voices.py 一致。
-const kokoroVoice: Record<string, string> = { "en-US": "af_heart", "en-GB": "bf_emma" };
+// 语言（口音）对应的模块声音，要和 tts/voices.py 一致。
+const ttsVoice: Record<string, string> = { "en-US": "af_heart", "en-GB": "bf_emma", "zh-CN": "zh_chaowen" };
 
 // 语音容器不可用（503、断网）后这段时间内直接用浏览器朗读，不再每句都等它报错。
-let kokoroDownUntil = 0;
+let ttsDownUntil = 0;
 
 // 整个页面共用一个 audio 元素：iPhone 上只有在点击里播放过的元素，之后才能在自动播放里继续出声。
 const audio = typeof Audio !== "undefined" ? new Audio() : null;
@@ -48,17 +48,21 @@ function pickVoice(lang: string) {
 let current: (() => void) | null = null;
 
 // speak 读一段文字，读完（或出错、或被 stop 打断）时返回，结果是从开始出声到读完用了几秒（自动播放按它定停顿）。
+// 最近一次开始朗读的时刻（performance.now），学习计时用它判断人还在不在（自动播放时不用碰屏幕）。
+export let lastSpokenAt = 0;
+
 export function speak(text: string, lang: string, rate = 1): Promise<number> {
   if (!text) return Promise.resolve(0);
+  lastSpokenAt = performance.now();
   current?.();
-  const voice = kokoroVoice[lang];
-  const spoken = voice && audio && Date.now() >= kokoroDownUntil ? speakKokoro(text, voice, lang, rate) : speakBrowser(text, lang, rate);
+  const voice = ttsVoice[lang];
+  const spoken = voice && audio && Date.now() >= ttsDownUntil ? speakTts(text, voice, lang, rate) : speakBrowser(text, lang, rate);
   return spoken.then((start) => (start ? (performance.now() - start) / 1000 : 0));
 }
 
 // 下面两个函数在读完时返回开始出声的时刻（performance.now），没出声时返回 0。
 
-function speakKokoro(text: string, voice: string, lang: string, rate: number): Promise<number> {
+function speakTts(text: string, voice: string, lang: string, rate: number): Promise<number> {
   return new Promise((resolve) => {
     const ctrl = new AbortController();
     let url = "";
@@ -88,7 +92,7 @@ function speakKokoro(text: string, voice: string, lang: string, rate: number): P
     fetch(ttsUrl(text, voice), { signal: ctrl.signal })
       .then(async (res) => {
         if (!res.ok) {
-          if (res.status === 503) kokoroDownUntil = Date.now() + 60_000;
+          if (res.status === 503) ttsDownUntil = Date.now() + 60_000;
           return fallback();
         }
         const blob = await res.blob();
@@ -106,7 +110,7 @@ function speakKokoro(text: string, voice: string, lang: string, rate: number): P
         // 浏览器不让自动出声（还没点过页面）时就当这句读完了；断网等其他错误退回浏览器朗读。
         if (err?.name === "NotAllowedError") finish();
         else {
-          kokoroDownUntil = Date.now() + 60_000;
+          ttsDownUntil = Date.now() + 60_000;
           fallback();
         }
       });
@@ -134,8 +138,42 @@ function speakBrowser(text: string, lang: string, rate: number): Promise<number>
 
 // prefetch 提前让后端合成接下来要读的句子，读到时不用等；结果留在浏览器缓存里。
 export function prefetchSpeech(text: string, lang: string) {
-  const voice = kokoroVoice[lang];
-  if (text && voice && Date.now() >= kokoroDownUntil) fetch(ttsUrl(text, voice)).catch(() => {});
+  const voice = ttsVoice[lang];
+  if (text && voice && Date.now() >= ttsDownUntil) fetch(ttsUrl(text, voice)).catch(() => {});
+}
+
+// 车载蓝牙、蓝牙音箱在一段时间没有声音后会关掉音频通道，下一句开始时重新接上，开头有一段淡入，前几个字听不清；
+// 拼读时一个词一个词地放，每个词都会这样。自动播放期间用 Web Audio 一直放一段极轻的噪声（约 -80 dB，听不到），
+// 通道就一直开着。用噪声不用纯静音：有的设备检测到全零的数据也会当成没声音。朗读本身还是走 audio 元素，不受影响。
+type AudioCtx = typeof AudioContext;
+let awakeCtx: AudioContext | null = null;
+let awakeNode: AudioBufferSourceNode | null = null;
+export function keepAudioAwake(on: boolean) {
+  const AC: AudioCtx | undefined = typeof window !== "undefined" ? (window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtx }).webkitAudioContext) : undefined;
+  if (!AC) return;
+  try {
+    if (!on) {
+      awakeNode?.stop();
+      awakeNode?.disconnect();
+      awakeNode = null;
+      awakeCtx?.suspend().catch(() => {});
+      return;
+    }
+    awakeCtx ??= new AC();
+    awakeCtx.resume().catch(() => {});
+    if (awakeNode) return;
+    const ctx = awakeCtx;
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 1e-4;
+    awakeNode = ctx.createBufferSource();
+    awakeNode.buffer = buf;
+    awakeNode.loop = true;
+    awakeNode.connect(ctx.destination);
+    awakeNode.start();
+  } catch {
+    // 不支持 Web Audio 时照常朗读，只是没有这层保护。
+  }
 }
 
 export function stopSpeaking() {

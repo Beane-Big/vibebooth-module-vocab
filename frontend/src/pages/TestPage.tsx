@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, errorText, modeNames, planSpan, scopeNames, type Mode, type Plan, type Settings, type Test, type TestScope, type WithWords } from "../api";
+import { api, errorText, modes, modesOf, modesText, planSpan, scopeNames, type Mode, type Plan, type Settings, type Test, type TestScope, type WithWords } from "../api";
 import BackBar from "../components/BackBar";
 import Icon, { type IconName } from "../components/Icon";
 import ModePicker from "../components/ModePicker";
@@ -14,6 +14,25 @@ import styles from "./pages.module.css";
 const scopeIcons: Record<Exclude<TestScope, "plan">, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong" };
 const counts = [10, 20, 30, 50, 100];
 
+// 上次检测选的题型记在这台设备上，下次默认选上。
+const modesKey = "vocab.testModes";
+function savedModes(): Mode[] {
+  try {
+    const list = (localStorage.getItem(modesKey) ?? "").split(",").filter((m): m is Mode => (modes as string[]).includes(m));
+    if (list.length) return list;
+  } catch {
+    // 读不到就用默认
+  }
+  return ["look"];
+}
+function saveModes(list: Mode[]) {
+  try {
+    localStorage.setItem(modesKey, list.join(","));
+  } catch {
+    // 存不了就算了
+  }
+}
+
 // 检测：自己选范围和题型，做完看正确率和答错的词；答错的进错题本，并提前到明天复习。
 // 选题的页面顶部和做完的结果下面有“检测记录”入口：一张卡片，写着做过几次、最近一次的日期和成绩，点进去是全部记录。
 // 带 ?plan=<id> 时是这个计划的错题检查：只选题型，计划答错过的词全出。
@@ -26,7 +45,7 @@ export default function TestPage() {
   const [from, setFrom] = useState(1);
   const [to, setTo] = useState(100);
   const [count, setCount] = useState(20);
-  const [mode, setMode] = useState<Mode>("look");
+  const [mode, setMode] = useState<Mode[]>(savedModes);
   const [test, setTest] = useState<WithWords<Test>>();
   const [result, setResult] = useState<WithWords<Test>>();
   const [busy, setBusy] = useState(false);
@@ -59,7 +78,9 @@ export default function TestPage() {
     setBusy(true);
     setError("");
     try {
-      setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode } : { scope, from, to, count, mode }));
+      saveModes(mode);
+      const joined = mode.join(",");
+      setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode: joined } : { scope, from, to, count, mode: joined }));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -78,7 +99,7 @@ export default function TestPage() {
         ) : test ? (
           <Quiz
             words={test.words}
-            mode={test.item.mode}
+            mode={modesOf(test.item.mode)}
             grading="ok"
             examples={settings.examples}
             settings={settings}
@@ -173,7 +194,7 @@ export function TestResult({ result, accent }: { result: WithWords<Test>; accent
         <Ring value={item.correct} total={item.total} label={`${percent}%`} sub="正确率" />
         <div className={styles.chips}>
           <span className={styles.chip}>{scopeNames[item.scope]}</span>
-          <span className={styles.chip}>{modeNames[item.mode]}</span>
+          <span className={styles.chip}>{modesText(item.mode)}</span>
         </div>
         <div className={styles.figures}>
           <div>

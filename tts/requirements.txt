@@ -7,3 +7,10 @@ espeakng-loader==0.2.4
 onnxruntime==1.31.1
 numpy==2.5.4
 soundfile==0.14.0
+# 中文用 Piper（GPL-3.0，单独装在这个语音容器里，后端只通过 HTTP 调用）。它的中文注音（g2pW 判断多音字）要这几个包，
+# transformers 只用来读 BERT 分词表，不装 torch。
+piper-tts==1.8.0
+g2pW==0.1.2
+transformers==5.22.1
+sentence-stream==1.4.0
+unicode-rbnf==2.4.1

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, errorText, modeNames, planSpan, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
+import { api, durationText, errorText, modesText, planSpan, scopeNames, type Plan, type Settings, type Test, type WithWords } from "../api";
 import BackBar from "../components/BackBar";
 import Icon, { type IconName } from "../components/Icon";
 import { root } from "../components/Nav";
@@ -54,6 +54,7 @@ export default function History() {
                 <span className={styles.chip}>{plan.item.words.length} 个词</span>
                 <span className={styles.chip}>每个词 {plan.item.examples} 条例句</span>
                 {plan.item.finishedAt && <span className={styles.chip}>{date(plan.item.finishedAt)}</span>}
+                {plan.item.studySecs > 0 && <span className={styles.chip}>学习 {durationText(plan.item.studySecs)}</span>}
               </div>
             </div>
             {/* 错题学习、错题检查只看这个计划答错过的词（计划测试和每次错题检查答错的合在一起）；再次学习是整批词从头学。 */}
@@ -118,7 +119,7 @@ export default function History() {
           {tab === "plans"
             ? plans!.map((p) => (
                 <li key={p.id}>
-                  <RecordRow href={`${root}history/?plan=${p.id}`} icon="book" title={range(p)} chips={[`${p.words.length} 个词`, date(p.finishedAt ?? p.createdAt)]} correct={p.correct} total={p.total} />
+                  <RecordRow href={`${root}history/?plan=${p.id}`} icon="book" title={range(p)} chips={[`${p.words.length} 个词`, date(p.finishedAt ?? p.createdAt), ...(p.studySecs > 0 ? [`学习 ${durationText(p.studySecs)}`] : [])]} correct={p.correct} total={p.total} />
                 </li>
               ))
             : tests!.map((t) => (
@@ -126,7 +127,7 @@ export default function History() {
                   <RecordRow
                     href={`${root}history/?test=${t.id}`}
                     icon="test"
-                    title={`${scopeNames[t.scope]} · ${modeNames[t.mode]}`}
+                    title={`${scopeNames[t.scope]} · ${modesText(t.mode)}`}
                     chips={[`${t.total} 题`, date(t.finishedAt ?? t.createdAt)]}
                     correct={t.correct}
                     total={t.total}

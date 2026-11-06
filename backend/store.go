@@ -100,6 +100,8 @@ CREATE INDEX IF NOT EXISTS tests_user ON tests (user_id, id);
 var migrations = []string{
 	// 错题检查（scope 为 plan）是哪个学习计划的；其他检测为 0。
 	`ALTER TABLE tests ADD COLUMN plan_id INTEGER NOT NULL DEFAULT 0`,
+	// 学这个计划一共花了几秒：翻卡片学习的时间（含再学一遍、错题学习、再次学习），退出或切到后台时不算。
+	`ALTER TABLE plans ADD COLUMN study_secs INTEGER NOT NULL DEFAULT 0`,
 }
 
 var ErrNotFound = errors.New("没有找到")
@@ -255,14 +257,15 @@ type Plan struct {
 	FinishedAt *time.Time `json:"finishedAt"`
 	Correct    int        `json:"correct"`
 	Total      int        `json:"total"`
+	StudySecs  int        `json:"studySecs"` // 学习时长（秒）
 }
 
-const planCols = `id, first_n, words, examples, pos, created_at, learned_at, finished_at, correct, total`
+const planCols = `id, first_n, words, examples, pos, created_at, learned_at, finished_at, correct, total, study_secs`
 
 func scanPlan(row interface{ Scan(...any) error }) (*Plan, error) {
 	var p Plan
 	var words string
-	if err := row.Scan(&p.ID, &p.FirstN, &words, &p.Examples, &p.Pos, &p.CreatedAt, &p.LearnedAt, &p.FinishedAt, &p.Correct, &p.Total); err != nil {
+	if err := row.Scan(&p.ID, &p.FirstN, &words, &p.Examples, &p.Pos, &p.CreatedAt, &p.LearnedAt, &p.FinishedAt, &p.Correct, &p.Total, &p.StudySecs); err != nil {
 		return nil, err
 	}
 	json.Unmarshal([]byte(words), &p.Words)
@@ -342,6 +345,21 @@ func (s *Store) SavePlanPos(ctx context.Context, user string, id, pos int, learn
 		args = []any{pos, s.now(), user, id}
 	}
 	res, err := s.db.ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// AddStudyTime 给计划的学习时长加上 secs 秒。前端每半分钟、以及暂停时报一次，单次最多算 5 分钟，防止时钟跳变算出很长的时间。
+func (s *Store) AddStudyTime(ctx context.Context, user string, id, secs int) error {
+	if secs < 1 || secs > 300 {
+		return BadInput("学习时长不对")
+	}
+	res, err := s.db.ExecContext(ctx, `UPDATE plans SET study_secs = study_secs + ? WHERE user_id = ? AND id = ?`, secs, user, id)
 	if err != nil {
 		return err
 	}

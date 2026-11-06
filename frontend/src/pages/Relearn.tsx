@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { api, errorText, planSpan, type Plan, type Settings, type WithWords } from "../api";
 import Player from "../components/Player";
+import { useStudyTimer } from "../components/useStudyTimer";
 import { root } from "../components/Nav";
 import styles from "./pages.module.css";
 
 // 把做完的计划再学一遍：?plan=<id> 学整批词（再次学习），再带 &wrong 只学答错过的词（错题学习）。
-// 只是翻卡片，不改计划、不记作答；学完可以接着做这个计划的错题检查。从首页进来时（&home）退出回首页，否则回计划详情。
+// 只是翻卡片，不改计划、不记作答（学习时长照样记在这个计划上）；学完可以接着做这个计划的错题检查。从首页进来时（&home）退出回首页，否则回计划详情。
 export default function Relearn() {
   const params = new URLSearchParams(location.search);
   const planId = Number(params.get("plan"));
@@ -14,6 +15,8 @@ export default function Relearn() {
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  // 再学的时间也记在这个计划上；没有要学的词时不计。
+  useStudyTimer(planId, !!plan && !done && (wrongOnly ? plan.missed : plan.words).length > 0);
 
   useEffect(() => {
     const fail = (err: unknown) => setError(errorText(err));

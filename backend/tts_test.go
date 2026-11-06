@@ -100,3 +100,27 @@ func TestTTSFailedSentence(t *testing.T) {
 		t.Fatalf("语音容器只是这一句失败时应该返回 502，got %d", rec.Code)
 	}
 }
+
+// 中文声音只读释义（去掉词性）和例句翻译；英文声音不读中文，中文声音也不读英文。
+func TestTTSChinese(t *testing.T) {
+	srv, _ := fakeTTS(t)
+	mux := ttsMux(t, srv.URL)
+	deck, _ := LoadDeck(coreDeck)
+	w := deck.Words[0]
+	meaning := posRe.ReplaceAllString(w.Zh[0], "")
+	for _, text := range []string{meaning, w.Ex[0].Zh} {
+		if rec := getTTS(mux, "zh_chaowen", text); rec.Code != 200 {
+			t.Fatalf("%q: %d", text, rec.Code)
+		}
+	}
+	for _, c := range []struct{ voice, text string }{
+		{"zh_chaowen", w.Zh[0]},  // 带词性的原文不读
+		{"zh_chaowen", w.W},      // 中文声音不读英文
+		{"af_heart", w.Ex[0].Zh}, // 英文声音不读中文
+		{"zh_chaowen", "随便一句话"},
+	} {
+		if rec := getTTS(mux, c.voice, c.text); rec.Code != 400 {
+			t.Fatalf("%s %q 应该被拒绝，得到 %d", c.voice, c.text, rec.Code)
+		}
+	}
+}

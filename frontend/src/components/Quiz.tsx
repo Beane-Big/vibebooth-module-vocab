@@ -12,7 +12,7 @@ export type Result = { word: Word; mode: Mode; ok: boolean; rating: number; answ
 
 type Props = {
   words: Word[];
-  mode: Mode | "mix"; // mix：听音和看词轮换
+  mode: Mode | Mode[] | "mix"; // 几种题型时按顺序轮流出；mix 是听音和看词轮换（复习用）
   grading: "ok" | "rating"; // ok：只记对错（计划测试、检测）；rating：复习，按 FSRS 的四档记
   examples: number; // 填词、听写、整句翻译从前几条例句里出题
   settings: Settings;
@@ -65,7 +65,8 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   const [dirs] = useState(() => words.map(() => Math.random() < 0.5));
 
   const word = words[i];
-  const m: Mode = mode === "mix" ? (i % 2 === 0 ? "listen" : "look") : mode;
+  const list: Mode[] = mode === "mix" ? ["listen", "look"] : Array.isArray(mode) ? mode : [mode];
+  const m: Mode = list[i % list.length];
   const choice = (m === "look" || m === "listen") && (grading === "ok" || settings.reviewBy === "choice");
   // 例句：从前几条里轮着取，填词类的题优先取含目标词的那条。
   const pool = word ? word.ex.slice(0, examples) : [];
@@ -76,13 +77,15 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   const typing = m === "write" || m === "dictation";
 
   useEffect(() => {
-    const needs = mode === "look" || mode === "listen" || mode === "mix";
+    const needs = list.includes("look") || list.includes("listen");
     if (!needs || (grading === "rating" && settings.reviewBy !== "choice")) return;
     api
       .choices(words.map((w) => w.w))
       .then(setChoices)
       .catch((err) => setError(errorText(err)));
-  }, [words, mode, grading, settings.reviewBy]);
+    // 按题型的内容判断，不按 mode 本身：传进来的数组每次渲染都是新的。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [words, list.join(), grading, settings.reviewBy]);
 
   // 四个选项：正确答案加三个干扰项，打乱顺序。选中文时显示释义，选英文时显示单词。
   const options = useMemo(() => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, errorText, orderNames, request, type Order, type Settings, type Stats } from "../api";
 import Icon from "../components/Icon";
+import { ActionRow, Group, NumberInput, Row, Select, SettingsList, Stepper, Switch } from "../components/SettingsList";
 import Sheet from "../components/Sheet";
 import { canSpeak, speak } from "../speech";
 import styles from "./pages.module.css";
@@ -124,9 +125,9 @@ export default function SettingsPage() {
     timer.current = window.setTimeout(flush, saveDelay);
   };
 
-  const num = (k: "planWords" | "startN" | "wordRepeat" | "sentRepeat" | "wrongClear", min: number, max: number, placeholder?: string) => (
-    <input
-      type="number"
+  // 数字输入：清空时先只改界面（准备重新输入），填了范围内的数才保存；startN 清空就是“不填”（0）。
+  const num = (k: "planWords" | "startN", min: number, max: number, placeholder?: string) => (
+    <NumberInput
       min={min}
       max={max}
       value={s[k] || (placeholder ? "" : s[k])}
@@ -137,149 +138,119 @@ export default function SettingsPage() {
       }}
     />
   );
+  const step = (k: "wordRepeat" | "sentRepeat" | "wrongClear", min: number, max: number, unit: string) => (
+    <Stepper value={s[k]} min={min} max={max} unit={unit} onChange={(v) => set(k, v)} />
+  );
 
   return (
     <>
-      <main className="content stack">
-        <section className="card stack">
-          <h1>学习计划</h1>
-          <label className="field">
-            <span>每次学几个词</span>
-            {num("planWords", 1, 100)}
-          </label>
-          <label className="field">
-            <span>学习顺序</span>
-            <select value={s.order} onChange={(e) => set("order", e.target.value as Order)}>
-              {(Object.keys(orderNames) as Order[]).map((o) => (
-                <option key={o} value={o}>
-                  {orderNames[o]}
-                </option>
-              ))}
-            </select>
-            <span className="muted">学过的词会跳过，随时可以换</span>
-          </label>
-          {/* 随机顺序的“第几个”没有意义，不显示。 */}
-          {s.order !== "random" && (
-            <label className="field">
-              <span>从第几个词开始</span>
-              {num("startN", 0, 99999, "不填")}
-              <span className="muted">只管下一个计划；不填就从第一个没学过的词开始</span>
-            </label>
-          )}
-          <label className="field">
-            <span>每个词几条例句</span>
-            <select value={s.examples} onChange={(e) => set("examples", Number(e.target.value))}>
-              {[2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n} 条
-                </option>
-              ))}
-            </select>
-            <span className="muted">也用于复习和检测里的例句题</span>
-          </label>
-          <label className="field">
-            <span>例句显示音标</span>
-            <input type="checkbox" checked={s.sentencePh} onChange={(e) => set("sentencePh", e.target.checked)} />
-            <span className="muted">每个词的词典读音连起来，a、to 这类虚词按弱读显示；没有连读，句子的实际读法以朗读为准</span>
-          </label>
-        </section>
+      <main className="content">
+        <SettingsList title="设置">
+          <Group title="学习计划" footer="学过的词会跳过，学习顺序随时可以换。“从第几个词开始”只管下一个计划，不填就从第一个没学过的词开始。例句条数也用于复习和检测里的例句题。">
+            <Row label="每次学几个词">{num("planWords", 1, 100)}</Row>
+            <Row label="学习顺序">
+              <Select value={s.order} onChange={(v) => set("order", v)} options={(Object.keys(orderNames) as Order[]).map((o) => [o, orderNames[o]])} />
+            </Row>
+            {/* 随机顺序的“第几个”没有意义，不显示。 */}
+            {s.order !== "random" && <Row label="从第几个词开始">{num("startN", 0, 99999, "不填")}</Row>}
+            <Row label="每个词几条例句">
+              <Select value={s.examples} onChange={(v) => set("examples", v)} options={[2, 3, 4, 5].map((n) => [n, `${n} 条`])} />
+            </Row>
+          </Group>
 
-        <section className="card stack">
-          <h1>朗读和自动播放</h1>
-          <label className="field">
-            <span>口音</span>
-            <select value={s.accent} onChange={(e) => set("accent", e.target.value as Settings["accent"])}>
-              <option value="en-US">美音</option>
-              <option value="en-GB">英音</option>
-            </select>
-            <button className="link" onClick={() => speak("The course comprises ten lessons.", s.accent, s.rate)} disabled={!canSpeak}>
-              🔊 试听
-            </button>
-          </label>
-          <label className="field">
-            <span>语速</span>
-            <select value={s.rate} onChange={(e) => set("rate", Number(e.target.value))}>
-              {[0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5].map((r) => (
-                <option key={r} value={r}>
-                  {r === 1 ? "正常" : `${r} 倍`}
-                </option>
-              ))}
-            </select>
-            <span className="muted">英文用 Kokoro 语音，一句话第一次读时要等一两秒合成，之后全家共用</span>
-          </label>
-          <label className="field">
-            <span>单词英文读几遍</span>
-            {num("wordRepeat", 1, 5)}
-            <span className="muted">自动播放时先读一遍中文，再读英文</span>
-          </label>
-          <label className="field">
-            <span>例句英文读几遍</span>
-            {num("sentRepeat", 1, 5)}
-          </label>
-          <label className="field">
-            <span>例句第二遍拼读</span>
-            <input type="checkbox" checked={s.spellOut} onChange={(e) => set("spellOut", e.target.checked)} />
-            <span className="muted">{s.sentRepeat >= 2 ? "第一遍正常读，第二遍一个词一个词地读，之后正常读" : "例句读两遍以上才有拼读"}</span>
-          </label>
-          <label className="field">
-            <span>每句后停多久</span>
-            <select value={s.pauseBy} onChange={(e) => set("pauseBy", e.target.value as Settings["pauseBy"])}>
-              <option value="audio">按这句的朗读时长</option>
-              <option value="fixed">固定秒数</option>
-            </select>
+          <Group footer="每个词的词典读音连起来，a、to 这类虚词按弱读显示；没有连读，句子的实际读法以朗读为准。">
+            <Row label="例句显示音标">
+              <Switch checked={s.sentencePh} onChange={(v) => set("sentencePh", v)} />
+            </Row>
+          </Group>
+
+          <Group title="朗读" footer={canSpeak ? "英文用 Kokoro 语音，中文用 Piper 语音。一句话第一次读时要等一两秒合成，之后全家共用。" : "当前浏览器不支持朗读。"}>
+            <Row label="口音">
+              <Select value={s.accent} onChange={(v) => set("accent", v)} options={[["en-US", "美音"], ["en-GB", "英音"]]} />
+            </Row>
+            <Row label="语速">
+              <Select value={s.rate} onChange={(v) => set("rate", v)} options={[0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5].map((r) => [r, r === 1 ? "正常" : `${r} 倍`])} />
+            </Row>
+            <ActionRow onClick={() => speak("The course comprises ten lessons.", s.accent, s.rate)} disabled={!canSpeak}>
+              试听
+            </ActionRow>
+          </Group>
+
+          <Group
+            title="自动播放"
+            footer={
+              <>
+                每页先读一遍中文（打开“读中文”时），再读英文。{s.spellOut && s.sentRepeat >= 2 ? "例句第一遍正常读，第二遍一个词一个词地读，之后正常读。" : ""}
+                {s.pauseBy === "audio" ? "每遍之间、翻到下一页前都停这么久：单词停得短、长句停得长。" : "每遍之间、翻到下一页前都停这么久。"}
+              </>
+            }
+          >
+            <Row label="读中文">
+              <Switch checked={s.autoZh} onChange={(v) => set("autoZh", v)} />
+            </Row>
+            <Row label="单词英文读几遍" plain>
+              {step("wordRepeat", 1, 5, " 遍")}
+            </Row>
+            <Row label="例句英文读几遍" plain>
+              {step("sentRepeat", 1, 5, " 遍")}
+            </Row>
+            <Row label="例句第二遍拼读" hint={s.sentRepeat < 2 ? "例句读两遍以上才有拼读" : undefined} disabled={s.sentRepeat < 2}>
+              <Switch checked={s.spellOut} onChange={(v) => set("spellOut", v)} disabled={s.sentRepeat < 2} />
+            </Row>
+            <Row label="每句后停多久">
+              <Select
+                value={s.pauseBy}
+                onChange={(v) => set("pauseBy", v)}
+                options={[
+                  ["audio", "按朗读时长"],
+                  ["fixed", "固定秒数"],
+                ]}
+              />
+            </Row>
             {s.pauseBy === "audio" ? (
-              <select value={s.pauseRatio} onChange={(e) => set("pauseRatio", Number(e.target.value))} aria-label="朗读时长的几倍">
-                {[0.5, 1, 1.5, 2].map((r) => (
-                  <option key={r} value={r}>
-                    {r === 1 ? "一样长" : `${r} 倍`}
-                  </option>
-                ))}
-              </select>
+              <Row label="停顿是朗读时长的">
+                <Select value={s.pauseRatio} onChange={(v) => set("pauseRatio", v)} options={[0.5, 1, 1.5, 2].map((r) => [r, r === 1 ? "一样长" : `${r} 倍`])} />
+              </Row>
             ) : (
-              <select value={s.autoPause} onChange={(e) => set("autoPause", Number(e.target.value))} aria-label="停几秒">
-                {[0, 1, 2, 3, 5, 8].map((n) => (
-                  <option key={n} value={n}>
-                    {n} 秒
-                  </option>
-                ))}
-              </select>
+              <Row label="停几秒">
+                <Select value={s.autoPause} onChange={(v) => set("autoPause", v)} options={[0, 1, 2, 3, 5, 8].map((n) => [n, `${n} 秒`])} />
+              </Row>
             )}
-            <span className="muted">{s.pauseBy === "audio" ? "每遍之间、翻到下一页前都停这么久；单词停得短、长句停得长" : "每遍之间、翻到下一页前都停这么久"}</span>
-          </label>
-          <label className="field">
-            <span>读中文</span>
-            <input type="checkbox" checked={s.autoZh} onChange={(e) => set("autoZh", e.target.checked)} />
-          </label>
-          {!canSpeak && <p className="muted">当前浏览器不支持朗读。</p>}
-        </section>
+          </Group>
 
-        <section className="card stack">
-          <h1>复习和错题本</h1>
-          <label className="field">
-            <span>复习题型</span>
-            <select value={s.reviewMode} onChange={(e) => set("reviewMode", e.target.value as Settings["reviewMode"])}>
-              <option value="mix">听音和看词轮换</option>
-              <option value="listen">只听音</option>
-              <option value="look">只看词</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>复习怎么作答</span>
-            <select value={s.reviewBy} onChange={(e) => set("reviewBy", e.target.value as Settings["reviewBy"])}>
-              <option value="choice">四选一</option>
-              <option value="rate">看答案后自己评（四档）</option>
-            </select>
-            <span className="muted">{s.reviewBy === "choice" ? "答对算记得，答错或不认识算忘了" : "按忘了、模糊、记得、轻松安排下次复习"}</span>
-          </label>
-          <label className="field">
-            <span>连续答对几次移出错题本</span>
-            {num("wrongClear", 1, 10)}
-          </label>
-        </section>
+          <Group title="复习和错题本" footer={s.reviewBy === "choice" ? "四选一：答对算记得，答错或不认识算忘了。" : "看答案后按忘了、模糊、记得、轻松安排下次复习。"}>
+            <Row label="复习题型">
+              <Select
+                value={s.reviewMode}
+                onChange={(v) => set("reviewMode", v)}
+                options={[
+                  ["mix", "听音和看词轮换"],
+                  ["listen", "只听音"],
+                  ["look", "只看词"],
+                ]}
+              />
+            </Row>
+            <Row label="复习怎么作答">
+              <Select
+                value={s.reviewBy}
+                onChange={(v) => set("reviewBy", v)}
+                options={[
+                  ["choice", "四选一"],
+                  ["rate", "看答案后自评"],
+                ]}
+              />
+            </Row>
+            <Row label="连续答对几次移出错题本" plain>
+              {step("wrongClear", 1, 10, " 次")}
+            </Row>
+          </Group>
 
-        <button className={`secondary ${styles.wide}`} onClick={() => openReset("menu")}>
-          还原
-        </button>
+          <Group footer="还原设置，或清空全部学习进度，都要再确认一次。">
+            <ActionRow onClick={() => openReset("menu")} destructive>
+              还原
+            </ActionRow>
+          </Group>
+        </SettingsList>
       </main>
 
       <Sheet open={reset === "menu"} onClose={() => setReset("")} title="还原">

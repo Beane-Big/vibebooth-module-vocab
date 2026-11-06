@@ -109,6 +109,28 @@ func TestPlanMissed(t *testing.T) {
 	}
 }
 
+// 学习时长按次累加，做完测试后再学也算；超出范围的拒绝，别人的计划改不了。
+func TestStudyTime(t *testing.T) {
+	ctx := context.Background()
+	s, deck, _ := newTestStore(t)
+	p, _ := s.CreatePlan(ctx, "u1", deck.Range(1, 2), 2)
+	for _, secs := range []int{30, 45} {
+		if err := s.AddStudyTime(ctx, "u1", p.ID, secs); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var bad BadInput
+	if err := s.AddStudyTime(ctx, "u1", p.ID, 301); !errors.As(err, &bad) {
+		t.Fatalf("301 秒应该被拒绝：%v", err)
+	}
+	if err := s.AddStudyTime(ctx, "u2", p.ID, 10); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("别人的计划：%v", err)
+	}
+	if got, _ := s.Plan(ctx, "u1", p.ID); got.StudySecs != 75 {
+		t.Fatalf("studySecs = %d", got.StudySecs)
+	}
+}
+
 func TestWrongBookClears(t *testing.T) {
 	ctx := context.Background()
 	s, deck, _ := newTestStore(t)

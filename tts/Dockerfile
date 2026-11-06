@@ -21,6 +21,11 @@ COPY fetch_models.py ./
 RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models model
 COPY voices.py ./
 RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models voices
+# 中文：Piper 的声音、g2pW 模型和 BERT 分词表。分词表存在 HF_HOME，运行时离线读，不再联网。
+ENV HF_HOME=/models/hf
+COPY fetch_zh.py ./
+RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_zh.py /models
+ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 COPY server.py .
 RUN useradd --uid 10001 --no-create-home app
 USER app
