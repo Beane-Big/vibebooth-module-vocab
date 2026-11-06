@@ -2,31 +2,51 @@
 #   - piper/<名字>.onnx 和 .onnx.json：Piper 的中文声音（voices.py 的 PIPER_VOICES），60 多 MB。
 #   - g2pW/：Piper 判断多音字用的 g2pW 模型，解压后 150 MB 左右。Piper 自己会在第一次合成时从 huggingface.co 下载，
 #     这里先按 HF_ENDPOINT 下好，运行时不用联网。
-#   - g2pW 用的 bert-base-chinese 分词表，存在 HF_HOME 里，运行时离线读（huggingface_hub 也按 HF_ENDPOINT 找镜像）。
+#   - bert-base-chinese/：g2pW 用的分词表。把 g2pW/config.py 里的 model_source 改成这个目录，
+#     运行时直接从本地读，不经过 huggingface_hub。
 # 和 fetch_models.py 分开：改中文这部分不会让 Docker 重新下载 Kokoro 的模型。
+#
+# 大文件（存在 LFS 里的模型）用 resolve 地址，小文件（json、词表）用 raw 地址：
+# huggingface.co 对小文件的 resolve 会再跳到 /api/resolve-cache/...，经 hf-mirror 下载时这一跳返回 403（2026-11 服务器上的构建日志）。
 import os
+import re
 import sys
 import tarfile
-
-from transformers import BertTokenizer
 
 from download import download
 from voices import PIPER_VOICES
 
 endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co").rstrip("/")
 out = sys.argv[1]
-os.makedirs(f"{out}/piper", exist_ok=True)
 
+
+def hf(repo: str, path: str, dest: str, big: bool = False) -> None:
+    download(f"{endpoint}/{repo}/{'resolve' if big else 'raw'}/main/{path}", dest)
+
+
+os.makedirs(f"{out}/piper", exist_ok=True)
 for name in PIPER_VOICES.values():
     lang, speaker, quality = name.split("-")  # zh_CN、chaowen、medium
-    url = f"{endpoint}/rhasspy/piper-voices/resolve/main/{lang.split('_')[0]}/{lang}/{speaker}/{quality}/{name}"
-    for ext in (".onnx", ".onnx.json"):
-        download(url + ext, f"{out}/piper/{name}{ext}")
+    path = f"{lang.split('_')[0]}/{lang}/{speaker}/{quality}/{name}"
+    hf("rhasspy/piper-voices", path + ".onnx", f"{out}/piper/{name}.onnx", big=True)
+    hf("rhasspy/piper-voices", path + ".onnx.json", f"{out}/piper/{name}.onnx.json")
 
 tar = f"{out}/g2pw.tar.gz"
-download(f"{endpoint}/datasets/rhasspy/piper-checkpoints/resolve/main/zh/zh_CN/_resources/g2pw.tar.gz", tar)
+hf("datasets/rhasspy/piper-checkpoints", "zh/zh_CN/_resources/g2pw.tar.gz", tar, big=True)
 with tarfile.open(tar) as t:
     t.extractall(f"{out}/g2pW", filter="data")
 os.remove(tar)
 
-BertTokenizer.from_pretrained("bert-base-chinese")
+bert = f"{out}/bert-base-chinese"
+os.makedirs(bert, exist_ok=True)
+for f in ("vocab.txt", "tokenizer.json", "tokenizer_config.json"):
+    hf("google-bert/bert-base-chinese", f, f"{bert}/{f}")
+
+config = f"{out}/g2pW/config.py"
+with open(config, encoding="utf-8") as f:
+    text = f.read()
+text, n = re.subn(r"^model_source = .*$", f"model_source = {bert!r}", text, flags=re.M)
+if n != 1:
+    raise SystemExit(f"{config} 里没找到 model_source")
+with open(config, "w", encoding="utf-8") as f:
+    f.write(text)
