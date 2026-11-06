@@ -15,9 +15,23 @@ function read() {
   return svg;
 }
 
-// iOS 会自己切圆角，透明的地方会变成黑色，所以 PNG 铺一层白底。
+// iOS 会自己切圆角（主屏幕、锁屏和控制中心的“正在播放”都是），透明的地方会变成黑色。
+// 所以 PNG 要铺满整个方块：把铺满画布的那块底色的圆角去掉，再铺一层白底兜底。
+// 不去圆角的话，iOS 切的圆角比图标自己的小，四个角会露出白边。
 function touchIcon(svg: string) {
-  return new Resvg(svg, { fitTo: { mode: "width", value: 180 }, background: "#ffffff" }).render().asPng();
+  return new Resvg(squareBackground(svg), { fitTo: { mode: "width", value: 180 }, background: "#ffffff" }).render().asPng();
+}
+
+// 找出和 viewBox 一样大、从左上角画起的 <rect>（图标的底色），去掉它的 rx、ry。
+function squareBackground(svg: string) {
+  const box = svg.match(/viewBox="\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*"/);
+  if (!box) return svg;
+  const [, w, h] = box;
+  return svg.replace(/<rect\b[^>]*>/g, (tag) => {
+    const attr = (name: string) => tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1];
+    const full = attr("width") === w && attr("height") === h && Number(attr("x") ?? 0) === 0 && Number(attr("y") ?? 0) === 0;
+    return full ? tag.replace(/\s(rx|ry)="[^"]*"/g, "") : tag;
+  });
 }
 
 export default function moduleIcon(): Plugin {
