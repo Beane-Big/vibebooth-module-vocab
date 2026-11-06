@@ -7,17 +7,24 @@
 # 和 fetch_models.py 分开：改中文这部分不会让 Docker 重新下载 Kokoro 的模型。
 #
 # 大文件（存在 LFS 里的模型）用 resolve 地址，小文件（json、词表）用 raw 地址：
-# huggingface.co 对小文件的 resolve 会再跳到 /api/resolve-cache/...，经 hf-mirror 下载时这一跳返回 403（2026-11 服务器上的构建日志）。
+# huggingface.co 对小文件的 resolve 会再跳到 /api/resolve-cache/...，raw 不跳。
+# hf-mirror 拒绝 User-Agent 为 Python-urllib 的小文件请求（返回 403），所以这里换一个名字。
+# 只在这个脚本里换，不改 download.py：改它会让前面装依赖、下 Kokoro 模型的构建层缓存全部失效。
 import os
 import re
 import sys
 import tarfile
+import urllib.request
 
 from download import download
 from voices import PIPER_VOICES
 
 endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co").rstrip("/")
 out = sys.argv[1]
+
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-Agent", "vibebooth-vocab-build/1.0")]
+urllib.request.install_opener(opener)
 
 
 def hf(repo: str, path: str, dest: str, big: bool = False) -> None:
