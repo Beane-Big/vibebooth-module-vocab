@@ -1,5 +1,12 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import Icon from "./Icon";
 import styles from "./SettingsList.module.css";
+
+// 下拉菜单：每项高度、最高多高、离窗口边缘至少多远（像素）。
+const menuRow = 44;
+const maxMenu = 360;
+const gap = 12;
 
 // 设置页用的 iOS 风格列表：Group 是一组（上面组标题，下面说明），Row 是一行（左边名字和小字说明，右边控件）。
 // 控件用下面的 Select、NumberInput、Switch、Stepper，整行是按钮时用 ActionRow。
@@ -38,20 +45,106 @@ export function Row({ label, hint, disabled, plain, children }: { label: string;
   );
 }
 
+// 下拉框：点开是贴着它弹出的菜单（iOS 的下拉菜单那样，当前值前面打勾），不用浏览器自带的下拉列表。
+// 菜单挂在 body 上（面板是 overflow: hidden，放在里面会被裁掉），按位置算在框的下方或上方。
+// 键盘：↑↓ 换选项、回车或空格选中、Esc 关闭；点菜单外面、滚动、改窗口大小都会关上。
 export function Select<T extends string | number>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (v: T) => void; label?: string }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0); // 键盘高亮的选项
+  const [pos, setPos] = useState<CSSProperties>({});
+  const button = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const current = options.findIndex(([v]) => v === value);
+
+  function show() {
+    const r = button.current!.getBoundingClientRect();
+    const height = Math.min(options.length * menuRow + 12, maxMenu);
+    const below = window.innerHeight - r.bottom - gap;
+    const top = below >= height || below >= r.top ? r.bottom + 6 : Math.max(gap, r.top - 6 - height);
+    setPos({ top, right: Math.max(gap, window.innerWidth - r.right - 8), maxHeight: maxMenu });
+    setActive(Math.max(0, current));
+    setOpen(true);
+  }
+
+  function pick(i: number) {
+    setOpen(false);
+    button.current?.focus();
+    if (options[i][0] !== value) onChange(options[i][0]);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    menu.current?.querySelector<HTMLElement>(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (e.target instanceof Node && (menu.current?.contains(e.target) || button.current?.contains(e.target))) return;
+      setOpen(false);
+    };
+    const shut = () => setOpen(false);
+    document.addEventListener("pointerdown", close, true);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", shut);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", shut);
+    };
+  }, [open]);
+
+  function onKey(e: React.KeyboardEvent) {
+    if (!open) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
+        e.preventDefault();
+        show();
+      }
+      return;
+    }
+    if (e.key === "Escape" || e.key === "Tab") setOpen(false);
+    else if (e.key === "ArrowDown") setActive((i) => Math.min(options.length - 1, i + 1));
+    else if (e.key === "ArrowUp") setActive((i) => Math.max(0, i - 1));
+    else if (e.key === "Enter" || e.key === " ") pick(active);
+    else return;
+    e.preventDefault();
+  }
+
   return (
-    <select
-      className={styles.select}
-      value={value}
-      aria-label={label}
-      onChange={(e) => onChange((typeof value === "number" ? Number(e.target.value) : e.target.value) as T)}
-    >
-      {options.map(([v, text]) => (
-        <option key={v} value={v}>
-          {text}
-        </option>
-      ))}
-    </select>
+    <>
+      <button
+        ref={button}
+        type="button"
+        className={`${styles.select} ${open ? styles.selectOpen : ""}`}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => (open ? setOpen(false) : show())}
+        onKeyDown={onKey}
+      >
+        {options[current]?.[1] ?? String(value)}
+      </button>
+      {open &&
+        createPortal(
+          <div ref={menu} className={styles.menu} style={pos} role="listbox" aria-label={label}>
+            {options.map(([v, text], i) => (
+              <div
+                key={v}
+                data-i={i}
+                role="option"
+                aria-selected={i === current}
+                className={`${styles.option} ${i === active ? styles.optionActive : ""}`}
+                onPointerEnter={() => setActive(i)}
+                onClick={() => pick(i)}
+              >
+                <span className={styles.tick}>{i === current && <Icon name="check" size={16} />}</span>
+                {text}
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 

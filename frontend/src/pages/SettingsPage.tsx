@@ -9,13 +9,13 @@ import styles from "./pages.module.css";
 // 停止改动这么久之后保存（输入数字时不用每敲一个字保存一次）。
 const saveDelay = 500;
 
-// 个人设置：每个人自己一份，不影响家里其他人。改了就自动保存，右下角轻轻提示一下“已保存”，没有保存按钮。
+// 个人设置：每个人自己一份，不影响家里其他人。改了就悄悄自动保存，不提示，也没有保存按钮。
 // 保存失败时提示一直留着，点它重试。离开页面时还没来得及保存的改动也会发出去。
 // 页面最下面是“还原”：还原设置，或清空全部学习进度，都要再确认一次。
 export default function SettingsPage() {
   const [s, setS] = useState<Settings>();
   const [status, setStatus] = useState<"" | "saved" | "failed">("");
-  const [notice, setNotice] = useState("已保存"); // 成功提示的文字
+  const [notice, setNotice] = useState(""); // 还原后的提示文字（平时保存不提示）
   const [reset, setReset] = useState<"" | "menu" | "settings" | "progress">("");
   const [counts, setCounts] = useState<Stats & { tests: number }>(); // 清空进度前列出会清掉多少
   const [resetting, setResetting] = useState(false);
@@ -77,7 +77,7 @@ export default function SettingsPage() {
       const saved = await api.saveSettings(next);
       // 服务器会把越界的值拉回范围内，没有新改动时用它的结果。
       if (v === version.current) setS(saved);
-      done("已保存");
+      setStatus((x) => (x === "failed" ? "" : x)); // 之前失败过、这次存上了，把失败提示收起来
     } catch (err) {
       pending.current ??= next;
       setStatus("failed");
