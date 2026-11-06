@@ -45,10 +45,38 @@ export function Row({ label, hint, disabled, plain, children }: { label: string;
   );
 }
 
-// 下拉框：点开是贴着它弹出的菜单（iOS 的下拉菜单那样，当前值前面打勾），不用浏览器自带的下拉列表。
+type SelectProps<T> = { value: T; options: [T, string][]; onChange: (v: T) => void; label?: string };
+
+// Chrome、Edge 这类 Chromium 浏览器自带的下拉列表不好看，换成自己画的菜单；Safari 和 iPhone、iPad 上的浏览器
+// （都是 Safari 的内核，UA 里没有 "Chrome"，iOS 的 Chrome 是 "CriOS"）、Firefox 用浏览器自带的。
+const chromium = /Chrome\/|Chromium\//.test(navigator.userAgent);
+
+// 下拉框。Chromium 上用 MenuSelect，其余用浏览器自带的 <select>。
+export function Select<T extends string | number>(props: SelectProps<T>) {
+  return chromium ? <MenuSelect {...props} /> : <NativeSelect {...props} />;
+}
+
+function NativeSelect<T extends string | number>({ value, options, onChange, label }: SelectProps<T>) {
+  return (
+    <select
+      className={styles.select}
+      value={value}
+      aria-label={label}
+      onChange={(e) => onChange((typeof value === "number" ? Number(e.target.value) : e.target.value) as T)}
+    >
+      {options.map(([v, text]) => (
+        <option key={v} value={v}>
+          {text}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+// 自己画的下拉菜单：贴着框弹出（iOS 的下拉菜单那样，当前值前面打勾）。
 // 菜单挂在 body 上（面板是 overflow: hidden，放在里面会被裁掉），按位置算在框的下方或上方。
 // 键盘：↑↓ 换选项、回车或空格选中、Esc 关闭；点菜单外面、滚动、改窗口大小都会关上。
-export function Select<T extends string | number>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (v: T) => void; label?: string }) {
+function MenuSelect<T extends string | number>({ value, options, onChange, label }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0); // 键盘高亮的选项
   const [pos, setPos] = useState<CSSProperties>({});

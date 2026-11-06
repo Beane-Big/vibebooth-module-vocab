@@ -24,8 +24,10 @@
 .control { flex: none; display: flex; align-items: center; gap: 8px; max-width: 60%; color: var(--muted); }
 .disabled .label { color: var(--muted); }
 
-/* 下拉框：没有边框，值靠右灰色，后面一对上下小箭头；点开时变成主题色。 */
+/* 下拉框（自带的 <select> 和自己画的按钮共用）：没有边框，值靠右灰色，后面一对上下小箭头；点开时变成主题色。 */
 .select {
+  appearance: none;
+  -webkit-appearance: none;
   max-width: 100%;
   border: none;
   border-radius: 0;
@@ -36,6 +38,7 @@
   font-size: 16px;
   font-weight: 400;
   text-align: right;
+  text-align-last: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
