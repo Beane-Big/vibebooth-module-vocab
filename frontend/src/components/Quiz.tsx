@@ -30,6 +30,10 @@ const ratings = [
   { v: 4, label: "轻松", hint: "间隔长一些", cls: styles.easy },
 ];
 
+// 左滑换题：移动超过 swipeTap 像素才算拖动，往左拖超过 swipeNext 像素松手就进下一题。
+const swipeTap = 8;
+const swipeNext = 70;
+
 const tokens = (s: string) => s.match(/[A-Za-z']+/g) ?? [];
 const shuffle = <T,>(list: T[]) => {
   const a = [...list];
@@ -44,10 +48,11 @@ const shuffle = <T,>(list: T[]) => {
 //   看词选择：看英文选中文，或看中文选英文；听音选择：听读音选中文，或选拼写。都是四选一，另有“不认识”。
 //     干扰项由后端挑（同词性、词频相近、意思不重叠；拼写类是拼写相近、读音不同的词）。
 //     复习可以在设置里改成老办法：看答案后四档自评（reviewBy = rate）。
-//   看中文写英文：显示例句的中文和挖掉目标词（留首字母）的英文，输入这个词；
+//   看中文写英文：显示例句的中文和挖掉目标词的英文（不给首字母），输入这个词；
 //   听写：播放例句，句中目标词挖空，输入这个词。这两种程序判对错，接受词形变化。
 //   整句翻译：看例句的中文写出整句英文，再对照原句（标出写对的词）自己判对错。
-// 选择题答对在复习里算“记得”，答错或不认识算“忘了”。
+// 选择题先点选一个（可以改选），再按“确定”判对错；“不认识”直接算答错。答对在复习里算“记得”，答错或不认识算“忘了”。
+// 作答后不自动朗读，听音和听写的题目本身照常播放。答完后点“下一题”或把卡片往左滑进下一题。
 // 做题时是专注模式：导航收起，左上角 × 退出。
 export default function Quiz({ words, mode, grading, examples, settings, onAnswer, onDone, onExit, exitConfirm }: Props) {
   useImmersive(true);
@@ -55,11 +60,14 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   const [shown, setShown] = useState(false);
   const [typed, setTyped] = useState("");
   const [checked, setChecked] = useState<boolean | null>(null);
-  const [picked, setPicked] = useState<string | null>(null); // 选择题选了哪个，"" 是不认识
+  const [selected, setSelected] = useState<string | null>(null); // 选择题点选了哪个，还没确定
+  const [picked, setPicked] = useState<string | null>(null); // 选择题确定的答案，"" 是不认识
   const [choices, setChoices] = useState<Record<string, Choices>>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const results = useRef<Result[]>([]);
+  const card = useRef<HTMLElement>(null);
+  const drag = useRef<{ x: number; y: number; dx: number; id: number; moved: boolean } | null>(null);
   const input = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   // 选择题每题的方向：true 是选中文（看英文选中文、听音选中文），false 是选英文。
   const [dirs] = useState(() => words.map(() => Math.random() < 0.5));
@@ -109,6 +117,7 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     setShown(false);
     setTyped("");
     setChecked(null);
+    setSelected(null);
     setPicked(null);
     setError("");
     playPrompt();
@@ -126,8 +135,14 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     try {
       await onAnswer(r);
       results.current.push(r);
-      if (i + 1 >= words.length) onDone(results.current);
-      else setI(i + 1);
+      if (i + 1 >= words.length) return onDone(results.current);
+      // 和换题放在同一次渲染里清掉作答状态，不然新题会先带着上一题的选择闪一下（正确答案先标绿）。
+      setShown(false);
+      setTyped("");
+      setChecked(null);
+      setSelected(null);
+      setPicked(null);
+      setI(i + 1);
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -135,15 +150,14 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     }
   }
 
-  // 答完显示答案时读一遍：选择题读单词，填词和整句翻译读原句。
+  // 显示答案，不朗读。
   function reveal() {
     setShown(true);
     stopSpeaking();
-    if ((m === "write" || m === "translate") && ex) say(ex.en);
-    else if (m === "look" || m === "listen") say(word.w);
   }
 
   function pick(w: string) {
+    setSelected(null);
     setPicked(w);
     reveal();
   }
@@ -154,11 +168,61 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     reveal();
   }
 
+  // 判完后才能进下一题：选择题和填词是“下一题”按钮，也可以把卡片往左滑。
+  const answered = checked !== null || (choice && picked !== null);
+  function next() {
+    const ok = typing ? !!checked : pickedOk;
+    return submit(ok, grading === "rating" ? (ok ? 3 : 1) : 0, typing ? typed.trim() : (picked ?? ""));
+  }
+
+  // 左滑进下一题：卡片跟着手指走，够远就滑出去换题，不够就弹回。只认横着滑，竖着滑照常滚动页面（touch-action: pan-y）。
+  function setCard(transform: string, opacity: string, ms = 0) {
+    const el = card.current;
+    if (!el) return;
+    el.style.transition = ms ? `transform ${ms}ms ease, opacity ${ms}ms ease` : "none";
+    el.style.transform = transform;
+    el.style.opacity = opacity;
+  }
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!answered || busy || drag.current || (e.target as HTMLElement).closest("input, textarea")) return;
+    drag.current = { x: e.clientX, y: e.clientY, dx: 0, id: e.pointerId, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    d.dx = e.clientX - d.x;
+    const dy = Math.abs(e.clientY - d.y);
+    if (!d.moved) {
+      if (dy > swipeTap && dy > Math.abs(d.dx)) {
+        drag.current = null; // 竖着滑是滚动页面
+        return;
+      }
+      if (Math.abs(d.dx) <= swipeTap) return;
+      d.moved = true;
+      card.current?.setPointerCapture(e.pointerId);
+    }
+    const dx = d.dx > 0 ? d.dx / 3 : d.dx; // 往右没有上一题，拖着有阻力
+    setCard(`translateX(${dx}px)`, String(1 - Math.min(0.5, Math.abs(dx) / (card.current?.offsetWidth || 1))));
+  };
+  const onPointerEnd = async (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    if (!d.moved) return;
+    if (e.type !== "pointerup" || d.dx > -swipeNext) return setCard("", "", 220);
+    const w = card.current?.offsetWidth || 0;
+    setCard(`translateX(${-w * 0.7}px)`, "0", 160);
+    await new Promise((r) => setTimeout(r, 160));
+    await next();
+    setCard(`translateX(${w * 0.35}px)`, "0");
+    void card.current?.offsetWidth; // 先让新位置生效，再滑进来
+    setCard("", "", 240);
+  };
+
   const correct = results.current.filter((r) => r.ok).length;
   const pickedOk = picked === word.w;
-  // 填词的空格：没作答时放首字母（看中文写英文）或一个不换行空格占位（听写），下划线和句子的字底对齐。
-  const hint = m === "write" && target ? target[0] : " ";
-  const blank = checked === null ? hint : target;
+  // 填词的空格：没作答时放一个不换行空格占位，下划线和句子的字底对齐；判完显示正确的词。
+  const blank = checked === null ? " " : target;
   const typedWords = new Set(tokens(typed).map((t) => t.toLowerCase()));
   const label = choice || (m !== "look" && m !== "listen") ? modeNames[m] : m === "look" ? "看词想意思" : "听音想意思";
 
@@ -177,7 +241,14 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   );
 
   return (
-    <section className={`card ${styles.quiz}`}>
+    <section
+      ref={card}
+      className={`card ${styles.quiz} ${answered ? styles.swipeable : ""}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
+    >
       <span className={styles.bar} style={{ width: `${((i + (shown ? 1 : 0)) / words.length) * 100}%` }} />
       <div className={styles.top}>
         <ExitButton
@@ -268,9 +339,16 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
       {choice && options.length > 0 && (
         <div className={styles.options}>
           {options.map((o) => {
-            const state = picked === null ? "" : o.w === word.w ? styles.optionRight : o.w === picked ? styles.optionWrong : styles.optionOff;
+            const state =
+              picked === null ? (o.w === selected ? styles.optionSelected : "") : o.w === word.w ? styles.optionRight : o.w === picked ? styles.optionWrong : styles.optionOff;
             return (
-              <button key={o.w} className={`${styles.option} ${state}`} onClick={() => pick(o.w)} disabled={picked !== null || busy}>
+              <button
+                key={o.w}
+                className={`${styles.option} ${state}`}
+                onClick={() => setSelected(o.w)}
+                disabled={picked !== null || busy}
+                aria-pressed={picked === null ? o.w === selected : undefined}
+              >
                 {toZh ? o.zh : o.w}
               </button>
             );
@@ -283,16 +361,15 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
         </div>
       )}
 
+      {/* 选择题点选后按“确定”判对错。 */}
+      {choice && options.length > 0 && picked === null && (
+        <button className={styles.reveal} onClick={() => selected !== null && pick(selected)} disabled={selected === null || busy}>
+          确定
+        </button>
+      )}
       {/* 选择题和填词判完后，“下一题”紧跟在作答区下面，答案详情放在它后面。 */}
-      {(checked !== null || (choice && picked !== null)) && (
-        <button
-          className={styles.reveal}
-          onClick={() => {
-            const ok = typing ? !!checked : pickedOk;
-            submit(ok, grading === "rating" ? (ok ? 3 : 1) : 0, typing ? typed.trim() : (picked ?? ""));
-          }}
-          disabled={busy}
-        >
+      {answered && (
+        <button className={styles.reveal} onClick={next} disabled={busy}>
           下一题
         </button>
       )}
