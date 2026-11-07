@@ -27,6 +27,11 @@ const readDelay = 400;
 const motion = { out: 180, in: 260, swipe: 70, tap: 8 };
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+// 手机（触屏）上卡片底部多一个“横屏”按钮。iPhone 的网页不能让屏幕真的转过去（Safari 不支持锁定方向），
+// 所以是把播放器转 90° 铺满屏幕，人把手机横过来看；手机自己已经转成横屏时不再转，按正常横屏排版。
+const touch = matchMedia("(pointer: coarse)").matches;
+const portrait = () => matchMedia("(orientation: portrait)").matches;
+
 const enOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].en : p.word.w);
 const zhOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].zh : plainZh(p.word.zh[0] ?? ""));
 const tokensOf = (en: string) => en.match(/[A-Za-z']+/g) ?? [];
@@ -48,9 +53,12 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   const [auto, setAuto] = useState(false);
   // 翻页时朗读的开关记在这台设备上，下次学习沿用；默认关，打开过才读。
   const [readOnEnter, setReadOnEnter] = useState(() => localStorage.getItem("vocab.readOnEnter") === "1");
+  const [landscape, setLandscape] = useState(false);
   const run = useRef(0); // 每次翻页或停止都加 1，正在进行的朗读看到编号变了就停下
   const stage = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; t: number; dx: number; id: number; moved: boolean } | null>(null);
+  // 转了 90° 时，卡片的左右是屏幕的上下：拖动按屏幕的纵坐标算（往下拖是卡片往右）。
+  const along = (e: React.PointerEvent) => (landscape && portrait() ? e.clientY : e.clientX);
   const sliding = useRef(0); // 换页动画的定时器，动画进行中为非 0；这时候再翻页或拖动先不理
   const page = pages[pos];
   const last = pos === pages.length - 1;
@@ -218,12 +226,12 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   // 移动超过 tap 像素后才捕获指针，这样轻点例句里的词仍然是点在那个词上（查词）。
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest("button") || drag.current || sliding.current) return;
-    drag.current = { x: e.clientX, t: e.timeStamp, dx: 0, id: e.pointerId, moved: false };
+    drag.current = { x: along(e), t: e.timeStamp, dx: 0, id: e.pointerId, moved: false };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
-    d.dx = e.clientX - d.x;
+    d.dx = along(e) - d.x;
     if (!d.moved && Math.abs(d.dx) > motion.tap) {
       d.moved = true;
       stage.current?.setPointerCapture(e.pointerId);
@@ -292,6 +300,18 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
       <button type="button" className={styles.icon} onClick={() => go(pos + 1)} aria-label="下一页" title="下一页">
         <Icon name="next" />
       </button>
+      {touch && (
+        <button
+          type="button"
+          className={`${styles.icon} ${landscape ? styles.active : ""}`}
+          onClick={() => setLandscape(!landscape)}
+          aria-pressed={landscape}
+          aria-label={landscape ? "退出横屏" : "横屏"}
+          title={landscape ? "退出横屏" : "横屏"}
+        >
+          <Icon name="landscape" />
+        </button>
+      )}
     </div>
   );
   const footer = (
@@ -306,7 +326,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   );
 
   return (
-    <div className={styles.player}>
+    <div className={`${styles.player} ${landscape ? styles.landscape : ""}`}>
       <div ref={stage} className={styles.stage} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
         <WordCard
           word={page.word}

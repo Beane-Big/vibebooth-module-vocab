@@ -1,5 +1,7 @@
 /* 出题卡片：顶部一条细进度条和题型标签，中间是题目，下面是答案面板和作答按钮。 */
 .quiz { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px; }
+/* 答完后可以左滑进下一题：横向手势交给卡片，竖向照常滚动。 */
+.swipeable { touch-action: pan-y; }
 .bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.3s; }
 .top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
 .top .count { margin-left: auto; }
@@ -63,6 +65,7 @@
 .option { min-height: 56px; padding: 12px 10px; font-size: 16px; font-weight: 500; line-height: 1.35; color: var(--text); background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1.5px solid var(--glass-edge); box-shadow: 0 1px 2px rgba(31, 45, 80, 0.05); }
 .option:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .option:disabled { opacity: 1; }
+.optionSelected { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 .optionRight { color: var(--success); border-color: var(--success); background: color-mix(in srgb, var(--success) 12%, var(--surface)); }
 .optionWrong { color: var(--danger); border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
 .optionOff { opacity: 0.45 !important; }
