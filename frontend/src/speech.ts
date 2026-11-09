@@ -16,17 +16,24 @@ let ttsDownUntil = 0;
 const audio = typeof Audio !== "undefined" ? new Audio() : null;
 const silentMp3 =
   "data:audio/mpeg;base64,//OExAAAAAAAAAAAAFhpbmcAAAAPAAAABQAAATgAMzMzMzMzMzMzMzMzMzMzMzMzM2ZmZmZmZmZmZmZmZmZmZmZmZmZmmZmZmZmZmZmZmZmZmZmZmZmZmZnMzMzMzMzMzMzMzMzMzMzMzMzMzP//////////////////////////AAAAPExBTUUzLjEwMAR4AAAAAAAAAAAVCCQEUCEAAcwAAAE4P2jxnwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//MUxAAAAANIAAAAAExBTUUzLjEwMFVV//MUxAsAAANIAAAAAFVVVVVVVVVVVVVV//MUxBYAAANIAAAAAFVVVVVVVVVVVVVV//MUxCEAAANIAAAAAFVVVVVVVVVVVVVV//MUxCwAAANIAAAAAFVVVVVVVVVVVVVV";
+// 解锁要在用户手势里调 play()。iPhone 上触摸时 pointerdown 不一定算手势，所以 click、touchend 也听；
+// 某一次没解锁成功（play 被拒）就等下一次手势再试，成功后才移除监听。正在读的时候不动它（那次播放本身就解锁了）。
 if (audio) {
+  const events = ["pointerdown", "touchend", "click", "keydown"] as const;
+  let unlocked = false;
   const unlock = () => {
-    if (!audio.src) {
-      audio.src = silentMp3;
-      audio.play().catch(() => {});
-    }
-    window.removeEventListener("pointerdown", unlock, true);
-    window.removeEventListener("keydown", unlock, true);
+    if (unlocked) return;
+    if (current || !audio.paused) return;
+    audio.src = silentMp3;
+    audio
+      .play()
+      .then(() => {
+        unlocked = true;
+        for (const e of events) window.removeEventListener(e, unlock, true);
+      })
+      .catch(() => {});
   };
-  window.addEventListener("pointerdown", unlock, true);
-  window.addEventListener("keydown", unlock, true);
+  for (const e of events) window.addEventListener(e, unlock, true);
 }
 
 let voices: SpeechSynthesisVoice[] = [];

@@ -222,7 +222,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     [],
   );
 
-  // 拖动：卡片跟着手指走，越远越淡；松手时够远（或甩得快）就翻页，否则弹回。轻点卡片再读一遍。
+  // 拖动：卡片跟着手指走，越远越淡；松手时够远（或甩得快）就翻页，否则弹回。
   // 移动超过 tap 像素后才捕获指针，这样轻点例句里的词仍然是点在那个词上（查词）。
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest("button") || drag.current || sliding.current) return;
@@ -247,10 +247,8 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     if (!d || d.id !== e.pointerId) return;
     drag.current = null;
     if (!d.moved) {
-      // 轻点卡片再读一遍；点在例句的词上时是查词，不读整句，自动播放中就先暂停。
-      const onWord = !!(e.target as HTMLElement).closest("[data-w]");
-      if (e.type === "pointerup" && onWord && auto) stop();
-      else if (e.type === "pointerup" && !auto && !onWord) read(++run.current, 1, false);
+      // 轻点卡片不朗读（再读一遍用底部按钮）；点在例句的词上是查词，自动播放中就先暂停。
+      if (e.type === "pointerup" && auto && (e.target as HTMLElement).closest("[data-w]")) stop();
       return;
     }
     const fast = Math.abs(d.dx) / Math.max(1, e.timeStamp - d.t) > 0.5 && Math.abs(d.dx) > 30;

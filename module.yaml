@@ -4,7 +4,7 @@ id: vocab                # 全局唯一，也是网址前缀 /apps/vocab/ 和 /a
 name: "背单词"
 description: "按计划背英语单词，每个词配例句，自动复习和错题本"
 icon: icon.svg
-version: 0.7.0           # 发布新版本前改大
+version: 0.7.1           # 发布新版本前改大
 services:                # 哪个容器接哪个网址前缀，安装器据此生成网关路由
   frontend: {port: 80}   # 容器 vocab-frontend → /apps/vocab/
   backend: {port: 8000}  # 容器 vocab-backend → /api/vocab/，健康检查 /api/vocab/health

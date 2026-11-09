@@ -44,7 +44,10 @@
 /* 作答格：浅色底、彩色字，一格一个选项（复习四档，测试两档）。 */
 .grades { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 10px; }
 .grade { --c: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 14px 6px; border-radius: 14px; color: var(--c); background: color-mix(in srgb, var(--c) 11%, var(--surface)); border: 1.5px solid color-mix(in srgb, var(--c) 30%, transparent); box-shadow: none; }
-.grade:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 18%, var(--surface)); }
+/* 只给有鼠标的设备：手机上点一下后 :hover 会一直留着，像按住没松开。 */
+@media (hover: hover) {
+  .grade:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 18%, var(--surface)); }
+}
 .grade strong { font-size: 16px; }
 .grade span { font-size: 12px; opacity: 0.8; }
 .again { --c: var(--danger); }
@@ -63,7 +66,9 @@
 /* 选择题：四个选项一格一个，选完后正确的标绿、选错的标红、其他变淡；“不认识”是下面一行小字。 */
 .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .option { min-height: 56px; padding: 12px 10px; font-size: 16px; font-weight: 500; line-height: 1.35; color: var(--text); background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1.5px solid var(--glass-edge); box-shadow: 0 1px 2px rgba(31, 45, 80, 0.05); }
-.option:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+@media (hover: hover) {
+  .option:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+}
 .option:disabled { opacity: 1; }
 .optionSelected { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 .optionRight { color: var(--success); border-color: var(--success); background: color-mix(in srgb, var(--success) 12%, var(--surface)); }

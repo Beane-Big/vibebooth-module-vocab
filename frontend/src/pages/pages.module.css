@@ -174,7 +174,10 @@ button.chip.on { color: #fff; background: var(--accent); }
 .summary strong { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .remove { width: 30px; height: 30px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); box-shadow: none; }
-.remove:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+/* 只给有鼠标的设备：手机上点一下后 :hover 会一直留着，像按住没松开。 */
+@media (hover: hover) {
+  .remove:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+}
 .dots { display: inline-flex; gap: 3px; margin-right: 2px; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--muted) 35%, transparent); }
 .dots i.dotOn { background: var(--success); }
@@ -184,7 +187,9 @@ button.chip.on { color: #fff; background: var(--accent); }
 .backBar { display: flex; align-items: center; gap: 12px; }
 .backBar h1 { margin: 0; font-size: 20px; }
 .back { display: inline-flex; align-items: center; gap: 2px; padding: 6px 12px 6px 6px; border-radius: 999px; color: var(--accent); text-decoration: none; font-size: 15px; font-weight: 500; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-hi), 0 2px 8px rgba(31, 45, 80, 0.06); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
-.back:hover { background: var(--glass-strong); }
+@media (hover: hover) {
+  .back:hover { background: var(--glass-strong); }
+}
 
 /* 分段选择里也可以放链接（已学习 / 检测记录 两栏各是一页）。 */
 .tabs a { flex: 1 0 auto; padding: 7px 14px; font-size: 14px; border-radius: 9px; color: var(--text); text-decoration: none; text-align: center; white-space: nowrap; }

@@ -37,9 +37,14 @@
   color: inherit;
   opacity: 0.75;
 }
-.icon:hover:not(:disabled) { opacity: 1; background: rgba(127, 127, 127, 0.12); }
+/* 只给有鼠标的设备：手机上点一下后 :hover 会一直留着，像按住没松开。 */
+@media (hover: hover) {
+  .icon:hover:not(:disabled) { opacity: 1; background: rgba(127, 127, 127, 0.12); }
+}
 .icon:disabled { opacity: 0.25; }
 .active { opacity: 1; }
 .main { width: 54px; height: 54px; opacity: 1; background: var(--ink); color: var(--paper); box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 30%, transparent); }
-.main:hover:not(:disabled) { background: var(--ink); opacity: 0.92; }
+@media (hover: hover) {
+  .main:hover:not(:disabled) { background: var(--ink); opacity: 0.92; }
+}
 .done { background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 22px; box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 25%, transparent); }
