@@ -54,4 +54,7 @@
 
 /* 例句里的词可以点，点了弹出词典气泡。 */
 .tok { cursor: pointer; border-radius: 4px; }
-.tok:hover { background: rgba(127, 127, 127, 0.15); }
+/* 只给有鼠标的设备：手机上点一下后 :hover 会一直留着，像按住没松开。 */
+@media (hover: hover) {
+  .tok:hover { background: rgba(127, 127, 127, 0.15); }
+}

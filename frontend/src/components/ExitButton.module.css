@@ -13,7 +13,10 @@
   font-size: 14px;
   white-space: nowrap;
 }
-.exit:hover { background: rgba(127, 127, 127, 0.2); }
+/* 只给有鼠标的设备：手机上点一下后 :hover 会一直留着，像按住没松开。 */
+@media (hover: hover) {
+  .exit:hover { background: rgba(127, 127, 127, 0.2); }
+}
 .asking { padding-right: 14px; color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .asking span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; font-weight: 600; }
 .asking small { font-size: 11px; font-weight: 400; opacity: 0.85; }

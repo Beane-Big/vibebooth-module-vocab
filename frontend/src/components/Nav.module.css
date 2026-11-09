@@ -50,7 +50,10 @@
   -webkit-user-drag: none;
 }
 
-.tab:hover { color: var(--accent); }
+/* 只给有鼠标的设备：手机上点一下后 :hover 会一直留着，像按住没松开。 */
+@media (hover: hover) {
+  .tab:hover { color: var(--accent); }
+}
 
 .on { color: var(--accent); font-weight: 600; }
 
