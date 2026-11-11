@@ -126,11 +126,12 @@ export default function SettingsPage() {
   };
 
   // 数字输入：清空时先只改界面（准备重新输入），填了范围内的数才保存；startN 清空就是“不填”（0）。
+  // 值是 0 时框里显示空：不然清空后会显示 0，接着输入就成了 08 这样 0 开头。
   const num = (k: "planWords" | "startN", min: number, max: number, placeholder?: string) => (
     <NumberInput
       min={min}
       max={max}
-      value={s[k] || (placeholder ? "" : s[k])}
+      value={s[k] || ""}
       placeholder={placeholder}
       onChange={(e) => {
         const n = Number(e.target.value);
