@@ -16,6 +16,8 @@
   --glass-strong: rgba(255, 255, 255, 0.72);
   --glass-edge: rgba(255, 255, 255, 0.85);
   --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  /* 主按钮的亮边和高光：一圈淡白边、顶上一道亮线、底下一道暗线，叠在纯色底上。 */
+  --btn-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(0, 0, 0, 0.08);
   --shadow: 0 10px 30px rgba(31, 45, 80, 0.08), 0 1px 3px rgba(31, 45, 80, 0.06);
   --blur: blur(22px) saturate(170%);
   /* 宽屏顶部导航占的高度，学习页的卡片按它算能撑多高。 */
@@ -108,23 +110,24 @@ body {
 /* 卡片里的小标题。 */
 .card h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
 
+/* 按钮是胶囊形。主按钮：纯色底，一圈很淡的亮边、顶上一道高光，下面一层同色的柔和阴影。 */
 button {
   font-size: 16px;
-  font-weight: 500;
-  padding: 11px 18px;
+  font-weight: 600;
+  padding: 11px 20px;
   border: 0;
-  border-radius: 12px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent));
+  border-radius: 999px;
+  background: var(--accent);
   color: #fff;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: var(--btn-rim), 0 6px 16px color-mix(in srgb, var(--accent) 24%, transparent);
   transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 
 button:active:not(:disabled) { transform: scale(0.97); }
 button:disabled { opacity: 0.5; cursor: default; }
-button.danger { background: var(--danger); box-shadow: none; }
+button.danger { background: var(--danger); box-shadow: var(--btn-rim), 0 6px 16px color-mix(in srgb, var(--danger) 22%, transparent); }
 
 button.link {
   background: none;
@@ -134,14 +137,12 @@ button.link {
   box-shadow: none;
 }
 
-/* 次要按钮：玻璃底、强调色的字。 */
+/* 次要按钮：白底、正文颜色的字、细灰边，边缘往里有一点阴影，像微微凹进去的白片。 */
 .secondary {
-  background: var(--glass);
-  color: var(--accent);
-  border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-hi), 0 2px 8px rgba(31, 45, 80, 0.06);
-  -webkit-backdrop-filter: var(--blur);
-  backdrop-filter: var(--blur);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--text) 13%, transparent);
+  box-shadow: var(--glass-hi), inset 0 0 14px color-mix(in srgb, var(--text) 5%, transparent), 0 6px 16px rgba(31, 45, 80, 0.06);
 }
 
 .content { max-width: 720px; margin: 0 auto; padding: 24px 16px; }

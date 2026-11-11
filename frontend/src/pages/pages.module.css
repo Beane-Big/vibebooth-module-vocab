@@ -23,14 +23,14 @@
 .button {
   display: inline-block;
   font-size: 16px;
-  font-weight: 500;
-  padding: 11px 18px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent));
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: var(--accent);
   color: #fff;
   text-decoration: none;
   text-align: center;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: var(--btn-rim), 0 6px 16px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 /* 撑满一行的主按钮。 */
 .wide { width: 100%; padding: 14px 18px; font-size: 17px; }
