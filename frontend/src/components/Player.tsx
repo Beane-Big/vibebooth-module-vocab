@@ -34,7 +34,7 @@ const portrait = () => matchMedia("(orientation: portrait)").matches;
 
 const enOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].en : p.word.w);
 const zhOf = (p: Page) => (p.example >= 0 ? p.word.ex[p.example].zh : plainZh(p.word.zh[0] ?? ""));
-const tokensOf = (en: string) => en.match(/[A-Za-z']+/g) ?? [];
+const tokensOf = (en: string) => en.match(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:st|nd|rd|th)?|[A-Za-z]+(?:['’-][A-Za-z]+)*/gi) ?? [];
 
 // 中文读完到英文开始之间停多久；拼读时词和词之间停多久（毫秒）。
 const zhGap = 250;
@@ -282,9 +282,11 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
           <Icon name="play" />
         </button>
       )}
-      <button type="button" className={styles.icon} onClick={() => read(++run.current, 1, true)} disabled={!canSpeak || auto} aria-label="再读一遍" title="再读一遍">
-        <Icon name="replay" />
-      </button>
+      {!auto && (
+        <button type="button" className={styles.icon} onClick={() => read(++run.current, 1, true)} disabled={!canSpeak} aria-label="播放当前卡片" title="播放当前卡片">
+          <Icon name="sound" />
+        </button>
+      )}
       <button
         type="button"
         className={`${styles.icon} ${readOnEnter ? styles.active : ""}`}

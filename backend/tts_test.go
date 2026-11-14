@@ -124,3 +124,13 @@ func TestTTSChinese(t *testing.T) {
 		}
 	}
 }
+
+func TestTTSSentenceTokens(t *testing.T) {
+	deck := &Deck{Words: []Word{{W: "learn", Ex: []Example{{En: "We’ll learn 1,200.5 words in the 21st lesson."}}}}}
+	speaker := newSpeaker("", t.TempDir(), deck, nil)
+	for _, token := range []string{"We’ll", "1,200.5", "21st"} {
+		if _, ok := speaker.normalize(token, false); !ok {
+			t.Errorf("expected %q to be available for word-by-word playback", token)
+		}
+	}
+}

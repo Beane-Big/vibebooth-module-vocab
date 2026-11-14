@@ -31,9 +31,8 @@ export default function Study() {
         const p = await api.plan(home.plan.id);
         setPlan(p);
         setStart(p.item.pos);
-        // 首页点“再学一遍”带 ?again：从第一页完整地再学一遍；否则学完了的计划直接到测试。
-        if (new URLSearchParams(location.search).has("again")) setStart(0);
-        else if (p.item.learnedAt) setPhase("pick");
+        // 首页点“再学一遍”带 ?again，从上次保存的位置继续。
+        if (p.item.learnedAt && !new URLSearchParams(location.search).has("again")) setPhase("pick");
       })
       .catch((err) => setError(errorText(err)));
   }, []);
@@ -56,10 +55,14 @@ export default function Study() {
             examples={item.examples}
             settings={settings}
             start={start}
-            onPos={(pos) => api.savePlanPos(item.id, pos).catch(() => {})}
+            onPos={(pos) => {
+              setStart(pos);
+              api.savePlanPos(item.id, pos).catch(() => {});
+            }}
             doneLabel="学完了，去测试"
             onExit={() => (location.href = root)}
             onDone={() => {
+              setStart(0);
               api.savePlanPos(item.id, 0, true).catch(() => {});
               setPhase("pick");
             }}
@@ -84,7 +87,6 @@ export default function Study() {
               <button
                 className="secondary"
                 onClick={() => {
-                  setStart(0);
                   setPhase("learn");
                 }}
               >

@@ -383,8 +383,8 @@ func (h *handlers) register(api *http.ServeMux) {
 	// ---- 检测
 	api.HandleFunc("POST /api/vocab/tests", func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
-			Scope string `json:"scope"` // recent（最近 7 天学的）、range（序号范围）、all（全部学过的）、wrong（错题本）、plan（一个学习计划答错过的词，全出）
-			Plan  int    `json:"plan"`  // scope 为 plan 时是哪个计划
+			Scope string `json:"scope"` // recent（最近 7 天学的）、range（序号范围）、all（全部学过的）、wrong（错题本）、plan（计划错题）、learned（已完成计划的全部词）
+			Plan  int    `json:"plan"`  // scope 为 plan 或 learned 时是哪个计划
 			From  int    `json:"from"`
 			To    int    `json:"to"`
 			Count int    `json:"count"`
@@ -414,6 +414,17 @@ func (h *handlers) register(api *http.ServeMux) {
 				}
 				candidates = kept
 			}
+		case "learned":
+			in.Count = 0
+			var plan *Plan
+			plan, err = h.store.Plan(r.Context(), user, in.Plan)
+			if err == nil {
+				if plan.FinishedAt == nil {
+					writeError(w, http.StatusBadRequest, "请选择已完成的学习计划")
+					return
+				}
+				candidates = plan.Words
+			}
 		case "plan":
 			in.Count = 0
 			if _, err = h.store.Plan(r.Context(), user, in.Plan); err == nil {
@@ -436,7 +447,7 @@ func (h *handlers) register(api *http.ServeMux) {
 		if fail(w, err) {
 			return
 		}
-		if in.Scope != "plan" {
+		if in.Scope != "plan" && in.Scope != "learned" {
 			in.Plan = 0
 		}
 		test, err := h.store.CreateTest(r.Context(), user, in.Scope, in.Mode, in.Plan, h.known(candidates), in.Count)

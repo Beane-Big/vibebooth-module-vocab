@@ -72,6 +72,9 @@ export default function History() {
               <a className={`${styles.button} secondary`} href={`${root}relearn/?plan=${plan.item.id}`}>
                 再次学习
               </a>
+              <a className={`${styles.button} secondary`} href={`${root}test/?scope=learned&plan=${plan.item.id}`}>
+                检测全部
+              </a>
             </div>
             {plan.missed.length > 0 && (
               <div className={styles.group}>

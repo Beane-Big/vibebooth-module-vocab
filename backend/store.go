@@ -98,7 +98,7 @@ CREATE INDEX IF NOT EXISTS tests_user ON tests (user_id, id);
 
 // 后来加的字段，老数据库里没有时补上（已经有了会报 duplicate column，跳过）。
 var migrations = []string{
-	// 错题检查（scope 为 plan）是哪个学习计划的；其他检测为 0。
+	// 按学习计划出题时的计划 id；其他检测为 0。
 	`ALTER TABLE tests ADD COLUMN plan_id INTEGER NOT NULL DEFAULT 0`,
 	// 学这个计划一共花了几秒：翻卡片学习的时间（含再学一遍、错题学习、再次学习），退出或切到后台时不算。
 	`ALTER TABLE plans ADD COLUMN study_secs INTEGER NOT NULL DEFAULT 0`,
@@ -338,7 +338,7 @@ func (s *Store) Plans(ctx context.Context, user string) ([]*Plan, error) {
 
 // SavePlanPos 记下学到第几页；learned 表示整批词已经学完，下一步是计划测试。
 func (s *Store) SavePlanPos(ctx context.Context, user string, id, pos int, learned bool) error {
-	q := `UPDATE plans SET pos = ? WHERE user_id = ? AND id = ? AND finished_at IS NULL`
+	q := `UPDATE plans SET pos = ? WHERE user_id = ? AND id = ?`
 	args := []any{pos, user, id}
 	if learned {
 		q = `UPDATE plans SET pos = ?, learned_at = COALESCE(learned_at, ?) WHERE user_id = ? AND id = ? AND finished_at IS NULL`
@@ -375,7 +375,7 @@ func (s *Store) FinishPlan(ctx context.Context, user string, id int) (*Plan, err
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.db.ExecContext(ctx, `UPDATE plans SET finished_at = ?, learned_at = COALESCE(learned_at, ?), correct = ?, total = ? WHERE user_id = ? AND id = ? AND finished_at IS NULL`,
+	res, err := s.db.ExecContext(ctx, `UPDATE plans SET pos = 0, finished_at = ?, learned_at = COALESCE(learned_at, ?), correct = ?, total = ? WHERE user_id = ? AND id = ? AND finished_at IS NULL`,
 		s.now(), s.now(), correct, total, user, id)
 	if err != nil {
 		return nil, err
@@ -583,7 +583,7 @@ func (s *Store) ClearWrong(ctx context.Context, user, word string) error {
 type Test struct {
 	ID         int        `json:"id"`
 	Scope      string     `json:"scope"`
-	PlanID     int        `json:"planId"` // scope 为 plan（计划错题检查）时是哪个计划
+	PlanID     int        `json:"planId"` // scope 为 plan 或 learned 时是哪个计划
 	Mode       string     `json:"mode"`
 	Words      []string   `json:"words"`
 	CreatedAt  time.Time  `json:"createdAt"`
@@ -626,7 +626,7 @@ func (s *Store) Learned(ctx context.Context, user string, since time.Time) ([]st
 	return collect(rows)
 }
 
-// CreateTest 从候选词里随机抽 count 个出一次检测（count 为 0 时全出）；planID 只有计划错题检查才有。
+// CreateTest 从候选词里随机抽 count 个出一次检测（count 为 0 时全出）；planID 用于按学习计划出题。
 func (s *Store) CreateTest(ctx context.Context, user, scope, mode string, planID int, candidates []string, count int) (*Test, error) {
 	if len(candidates) == 0 {
 		return nil, errors.New("这个范围里还没有学过的词")

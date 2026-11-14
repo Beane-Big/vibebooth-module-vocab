@@ -60,7 +60,19 @@ export default function Relearn() {
 
   return (
     <main className="content stack fill">
-      <Player words={words} examples={plan.item.examples} settings={settings} doneLabel="学完了" onExit={() => (location.href = back)} onDone={() => setDone(true)} />
+      <Player
+        words={words}
+        examples={plan.item.examples}
+        settings={settings}
+        start={wrongOnly ? 0 : plan.item.pos}
+        onPos={wrongOnly ? undefined : (pos) => api.savePlanPos(planId, pos).catch(() => {})}
+        doneLabel="学完了"
+        onExit={() => (location.href = back)}
+        onDone={() => {
+          if (!wrongOnly) api.savePlanPos(planId, 0).catch(() => {});
+          setDone(true);
+        }}
+      />
     </main>
   );
 }

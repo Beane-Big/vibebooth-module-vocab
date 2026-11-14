@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -57,6 +58,45 @@ func TestValidModes(t *testing.T) {
 	for list, want := range map[string]bool{"look": true, "look,write,translate": true, "look,look": false, "": false, "speak": false, "look,": false} {
 		if got := validModes(list); got != want {
 			t.Errorf("validModes(%q) = %v", list, got)
+		}
+	}
+}
+
+func TestLearnedPlanTestIncludesAllWordsOnEveryAttempt(t *testing.T) {
+	ctx := context.Background()
+	store, deck, _ := newTestStore(t)
+	plan, err := store.CreatePlan(ctx, "local", []*Word{&deck.Words[0], &deck.Words[1]}, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	newHandlers(deck, nil, store).register(mux)
+	handler := auth.Standalone("测试")(mux)
+	start := func() *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		body := fmt.Sprintf(`{"scope":"learned","plan":%d,"count":1,"mode":"look"}`, plan.ID)
+		handler.ServeHTTP(rec, httptest.NewRequest("POST", "/api/vocab/tests", strings.NewReader(body)))
+		return rec
+	}
+	if rec := start(); rec.Code != http.StatusBadRequest {
+		t.Fatalf("unfinished plan: got %d %s", rec.Code, rec.Body.String())
+	}
+	if _, err := store.FinishPlan(ctx, "local", plan.ID); err != nil {
+		t.Fatal(err)
+	}
+	var previousID int
+	for range 2 {
+		rec := start()
+		var out struct{ Item Test }
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		if rec.Code != http.StatusCreated || out.Item.ID <= previousID || out.Item.PlanID != plan.ID || len(out.Item.Words) != 2 {
+			t.Fatalf("expected a new test with all plan words, got %d %s", rec.Code, rec.Body.String())
+		}
+		previousID = out.Item.ID
+		if _, err := store.FinishTest(ctx, "local", previousID); err != nil {
+			t.Fatal(err)
 		}
 	}
 }

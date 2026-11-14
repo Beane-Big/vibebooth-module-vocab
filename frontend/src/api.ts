@@ -45,7 +45,7 @@ export type Plan = {
 export type Test = {
   id: number;
   scope: TestScope;
-  planId: number; // scope 为 plan（计划错题检查）时是哪个计划
+  planId: number; // scope 为 plan 或 learned 时是哪个计划
   mode: string; // 题型，几种时用逗号隔开（look,write），见 modesOf
   words: string[];
   createdAt: string;
@@ -60,7 +60,7 @@ export type Home = { settings: Settings; deck: { name: string; total: number }; 
 // 题型：看词选择、听音选择（四选一）、看中文写英文（例句挖空填词）、听写、整句翻译。speak（看中文说英文）是老版本的题型，只出现在老记录里。
 export type Mode = "look" | "listen" | "write" | "dictation" | "translate" | "speak";
 // plan 是一个学习计划答错过的词（错题检查，从已学习进），不在检测页的范围里选。
-export type TestScope = "recent" | "range" | "all" | "wrong" | "plan";
+export type TestScope = "recent" | "range" | "all" | "wrong" | "plan" | "learned";
 export type Kind = "plan" | "review" | "test";
 export type AnswerIn = { word: string; kind: Kind; refId: number; mode: Mode; ok: boolean; rating: number; answer: string };
 
@@ -128,7 +128,7 @@ export const api = {
   createPlan: (p: { from?: number; count?: number; examples?: number } = {}) => request<WithWords<Plan>>(`${base}/plans`, post(p)),
   plan: (id: number) => request<WithWords<Plan>>(`${base}/plans/${id}`),
   plans: () => request<Plan[]>(`${base}/plans`),
-  savePlanPos: (id: number, pos: number, learned = false) => request<void>(`${base}/plans/${id}`, { method: "PUT", body: JSON.stringify({ pos, learned }) }),
+  savePlanPos: (id: number, pos: number, learned = false) => request<void>(`${base}/plans/${id}`, { method: "PUT", body: JSON.stringify({ pos, learned }), keepalive: true }),
   // 记学习时长；keepalive 让离开页面时发的这一次也能发完。
   studyTime: (id: number, secs: number) => request<void>(`${base}/plans/${id}/time`, { method: "POST", body: JSON.stringify({ secs }), keepalive: true }),
   finishPlan: (id: number) => request<WithWords<Plan>>(`${base}/plans/${id}/finish`, { method: "POST" }),
@@ -159,7 +159,7 @@ export const modes: Mode[] = ["look", "listen", "write", "dictation", "translate
 export const modesOf = (s: string) => s.split(",") as Mode[];
 export const modesText = (s: string) => modesOf(s).map((m) => modeNames[m]).join("、");
 export const orderNames: Record<Order, string> = { alpha: "按字母顺序", frq: "按词频（常用的先学）", random: "随机打乱" };
-export const scopeNames: Record<TestScope, string> = { recent: "最近 7 天学的", range: "按序号范围", all: "全部学过的", wrong: "错题本", plan: "计划错题" };
+export const scopeNames: Record<TestScope, string> = { recent: "最近 7 天学的", range: "按序号范围", all: "全部学过的", wrong: "错题本", plan: "计划错题", learned: "已学习" };
 
 // 学习时长：不到一分钟、几分钟、几小时几分钟。
 export function durationText(secs: number) {

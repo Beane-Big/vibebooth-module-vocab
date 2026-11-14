@@ -11,7 +11,7 @@ import { RecordRow } from "./History";
 import styles from "./pages.module.css";
 
 // 检测页上能选的范围；计划错题（plan）从已学习的计划详情进来，不在这里选。
-const scopeIcons: Record<Exclude<TestScope, "plan">, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong" };
+const scopeIcons: Record<Exclude<TestScope, "plan">, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong", learned: "book" };
 const counts = [10, 20, 30, 50, 100];
 
 // 上次检测选的题型记在这台设备上，下次默认选上。
@@ -38,7 +38,10 @@ function saveModes(list: Mode[]) {
 // 带 ?plan=<id> 时是这个计划的错题检查：只选题型，计划答错过的词全出。
 export default function TestPage() {
   const params = new URLSearchParams(location.search);
-  const planId = Number(params.get("plan"));
+  const linkedPlan = Number(params.get("plan"));
+  const planId = params.get("scope") === "learned" ? 0 : linkedPlan;
+  const [learnedId, setLearnedId] = useState(planId ? 0 : linkedPlan);
+  const [plans, setPlans] = useState<Plan[]>();
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [settings, setSettings] = useState<Settings>();
   const [scope, setScope] = useState<TestScope>((params.get("scope") as TestScope) || "recent");
@@ -61,6 +64,12 @@ export default function TestPage() {
     if (planId) api.plan(planId).then(setPlan, (err) => setError(errorText(err)));
   }, [planId]);
 
+  useEffect(() => {
+    if (scope === "learned" && !planId) api.plans().then(setPlans, (err) => setError(errorText(err)));
+  }, [scope, planId]);
+
+  const learnedPlan = plans?.find((p) => p.id === learnedId);
+
   // 检测记录入口。还没做过检测时不显示（点进去也是空的）。
   const latest = past?.[0];
   const records = latest && (
@@ -80,7 +89,7 @@ export default function TestPage() {
     try {
       saveModes(mode);
       const joined = mode.join(",");
-      setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode: joined } : { scope, from, to, count, mode: joined }));
+      setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode: joined } : { scope, from, to, count, plan: scope === "learned" ? learnedId : undefined, mode: joined }));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -136,6 +145,7 @@ export default function TestPage() {
           </>
         ) : (
           <>
+            {scope === "learned" && linkedPlan > 0 && <BackBar href={`${root}history/?plan=${linkedPlan}`} label="计划详情" />}
             {records}
             <section className="card stack">
               <h1>开始一次检测</h1>
@@ -149,6 +159,19 @@ export default function TestPage() {
                     </button>
                   ))}
                 </div>
+                {scope === "learned" && (
+                  <label className="field">
+                    <span>学习计划</span>
+                    <select value={learnedPlan?.id ?? ""} onChange={(e) => setLearnedId(Number(e.target.value))}>
+                      <option value="" disabled>{!plans ? "加载中…" : plans.length ? "请选择已学习的计划" : "还没有已完成的学习计划"}</option>
+                      {plans?.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {planSpan(p)} · {p.words.length} 个词 · {new Date(p.finishedAt ?? p.createdAt).toLocaleDateString("zh-CN")}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 {scope === "range" && (
                   <label className="field">
                     <span>序号</span>
@@ -158,22 +181,24 @@ export default function TestPage() {
                   </label>
                 )}
               </div>
-              <div className={styles.group}>
-                <h2>题数</h2>
-                <div className={`${styles.tabs} ${styles.full}`} role="radiogroup" aria-label="题数">
-                  {counts.map((n) => (
-                    <button key={n} type="button" role="radio" aria-checked={n === count} className={n === count ? styles.on : ""} onClick={() => setCount(n)}>
-                      {n} 题
-                    </button>
-                  ))}
+              {scope !== "learned" && (
+                <div className={styles.group}>
+                  <h2>题数</h2>
+                  <div className={`${styles.tabs} ${styles.full}`} role="radiogroup" aria-label="题数">
+                    {counts.map((n) => (
+                      <button key={n} type="button" role="radio" aria-checked={n === count} className={n === count ? styles.on : ""} onClick={() => setCount(n)}>
+                        {n} 题
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className={styles.group}>
                 <h2>题型</h2>
                 <ModePicker value={mode} onChange={setMode} />
               </div>
-              <button className={`${styles.wide} ${styles.sticky}`} onClick={start} disabled={busy}>
-                开始检测
+              <button className={`${styles.wide} ${styles.sticky}`} onClick={start} disabled={busy || (scope === "learned" && !learnedPlan)}>
+                {scope === "learned" ? "检测全部" : "开始检测"}
               </button>
             </section>
           </>
