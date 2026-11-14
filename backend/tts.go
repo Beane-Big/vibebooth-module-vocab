@@ -46,7 +46,7 @@ type speaker struct {
 }
 
 // 小写句子里的词：拼读时一个一个地读。
-var wordRe = regexp.MustCompile(`[a-z']+`)
+var wordRe = regexp.MustCompile(`(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:st|nd|rd|th)?|[a-z]+(?:['’-][a-z]+)*`)
 
 // 释义前面的词性缩写，读中文释义时去掉（和前端 speech.ts 的 plainZh 一样）。
 var posRe = regexp.MustCompile(`^[a-z]+\.\s*`)

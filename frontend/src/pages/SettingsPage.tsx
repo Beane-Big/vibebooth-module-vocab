@@ -147,7 +147,7 @@ export default function SettingsPage() {
     <>
       <main className="content">
         <SettingsList title="设置">
-          <Group title="学习计划" footer="学过的词会跳过，学习顺序随时可以换。“从第几个词开始”只管下一个计划，不填就从第一个没学过的词开始。例句条数也用于复习和检测里的例句题。">
+          <Group title="学习计划">
             <Row label="每次学几个词">{num("planWords", 1, 100)}</Row>
             <Row label="学习顺序">
               <Select value={s.order} onChange={(v) => set("order", v)} options={(Object.keys(orderNames) as Order[]).map((o) => [o, orderNames[o]])} />
@@ -159,13 +159,13 @@ export default function SettingsPage() {
             </Row>
           </Group>
 
-          <Group footer="每个词的词典读音连起来，a、to 这类虚词按弱读显示；没有连读，句子的实际读法以朗读为准。">
+          <Group>
             <Row label="例句显示音标">
               <Switch checked={s.sentencePh} onChange={(v) => set("sentencePh", v)} />
             </Row>
           </Group>
 
-          <Group title="朗读" footer={canSpeak ? "英文用 Kokoro 语音，中文用 Piper 语音。一句话第一次读时要等一两秒合成，之后全家共用。" : "当前浏览器不支持朗读。"}>
+          <Group title="朗读">
             <Row label="口音">
               <Select value={s.accent} onChange={(v) => set("accent", v)} options={[["en-US", "美音"], ["en-GB", "英音"]]} />
             </Row>
@@ -177,15 +177,7 @@ export default function SettingsPage() {
             </ActionRow>
           </Group>
 
-          <Group
-            title="自动播放"
-            footer={
-              <>
-                每页先读一遍中文（打开“读中文”时），再读英文。{s.spellOut && s.sentRepeat >= 2 ? "例句第一遍正常读，第二遍一个词一个词地读，之后正常读。" : ""}
-                {s.pauseBy === "audio" ? "每遍之间、翻到下一页前都停这么久：单词停得短、长句停得长。" : "每遍之间、翻到下一页前都停这么久。"}
-              </>
-            }
-          >
+          <Group title="自动播放">
             <Row label="读中文">
               <Switch checked={s.autoZh} onChange={(v) => set("autoZh", v)} />
             </Row>
@@ -195,7 +187,7 @@ export default function SettingsPage() {
             <Row label="例句英文读几遍" plain>
               {step("sentRepeat", 1, 5, " 遍")}
             </Row>
-            <Row label="例句第二遍拼读" hint={s.sentRepeat < 2 ? "例句读两遍以上才有拼读" : undefined} disabled={s.sentRepeat < 2}>
+            <Row label="例句第二遍拼读" disabled={s.sentRepeat < 2}>
               <Switch checked={s.spellOut} onChange={(v) => set("spellOut", v)} disabled={s.sentRepeat < 2} />
             </Row>
             <Row label="每句后停多久">
@@ -219,7 +211,7 @@ export default function SettingsPage() {
             )}
           </Group>
 
-          <Group title="复习和错题本" footer={s.reviewBy === "choice" ? "四选一：答对算记得，答错或不认识算忘了。" : "看答案后按忘了、模糊、记得、轻松安排下次复习。"}>
+          <Group title="复习和错题本">
             <Row label="复习题型">
               <Select
                 value={s.reviewMode}
@@ -246,7 +238,7 @@ export default function SettingsPage() {
             </Row>
           </Group>
 
-          <Group footer="还原设置，或清空全部学习进度，都要再确认一次。">
+          <Group>
             <ActionRow onClick={() => openReset("menu")} destructive>
               还原
             </ActionRow>
@@ -261,7 +253,6 @@ export default function SettingsPage() {
           </span>
           <span>
             <strong>还原设置</strong>
-            <small>所有设置恢复成默认值，学习进度不变</small>
           </span>
         </button>
         <button className={`${styles.sheetOption} ${styles.risky}`} onClick={() => openReset("progress")}>
@@ -270,7 +261,6 @@ export default function SettingsPage() {
           </span>
           <span>
             <strong>重置学习进度</strong>
-            <small>清空学过的词、复习安排、错题本、检测记录和学习计划，设置不变</small>
           </span>
         </button>
         <button className="link" onClick={() => setReset("")}>
@@ -280,7 +270,7 @@ export default function SettingsPage() {
 
       <Sheet open={reset === "settings" || reset === "progress"} onClose={() => setReset("")} title={reset === "settings" ? "确定还原设置？" : "确定清空学习进度？"}>
         {reset === "settings" ? (
-          <p className="muted">每次学几个词、学习顺序、口音、语速、自动播放、复习方式等都会恢复成默认值。学习进度不受影响。</p>
+          <p className="muted">所有设置会恢复为默认值。</p>
         ) : (
           <>
             <p>下面这些会全部清空，不能恢复：</p>
@@ -289,7 +279,6 @@ export default function SettingsPage() {
               <li>错题本里的 {counts?.wrong ?? "…"} 个词</li>
               <li>{counts?.tests ?? "…"} 次检测记录、全部学习计划和作答记录</li>
             </ul>
-            <p className="muted">设置不受影响。清空后从第一个词重新开始学。</p>
           </>
         )}
         {resetError && <p className="error">{resetError}</p>}
