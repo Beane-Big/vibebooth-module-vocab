@@ -196,6 +196,8 @@ async function main() {
 
   // 3. 每个词挑例句：长度接近 8 个词、不带常见人名、用原形的优先，去掉几乎重复的句子。
   const extra = existsSync(extraFile) ? JSON.parse(readFileSync(extraFile, "utf8")) : {};
+  // 按原句来源替换审核过的例句，保留它原来的选句位置。
+  const replacements = JSON.parse(readFileSync(join(root, "deck", "example-replacements.json"), "utf8"));
   let short = 0;
   const deck = words.map((x, i) => {
     const ids = new Set(x.forms.flatMap((f) => index.get(f) ?? []));
@@ -215,6 +217,10 @@ async function main() {
       seen.push(t);
       ex.push(c.extra ? { en: c.en, zh: c.zh, src: "extra" } : { en: c.en, zh: toSimplified(cmn.get(pairs.get(c.id))), src: `tatoeba:${c.id}` });
       if (ex.length === PER_WORD) break;
+    }
+    for (const [index, example] of ex.entries()) {
+      const replacement = replacements[example.src];
+      if (replacement) ex[index] = { ...replacement, src: "extra" };
     }
     if (ex.length < PER_WORD) short++;
     return { n: 0, f: i + 1, w: x.w, us: x.us, uk: x.uk, zh: x.zh, forms: x.forms, ex };
