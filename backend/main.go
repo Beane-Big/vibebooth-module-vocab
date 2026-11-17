@@ -42,7 +42,9 @@ func main() {
 
 	api := http.NewServeMux()
 	newHandlers(deck, dict, store).register(api)
-	newSpeaker(env("TTS_URL", "http://vocab-tts:8880"), filepath.Join(dataDir, "tts"), deck, dict).register(api)
+	speech := newSpeaker(env("TTS_URL", "http://vocab-tts:8880"), filepath.Join(dataDir, "tts"), deck, dict)
+	speech.register(api)
+	(&videoExporter{deck: deck, speech: speech}).register(api)
 	for _, add := range routes {
 		add(api)
 	}

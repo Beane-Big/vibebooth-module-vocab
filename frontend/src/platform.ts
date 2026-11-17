@@ -9,13 +9,14 @@ export type Me = { name: string; menus: string[]; perms: string[]; all: boolean 
 // 本地用户：没有平台时拥有全部权限。按钮能不能点只是界面上的提示，真正的检查在后端。
 const local: Me = { name: "", menus: [], perms: [], all: true };
 
-export async function getMe(): Promise<Me> {
+export async function getMe(strict = false): Promise<Me> {
   if (!hasBackend) return local;
   try {
     const me = await request<Me>("/api/vocab/me");
     // 没有任何权限时后端返回 null。
     return { ...me, menus: me.menus ?? [], perms: me.perms ?? [] };
-  } catch {
+  } catch (error) {
+    if (strict) throw error;
     return local;
   }
 }
