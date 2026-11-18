@@ -9,7 +9,13 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     go mod tidy && CGO_ENABLED=0 go build -mod=mod -trimpath -ldflags="-s -w" -o /out/app .
 
 FROM alpine:3.22
-RUN apk add --no-cache ffmpeg python3 py3-pillow font-noto font-noto-cjk && adduser -D -u 10001 app
+# 构建器可覆盖系统包镜像源；保留已下载的包，超时后重试可以复用。
+ARG APK_MIRROR=https://dl-cdn.alpinelinux.org/alpine
+RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
+    case "$APK_MIRROR" in https://*) ;; *) echo "APK_MIRROR 必须是 HTTPS 地址" >&2; exit 1 ;; esac \
+ && printf '%s/v3.22/main\n%s/v3.22/community\n' "${APK_MIRROR%/}" "${APK_MIRROR%/}" > /etc/apk/repositories \
+ && apk --cache-dir /var/cache/apk add ffmpeg python3 py3-pillow font-noto font-noto-cjk \
+ && adduser -D -u 10001 app
 COPY video.py /usr/local/lib/vocab-video.py
 # 数据目录挂载命名卷；先建好并交给 app 用户，卷第一次创建时会沿用这个属主。
 RUN mkdir /data && chown app /data
