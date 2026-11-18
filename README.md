@@ -19,6 +19,10 @@
 
 历史按最新生成顺序排列。每份成片从生成成功起保留 24 小时，到期清除文件并保留记录，可以重新生成。历史重生成复用当时的词表快照，另建最新记录，不推进新导出的起始序号。记录和进度保存在模块数据卷，服务启动及运行时都会清理过期文件，重启中断的任务可重新生成。
 
+导出自动拼接片头、学习卡片和片尾，文案模板独立放在 `backend/video-bookends.json`。每次导出保存模板快照，历史重生成保持原模板。后续自动化可沿用 `POST /api/vocab/video` 创建任务、`GET /api/vocab/video` 查询列表、`GET /api/vocab/video/file?id=...` 下载成片，均需要视频导出权限。
+
+中文例句含 Mac、PC 等英文时，由 Piper 和 Kokoro 分段合成，按原顺序拼回音轨。中文缓存和浏览器请求带有新版本，升级后会重新生成中文音频。
+
 ## 词库
 
 `backend/deck/core.json` 是生成好的词库，提交在仓库里，构建镜像不需要联网下载。要更新时运行 `npm install` 再 `npm run deck`：脚本下载 ECDICT、CMUdict、Britfone 和 Tatoeba 的原始数据到 `.cache/deck/`，按词频取前 3000 名、按字母排序，每个词挑最多 5 条中英例句。来源和许可证见 `backend/deck/NOTICE.md`。
@@ -83,3 +87,4 @@
 依赖在构建镜像时下载（Go 用 `GOPROXY`，npm 用 `NPM_REGISTRY`），本机不用装 Go。
 
 发布新版本前，把 `module.yaml` 的 `version` 改大。
+

@@ -54,6 +54,9 @@ var posRe = regexp.MustCompile(`^[a-z]+\.\s*`)
 func newSpeaker(url, dir string, deck *Deck, dict Dict) *speaker {
 	texts := map[string]bool{sampleText: true}
 	zh := map[string]bool{}
+	for _, bookend := range defaultVideoBookends() {
+		zh[bookend.Speech] = true
+	}
 	for _, w := range deck.Words {
 		texts[w.W] = true
 		if len(w.Zh) > 0 {
@@ -92,7 +95,12 @@ func (s *speaker) normalize(text string, zh bool) (string, bool) {
 // audio 返回 MP3：有缓存读缓存，没有就请语音容器合成后存起来。
 // 浏览器中途取消（翻页了）也合成完存好，下次直接用。
 func (s *speaker) audio(ctx context.Context, voice, text string) ([]byte, error) {
-	sum := sha256.Sum256([]byte(text))
+	cacheText := text
+	if voice == "zh_chaowen" {
+		// 中英混读修复后不再复用旧中文音频，但原缓存保留以兼容已有请求。
+		cacheText = "mixed-v2\n" + text
+	}
+	sum := sha256.Sum256([]byte(cacheText))
 	name := hex.EncodeToString(sum[:])
 	path := filepath.Join(s.dir, voice, name[:2], name+".mp3")
 	if b, err := os.ReadFile(path); err == nil {

@@ -6,6 +6,7 @@
 import io
 import json
 import os
+import re
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -28,15 +29,54 @@ piper = {v: PiperVoice.load(f"{MODEL_DIR}/piper/{name}.onnx", download_dir=MODEL
 lock = threading.Lock()
 
 
+# Piper 的中文音素表不包含拉丁字母。混合语句逐段合成，避免 Mac、PC 等内容吞掉中文。
+latin_span = re.compile(r"([A-Za-z][A-Za-z0-9]*(?:[ '\u2019-]+[A-Za-z][A-Za-z0-9]*)*)")
+
+
+def english_audio(text: str, voice: str):
+    phonemes, _ = g2p[VOICES[voice]](text)
+    return kokoro.create(phonemes, voice=voice, is_phonemes=True)
+
+
+def chinese_audio(text: str, voice: str):
+    chunks = [chunk.audio_float_array for chunk in piper[voice].synthesize(text)]
+    if not chunks:
+        raise ValueError("Chinese speech produced no audio")
+    return np.concatenate(chunks), piper[voice].config.sample_rate
+
+
+def mixed_audio(text: str, voice: str):
+    """Preserve the order of Chinese and English spans in a single 24 kHz track."""
+    segments = []
+    rate = 24000
+    for part in latin_span.split(text):
+        if not part.strip():
+            continue
+        if latin_span.fullmatch(part):
+            samples, source_rate = english_audio(part, "af_heart")
+        elif re.search(r"[\u3400-\u9fff0-9]", part):
+            samples, source_rate = chinese_audio(part, voice)
+        else:
+            continue
+        if len(samples) == 0:
+            raise ValueError("Speech segment produced no audio")
+        if source_rate != rate:
+            size = max(1, round(len(samples) * rate / source_rate))
+            samples = np.interp(
+                np.arange(size) * source_rate / rate, np.arange(len(samples)), samples
+            ).astype(np.float32)
+        segments.append(samples)
+    if not segments:
+        raise ValueError("Speech produced no audio")
+    return np.concatenate(segments), rate
+
+
 def synthesize(text: str, voice: str) -> bytes:
     with lock:
         if voice in piper:
-            # Piper 按句子分段合成，拼成一段。
-            chunks = [c.audio_float_array for c in piper[voice].synthesize(text)]
-            audio, rate = np.concatenate(chunks) if chunks else np.zeros(1, dtype=np.float32), piper[voice].config.sample_rate
+            audio, rate = mixed_audio(text, voice) if latin_span.search(text) else chinese_audio(text, voice)
         else:
-            phonemes, _ = g2p[VOICES[voice]](text)
-            audio, rate = kokoro.create(phonemes, voice=voice, is_phonemes=True)
+            audio, rate = english_audio(text, voice)
     buf = io.BytesIO()
     sf.write(buf, audio, rate, format="MP3")
     return buf.getvalue()
@@ -81,3 +121,4 @@ if __name__ == "__main__":
         synthesize("准备好了。", v)
     print("vocab-tts 已启动，端口 8880", flush=True)
     ThreadingHTTPServer(("", 8880), Handler).serve_forever()
+

@@ -284,7 +284,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
       )}
       {!auto && (
         <button type="button" className={styles.icon} onClick={() => read(++run.current, 1, true)} disabled={!canSpeak} aria-label="播放当前卡片" title="播放当前卡片">
-          <Icon name="sound" />
+          <Icon name="replay" />
         </button>
       )}
       <button
@@ -326,7 +326,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   );
 
   return (
-    <div className={`${styles.player} ${landscape ? styles.landscape : ""}`}>
+    <div data-word-popup-surface="" className={`${styles.player} ${landscape ? styles.landscape : ""}`}>
       <div ref={stage} className={styles.stage} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
         <WordCard
           word={page.word}
@@ -351,3 +351,4 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     </div>
   );
 }
+

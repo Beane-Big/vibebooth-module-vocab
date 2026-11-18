@@ -1,5 +1,7 @@
 .popup {
   position: fixed;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 10;
   background: var(--glass-strong);
   color: var(--text);
@@ -22,3 +24,4 @@
 .ph { color: var(--muted); }
 .head button { margin-left: auto; font-size: 18px; }
 .zh { display: flex; flex-direction: column; gap: 2px; }
+
