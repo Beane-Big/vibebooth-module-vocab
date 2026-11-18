@@ -29,6 +29,8 @@
 | `HF_ENDPOINT` | `https://hf-mirror.com` |
 | `SPACY_MODEL_URL` | en_core_web_sm 的 wheel 在镜像里的地址（3.8.0 或 3.7.1 都行，hf-mirror 上是 3.7.1），GitHub 能连上时不用填 |
 
+后端的视频导出依赖 FFmpeg、Python 和字体。系统包下载慢时，在构建器的构建参数中添加 `APK_MIRROR=https://mirrors.aliyun.com/alpine`。它与 Go 的 `GOPROXY` 分别控制系统包和 Go 依赖下载。已下载的系统包会保留在构建缓存中，超时后重试可复用。
+
 ## 常用命令
 
 都在本目录运行，需要 Node.js。
