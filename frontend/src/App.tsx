@@ -1,3 +1,4 @@
+import VideoExport from "./pages/VideoExport";
 import Nav from "./components/Nav";
 import WordPopup from "./components/WordPopup";
 import History from "./pages/History";
@@ -18,6 +19,7 @@ const pages: Record<string, () => React.JSX.Element> = {
   wrong: Wrongs,
   history: History,
   settings: SettingsPage,
+  video: VideoExport,
 };
 
 // 背景色块固定在最底下，导航和页面在它上面，玻璃面板透出它的颜色。
