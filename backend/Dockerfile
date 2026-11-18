@@ -9,7 +9,8 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
     go mod tidy && CGO_ENABLED=0 go build -mod=mod -trimpath -ldflags="-s -w" -o /out/app .
 
 FROM alpine:3.22
-RUN adduser -D -u 10001 app
+RUN apk add --no-cache ffmpeg python3 py3-pillow font-noto font-noto-cjk && adduser -D -u 10001 app
+COPY video.py /usr/local/lib/vocab-video.py
 # 数据目录挂载命名卷；先建好并交给 app 用户，卷第一次创建时会沿用这个属主。
 RUN mkdir /data && chown app /data
 USER app
