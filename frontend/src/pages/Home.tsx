@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, errorText, orderNames, planSpan, type Home as HomeData } from "../api";
 import { root } from "../components/Nav";
-import VideoExport from "./VideoExport";
 import styles from "./pages.module.css";
 
 // 首页：学习计划（继续或新建）、今天的复习、统计和其他页面的入口。
@@ -115,8 +114,6 @@ export default function Home() {
             )}
           </div>
         </section>
-
-        <VideoExport total={deck.total} />
 
         {/* 手机底部的标签栏里没有“已学习”，首页给它留一个入口；宽屏顶部导航里都有，不显示。 */}
         <nav className={styles.links}>

@@ -44,7 +44,12 @@ func main() {
 	newHandlers(deck, dict, store).register(api)
 	speech := newSpeaker(env("TTS_URL", "http://vocab-tts:8880"), filepath.Join(dataDir, "tts"), deck, dict)
 	speech.register(api)
-	(&videoExporter{deck: deck, speech: speech}).register(api)
+	exporter := &videoExporter{deck: deck, speech: speech, db: store.db, dir: filepath.Join(dataDir, "videos")}
+	if err := exporter.initialize(); err != nil {
+		slog.Error("恢复视频导出历史失败", "err", err)
+		os.Exit(1)
+	}
+	exporter.register(api)
 	for _, add := range routes {
 		add(api)
 	}

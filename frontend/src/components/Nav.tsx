@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { can, getMe } from "../platform";
 import Icon, { type IconName } from "./Icon";
 import styles from "./Nav.module.css";
 
@@ -13,6 +14,7 @@ const tabs: { page: string; label: string; icon: IconName; wide?: boolean }[] = 
   { page: "test", label: "检测", icon: "test" },
   { page: "wrong", label: "错题本", icon: "wrong" },
   { page: "history", label: "已学习", icon: "history", wide: true },
+  { page: "video", label: "视频导出", icon: "play" },
   { page: "settings", label: "设置", icon: "settings" },
 ];
 
@@ -32,7 +34,16 @@ const slideMs = 220; // 滑块滑到点中的标签用的时间，滑完再换�
 const dragStart = 6; // 移动超过这么多像素才算拖动，否则是点击
 
 export default function Nav({ current }: { current: string }) {
-  const active = tabs.some((t) => t.page === current) ? current : "";
+  const [videoAllowed, setVideoAllowed] = useState(false);
+  useEffect(() => {
+    let live = true;
+    getMe(true).then((me) => {
+      if (live) setVideoAllowed(!me.all && can(me, "video-export"));
+    }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+  const visibleTabs = tabs.filter((tab) => tab.page !== "video" || videoAllowed);
+  const active = visibleTabs.some((t) => t.page === current) ? current : "";
   const bar = useRef<HTMLElement>(null);
   const pill = useRef<HTMLSpanElement>(null);
   const drag = useRef<{ id: number; x: number; left: number; moved: boolean } | null>(null);
@@ -74,7 +85,7 @@ export default function Nav({ current }: { current: string }) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, videoAllowed]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 || !pill.current) return;
@@ -118,7 +129,7 @@ export default function Nav({ current }: { current: string }) {
   return (
     <nav ref={bar} className={styles.bar} aria-label="页面" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
       <span ref={pill} className={styles.pill} aria-hidden="true" />
-      {tabs.map((t) => (
+      {visibleTabs.map((t) => (
         <a
           key={t.page}
           data-page={t.page}
