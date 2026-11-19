@@ -68,6 +68,8 @@ type videoExporter struct {
 	next      int
 	completed bool
 	jobs      []*videoJob
+	assets    map[string]*videoAsset
+	assetBusy bool
 }
 
 // initialize 从 SQLite 恢复历史，重启中断的任务标为失败，成片按到期时间清理。
@@ -120,6 +122,9 @@ func (v *videoExporter) initialize() error {
 				return err
 			}
 		}
+	}
+	if err := v.loadAssets(); err != nil {
+		return err
 	}
 	v.next = max(1, min(v.next, len(v.deck.Words)))
 	v.cleanupLocked(time.Now())
@@ -194,6 +199,10 @@ func (v *videoExporter) register(api *http.ServeMux) {
 	api.HandleFunc("POST /api/vocab/video", guard(v.start))
 	api.HandleFunc("GET /api/vocab/video", guard(v.status))
 	api.HandleFunc("GET /api/vocab/video/file", guard(v.download))
+	api.HandleFunc("GET /api/vocab/video/assets", guard(v.assetStatus))
+	api.HandleFunc("POST /api/vocab/video/assets/{kind}", guard(v.uploadAsset))
+	api.HandleFunc("GET /api/vocab/video/assets/{kind}", guard(v.assetFile))
+	api.HandleFunc("DELETE /api/vocab/video/assets/{kind}", guard(v.removeAsset))
 }
 
 // 新生成成功才推进序号。重做旧记录时复用快照，另建一条历史且不推进。
@@ -208,7 +217,7 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if v.running {
+	if v.running || v.assetBusy {
 		writeError(w, http.StatusConflict, "已有视频正在生成")
 		return
 	}
@@ -217,6 +226,7 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 		for _, job := range v.jobs {
 			if job.ID == in.RetryID {
 				words = job.Words
+				// 重生成使用当前上传的素材，词表仍复用历史快照。
 				in.From = job.From
 				in.Count = job.Count
 				break
@@ -245,6 +255,11 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 	}
 	dir := filepath.Join(v.dir, strconv.FormatInt(id, 10))
 	if fail(w, os.Mkdir(dir, 0700)) {
+		return
+	}
+	if err := v.copyAssetsLocked(dir); err != nil {
+		os.RemoveAll(dir)
+		fail(w, err)
 		return
 	}
 	job := &videoJob{videoStatus: videoStatus{State: "running", Total: len(words) * 3}, ID: id, From: in.From, Count: in.Count, CreatedAt: time.Now().UTC(), Retry: in.RetryID != 0, Words: words, dir: dir}

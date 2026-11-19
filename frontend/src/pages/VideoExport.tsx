@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorText, request } from "../api";
 import { can, getMe } from "../platform";
+import VideoAssets from "./VideoAssets";
 import styles from "./pages.module.css";
 
 const base = "/api/vocab/video";
@@ -18,6 +19,7 @@ export default function VideoExport() {
   const [from, setFrom] = useState(1);
   const [count, setCount] = useState(20);
   const [busy, setBusy] = useState(false);
+  const [assetBusy, setAssetBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<number>();
   const previousNext = useRef<number | undefined>(undefined);
@@ -75,7 +77,7 @@ export default function VideoExport() {
 
   if (!allowed || !data) return <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">{allowed === false ? "没有视频导出权限" : "加载中…"}</p>}</main>;
   const jobs = data.jobs ?? [];
-  const running = busy || jobs.some(job => job.state === "running");
+  const running = busy || assetBusy || jobs.some(job => job.state === "running");
   const valid = Number.isInteger(from) && from >= 1 && from <= data.total && Number.isInteger(count) && count >= 1 && count <= 20 && from + count - 1 <= data.total;
   const file = (id: number) => base + "/file?id=" + id;
   return (
@@ -89,6 +91,7 @@ export default function VideoExport() {
           <div className="actions"><button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button></div>
         </form>
       </section>
+      <VideoAssets disabled={busy || jobs.some(job => job.state === "running")} onBusy={setAssetBusy} />
       <section className="stack">
         <h2>生成记录</h2>
         {jobs.length === 0 && <p className="muted">暂无生成记录</p>}

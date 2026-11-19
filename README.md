@@ -19,6 +19,10 @@
 
 历史按最新生成顺序排列。每份成片从生成成功起保留 24 小时，到期清除文件并保留记录，可以重新生成。历史重生成复用当时的词表快照，另建最新记录，不推进新导出的起始序号。记录和进度保存在模块数据卷，服务启动及运行时都会清理过期文件，重启中断的任务可重新生成。
 
+视频导出页可上传、预览、替换或移除共享片头和片尾。支持单个不超过 50 MB、30 秒、4K 的 MP4/MOV，服务端统一转为竖屏 1080×1920、24 fps、H.264/AAC；无音轨视频自动补静音。未上传的片段会省略。新建和历史重生成都使用当前素材，并在任务开始时复制一份，生成过程中替换素材不会影响成片。服务器只长期保留当前两份素材，成片仍按 24 小时规则清理。素材接口为 `GET /api/vocab/video/assets` 查询，以及 `POST/GET/DELETE /api/vocab/video/assets/intro`、`.../outro` 上传、预览和移除，上传使用 multipart 的 `file` 字段。后续自动化可沿用 `POST /api/vocab/video` 创建任务、`GET /api/vocab/video` 查询列表、`GET /api/vocab/video/file?id=...` 下载成片，均需要视频导出权限。
+
+中文例句含 Mac、PC 等英文时，由 Piper 和 Kokoro 分段合成，按原顺序拼回音轨。中文缓存和浏览器请求带有新版本，升级后会重新生成中文音频。
+
 ## 词库
 
 `backend/deck/core.json` 是生成好的词库，提交在仓库里，构建镜像不需要联网下载。要更新时运行 `npm install` 再 `npm run deck`：脚本下载 ECDICT、CMUdict、Britfone 和 Tatoeba 的原始数据到 `.cache/deck/`，按词频取前 3000 名、按字母排序，每个词挑最多 5 条中英例句。来源和许可证见 `backend/deck/NOTICE.md`。
@@ -83,3 +87,4 @@
 依赖在构建镜像时下载（Go 用 `GOPROXY`，npm 用 `NPM_REGISTRY`），本机不用装 Go。
 
 发布新版本前，把 `module.yaml` 的 `version` 改大。
+

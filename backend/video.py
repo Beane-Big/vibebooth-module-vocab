@@ -141,10 +141,11 @@ def render_page():
 
 def join_pages():
     """Join rendered pages in order and write the download with a seekable header."""
-    clips = sorted(Path.cwd().glob("card-*.mp4"))
+    clips = sorted(Path.cwd().glob("intro-*.mp4")) + sorted(Path.cwd().glob("card-*.mp4")) + sorted(Path.cwd().glob("outro-*.mp4"))
     Path("concat.txt").write_text("".join(f"file '{p.name}'\n" for p in clips),encoding="ascii")
     ffmpeg("-f","concat","-safe","0","-i","concat.txt","-c","copy","-movflags","+faststart","video.mp4")
 
 
 if __name__ == "__main__":
     {"page": render_page, "join": join_pages}[sys.argv[1]]()
+
