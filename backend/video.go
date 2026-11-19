@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -21,24 +20,6 @@ import (
 
 const videoPermission = "video-export"
 
-// 片头片尾独立于学习卡片，导出时合成，历史重做使用保存的模板快照。
-//go:embed video-bookends.json
-var videoBookendsJSON []byte
-
-type videoBookend struct {
-	Title    string `json:"title"`
-	Subtitle string `json:"subtitle"`
-	Speech   string `json:"speech"`
-}
-
-func defaultVideoBookends() []videoBookend {
-	var result []videoBookend
-	if err := json.Unmarshal(videoBookendsJSON, &result); err != nil {
-		panic(err)
-	}
-	return result
-}
-
 type videoStatus struct {
 	State string `json:"state"`
 	Done  int    `json:"done"`
@@ -48,21 +29,19 @@ type videoStatus struct {
 // 视频历史共享保存。词表快照用于过期重做，避免词库更新改变旧视频内容。
 type videoJob struct {
 	videoStatus
-	ID        int64          `json:"id"`
-	From      int            `json:"from"`
-	Count     int            `json:"count"`
-	CreatedAt time.Time      `json:"createdAt"`
-	ExpiresAt *time.Time     `json:"expiresAt,omitempty"`
-	Retry     bool           `json:"retry"`
-	Words     []*Word        `json:"-"`
-	Bookends  []videoBookend `json:"-"`
+	ID        int64      `json:"id"`
+	From      int        `json:"from"`
+	Count     int        `json:"count"`
+	CreatedAt time.Time  `json:"createdAt"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	Retry     bool       `json:"retry"`
+	Words     []*Word    `json:"-"`
 	dir       string
 }
 
 type savedVideoJob struct {
-	Job      videoJob       `json:"job"`
-	Words    []*Word        `json:"words"`
-	Bookends []videoBookend `json:"bookends,omitempty"`
+	Job   videoJob `json:"job"`
+	Words []*Word  `json:"words"`
 }
 
 type videoState struct {
@@ -89,6 +68,8 @@ type videoExporter struct {
 	next      int
 	completed bool
 	jobs      []*videoJob
+	assets    map[string]*videoAsset
+	assetBusy bool
 }
 
 // initialize 从 SQLite 恢复历史，重启中断的任务标为失败，成片按到期时间清理。
@@ -119,7 +100,6 @@ func (v *videoExporter) initialize() error {
 		for _, record := range saved.Jobs {
 			job := &record.Job
 			job.Words = record.Words
-			job.Bookends = record.Bookends
 			job.dir = filepath.Join(v.dir, strconv.FormatInt(job.ID, 10))
 			if job.State == "running" {
 				job.State = "failed"
@@ -142,6 +122,9 @@ func (v *videoExporter) initialize() error {
 				return err
 			}
 		}
+	}
+	if err := v.loadAssets(); err != nil {
+		return err
 	}
 	v.next = max(1, min(v.next, len(v.deck.Words)))
 	v.cleanupLocked(time.Now())
@@ -168,7 +151,7 @@ func (v *videoExporter) saveLocked() error {
 		Jobs      []savedVideoJob
 	}{Next: v.next, Completed: v.completed}
 	for _, job := range v.jobs {
-		saved.Jobs = append(saved.Jobs, savedVideoJob{*job, job.Words, job.Bookends})
+		saved.Jobs = append(saved.Jobs, savedVideoJob{*job, job.Words})
 	}
 	data, err := json.Marshal(saved)
 	if err != nil {
@@ -216,6 +199,10 @@ func (v *videoExporter) register(api *http.ServeMux) {
 	api.HandleFunc("POST /api/vocab/video", guard(v.start))
 	api.HandleFunc("GET /api/vocab/video", guard(v.status))
 	api.HandleFunc("GET /api/vocab/video/file", guard(v.download))
+	api.HandleFunc("GET /api/vocab/video/assets", guard(v.assetStatus))
+	api.HandleFunc("POST /api/vocab/video/assets/{kind}", guard(v.uploadAsset))
+	api.HandleFunc("GET /api/vocab/video/assets/{kind}", guard(v.assetFile))
+	api.HandleFunc("DELETE /api/vocab/video/assets/{kind}", guard(v.removeAsset))
 }
 
 // 新生成成功才推进序号。重做旧记录时复用快照，另建一条历史且不推进。
@@ -230,17 +217,16 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if v.running {
+	if v.running || v.assetBusy {
 		writeError(w, http.StatusConflict, "已有视频正在生成")
 		return
 	}
 	var words []*Word
-	bookends := defaultVideoBookends()
 	if in.RetryID != 0 {
 		for _, job := range v.jobs {
 			if job.ID == in.RetryID {
 				words = job.Words
-				bookends = job.Bookends
+				// 重生成使用当前上传的素材，词表仍复用历史快照。
 				in.From = job.From
 				in.Count = job.Count
 				break
@@ -271,7 +257,12 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 	if fail(w, os.Mkdir(dir, 0700)) {
 		return
 	}
-	job := &videoJob{videoStatus: videoStatus{State: "running", Total: len(words)*3 + len(bookends)}, ID: id, From: in.From, Count: in.Count, CreatedAt: time.Now().UTC(), Retry: in.RetryID != 0, Words: words, Bookends: bookends, dir: dir}
+	if err := v.copyAssetsLocked(dir); err != nil {
+		os.RemoveAll(dir)
+		fail(w, err)
+		return
+	}
+	job := &videoJob{videoStatus: videoStatus{State: "running", Total: len(words) * 3}, ID: id, From: in.From, Count: in.Count, CreatedAt: time.Now().UTC(), Retry: in.RetryID != 0, Words: words, dir: dir}
 	v.jobs = append([]*videoJob{job}, v.jobs...)
 	if err := v.saveLocked(); err != nil {
 		v.jobs = v.jobs[1:]
@@ -408,33 +399,6 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
-	}
-	// 生成独立片段，最终由渲染器按片头、学习卡片、片尾的顺序拼接。
-	for index, bookend := range job.Bookends {
-		name, err := audio("zh_chaowen", bookend.Speech)
-		if err != nil {
-			return err
-		}
-		data, err := json.Marshal(struct {
-			videoBookend
-			Audio string `json:"audio"`
-		}{bookend, name})
-		if err != nil {
-			return err
-		}
-		if err = os.WriteFile(filepath.Join(job.dir, "bookend.json"), data, 0600); err != nil {
-			return err
-		}
-		prefix := "intro"
-		if index > 0 {
-			prefix = "outro"
-		}
-		if err = run("bookend", fmt.Sprintf("%s-%d", prefix, index)); err != nil {
-			return err
-		}
-		v.mu.Lock()
-		job.Done++
-		v.mu.Unlock()
 	}
 	for index, word := range words {
 		for example := -1; example < 2; example++ {

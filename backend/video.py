@@ -54,30 +54,24 @@ def card(page, total, output):
     for y, width in ((236,23),(246,18),(256,14)):
         draw.rounded_rectangle((118,y,118+width,y+4), 2, fill="white")
     draw.text((174,220), "背单词", font=font(47,bold=True,cjk=True), fill="#17284b", anchor="lt")
-    is_bookend = "title" in page
-    if not is_bookend:
-        draw.text((977,232), f"{page['index']:02d} / {total:02d}", font=font(35), fill="#435984", anchor="rt")
-        step = (page["index"]-1)*3+page["example"]+2
-        draw.rounded_rectangle((104,313,976,322), 5, fill="#dce5fb")
-        draw.rounded_rectangle((104,313,104+round(872*step/(total*3)),322), 5, fill="#4d70dd")
+    draw.text((977,232), f"{page['index']:02d} / {total:02d}", font=font(35), fill="#435984", anchor="rt")
+    step = (page["index"]-1)*3+page["example"]+2
+    draw.rounded_rectangle((104,313,976,322), 5, fill="#dce5fb")
+    draw.rounded_rectangle((104,313,104+round(872*step/(total*3)),322), 5, fill="#4d70dd")
     draw.text((540,1655), "vibebooth.cn/apps/vocab", font=font(35), fill="#59668c", anchor="mt")
-    if is_bookend:
-        blocks = [(page["title"],96,True,True,"#252e63")]
-        blocks.extend((line,53,False,True,"#59668c") for line in page["subtitle"].splitlines())
-    else:
-        word, example = page["word"], page["example"]
-        if example < 0:
-            blocks = [(word["w"],158,True,False,"#252e63"), (f"[{word['us']}]" if word["us"] else "",47,False,False,"#59668c")]
-            blocks.extend((s,53,True,True,"#252e63") for s in word["zh"])
-        else:
-            sentence = word["ex"][example]
-            blocks = [
-                (f"{word['w']}  ·  例句 {example+1} / 2",38,False,True,"#59668c"),
-                (sentence["en"],76,True,False,"#252e63"),
-                (f"[{sentence['us']}]" if sentence["us"] else "",39,False,False,"#59668c"),
-                (sentence["zh"],53,True,True,"#252e63"),
-            ]
 
+    word, example = page["word"], page["example"]
+    if example < 0:
+        blocks = [(word["w"],158,True,False,"#252e63"), (f"[{word['us']}]" if word["us"] else "",47,False,False,"#59668c")]
+        blocks.extend((s,53,True,True,"#252e63") for s in word["zh"])
+    else:
+        sentence = word["ex"][example]
+        blocks = [
+            (f"{word['w']}  ·  例句 {example+1} / 2",38,False,True,"#59668c"),
+            (sentence["en"],76,True,False,"#252e63"),
+            (f"[{sentence['us']}]" if sentence["us"] else "",39,False,False,"#59668c"),
+            (sentence["zh"],53,True,True,"#252e63"),
+        ]
 
     # Longer examples shrink together only when wrapping exceeds the central area.
     for percent in range(100, 9, -5):
@@ -133,18 +127,6 @@ def render_page():
     if page["example"] >= 0:
         audio += silence(0.18).join(map(pcm,tokens))+pause
     audio += normal+pause
-    encode_audio(audio, f"card-{index:03}.mp4")
-
-
-def render_bookend():
-    page = json.loads(Path("bookend.json").read_text(encoding="utf-8"))
-    card(page, 1, "card.png")
-    audio = silence(0.25) + pcm(page["audio"]) + silence(0.65)
-    encode_audio(audio, sys.argv[2] + ".mp4")
-
-
-def encode_audio(audio, output):
-    """All segments use matching dimensions, frame rate and audio parameters."""
     with wave.open("card.wav","wb") as track:
         track.setparams((1,2,SAMPLE_RATE,0,"NONE","not compressed"))
         track.writeframes(audio)
@@ -153,7 +135,7 @@ def encode_audio(audio, output):
         "-c:v","libx264","-threads","2","-preset","ultrafast","-tune","stillimage",
         "-crf","20","-pix_fmt","yuv420p","-af","volume=4dB,alimiter=limit=0.89:level=0",
         "-c:a","aac","-ac","2","-ar","48000","-b:a","160k",
-        "-t",str(len(audio)/(2*SAMPLE_RATE)),output,
+        "-t",str(len(audio)/(2*SAMPLE_RATE)),f"card-{index:03}.mp4",
     )
 
 
@@ -165,5 +147,5 @@ def join_pages():
 
 
 if __name__ == "__main__":
-    {"page": render_page, "bookend": render_bookend, "join": join_pages}[sys.argv[1]]()
+    {"page": render_page, "join": join_pages}[sys.argv[1]]()
 

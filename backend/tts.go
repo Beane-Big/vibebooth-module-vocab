@@ -54,9 +54,6 @@ var posRe = regexp.MustCompile(`^[a-z]+\.\s*`)
 func newSpeaker(url, dir string, deck *Deck, dict Dict) *speaker {
 	texts := map[string]bool{sampleText: true}
 	zh := map[string]bool{}
-	for _, bookend := range defaultVideoBookends() {
-		zh[bookend.Speech] = true
-	}
 	for _, w := range deck.Words {
 		texts[w.W] = true
 		if len(w.Zh) > 0 {

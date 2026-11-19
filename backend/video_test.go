@@ -124,35 +124,3 @@ func TestVideoExpiryAndInterruptedRecovery(t *testing.T) {
 		t.Fatal("restart advanced cursor")
 	}
 }
-
-// 新模板保存到历史快照，老版本没有模板的历史仍按原样恢复。
-func TestVideoBookendSnapshot(t *testing.T) {
-	store, err := OpenStore(filepath.Join(t.TempDir(), "video.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer store.db.Close()
-	dir := t.TempDir()
-	v := &videoExporter{deck: &Deck{Words: make([]Word, 30)}, db: store.db, dir: dir}
-	if err = v.initialize(); err != nil {
-		t.Fatal(err)
-	}
-	original := defaultVideoBookends()
-	v.jobs = []*videoJob{
-		{videoStatus: videoStatus{State: "expired"}, ID: 2, Bookends: original, dir: filepath.Join(dir, "2")},
-		{videoStatus: videoStatus{State: "expired"}, ID: 1, dir: filepath.Join(dir, "1")},
-	}
-	if err = v.saveLocked(); err != nil {
-		t.Fatal(err)
-	}
-	restored := &videoExporter{deck: v.deck, db: store.db, dir: dir}
-	if err = restored.initialize(); err != nil {
-		t.Fatal(err)
-	}
-	if len(restored.jobs[0].Bookends) != 2 || restored.jobs[0].Bookends[0].Speech != original[0].Speech {
-		t.Fatal("bookend snapshot lost")
-	}
-	if len(restored.jobs[1].Bookends) != 0 {
-		t.Fatal("legacy video unexpectedly received bookends")
-	}
-}
