@@ -19,12 +19,12 @@ import (
 	"time"
 )
 
-// 朗读：用模块自带的语音容器 vocab-tts 合成 MP3（英文 Kokoro，中文 Piper），存在卷里的 tts/ 目录。
+// 朗读：用模块自带的语音容器 vocab-tts 合成 MP3（英文 Kokoro v1.0，中文与中英混读 Kokoro v1.1-zh），存在卷里的 tts/ 目录。
 // 同一个声音读同一段文字只合成一次，所有人共用，重启也还在。
 // 只朗读词库里的词、例句和例句里出现的词（弹框能点到的），以及自动播放读的中文（释义、例句翻译），别的文字不合成，缓存不会被随便塞满。
 
 // ttsVoices 要和 tts/voices.py 一致：值为真是中文声音（只读中文），假是英文声音。
-var ttsVoices = map[string]bool{"af_heart": false, "bf_emma": false, "zh_chaowen": true}
+var ttsVoices = map[string]bool{"af_heart": false, "bf_emma": false, "zf_001": true}
 
 // sampleText 是设置页“试听”读的句子（frontend/src/pages/SettingsPage.tsx）。
 const sampleText = "The course comprises ten lessons."
@@ -92,11 +92,8 @@ func (s *speaker) normalize(text string, zh bool) (string, bool) {
 // audio 返回 MP3：有缓存读缓存，没有就请语音容器合成后存起来。
 // 浏览器中途取消（翻页了）也合成完存好，下次直接用。
 func (s *speaker) audio(ctx context.Context, voice, text string) ([]byte, error) {
-	cacheText := text
-	if voice == "zh_chaowen" {
-		// 中英混读修复后不再复用旧中文音频，但原缓存保留以兼容已有请求。
-		cacheText = "mixed-v2\n" + text
-	}
+	// 升级语音模型与英文单字拼读策略后统一使用 v3 缓存键，避免复用旧版吞音或混读的音频。
+	cacheText := "tts-v3\n" + text
 	sum := sha256.Sum256([]byte(cacheText))
 	name := hex.EncodeToString(sum[:])
 	path := filepath.Join(s.dir, voice, name[:2], name+".mp3")

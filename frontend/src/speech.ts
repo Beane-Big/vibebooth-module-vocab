@@ -1,13 +1,13 @@
 import { ttsUrl } from "./api";
 
-// 朗读：用模块自带的语音（英文 Kokoro，中文 Piper；后端合成 MP3 并存起来，全家共用）。
+// 朗读：用模块自带的语音（英文 Kokoro v1.0，中文与中英混读 Kokoro v1.1-zh；后端合成 MP3 并存起来，全家共用）。
 // 语音容器不可用时（独立模式没有语音容器，或者语音容器出错）退回浏览器自带的 speechSynthesis。
 // 语速在播放时调（playbackRate，浏览器默认保持音调不变），同一句只存一份音频。
 export const canSpeak = typeof window !== "undefined" && ("speechSynthesis" in window || "Audio" in window);
 const canBrowserSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
 
 // 语言（口音）对应的模块声音，要和 tts/voices.py 一致。
-const ttsVoice: Record<string, string> = { "en-US": "af_heart", "en-GB": "bf_emma", "zh-CN": "zh_chaowen" };
+const ttsVoice: Record<string, string> = { "en-US": "af_heart", "en-GB": "bf_emma", "zh-CN": "zf_001" };
 
 // 语音容器不可用（503、断网）后这段时间内直接用浏览器朗读，不再每句都等它报错。
 let ttsDownUntil = 0;

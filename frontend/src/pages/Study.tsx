@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, durationText, errorText, modeNames, type Mode, type Plan, type Settings, type WithWords, type Word } from "../api";
+import { api, durationText, errorText, modeNames, modes, type Mode, type Plan, type Settings, type WithWords, type Word } from "../api";
 import ModePicker from "../components/ModePicker";
 import Player from "../components/Player";
 import Quiz from "../components/Quiz";
@@ -8,12 +8,31 @@ import { root } from "../components/Nav";
 import WordList from "../components/WordList";
 import styles from "./pages.module.css";
 
+// 上次计划测试选的题型记在这台设备上，下次默认选上。
+const planModesKey = "vocab.planTestModes";
+function savedPlanModes(): Mode[] {
+  try {
+    const list = (localStorage.getItem(planModesKey) ?? "").split(",").filter((m): m is Mode => (modes as string[]).includes(m));
+    if (list.length) return list;
+  } catch {
+    // 读不到就用默认
+  }
+  return ["look"];
+}
+function savePlanModes(list: Mode[]) {
+  try {
+    localStorage.setItem(planModesKey, list.join(","));
+  } catch {
+    // 存不了就算了
+  }
+}
+
 // 学习当前计划：先用滑卡或自动播放学完这批词，再做计划测试（只测这批词），最后看结果。答错的词后端放进错题本。
 export default function Study() {
   const [settings, setSettings] = useState<Settings>();
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [phase, setPhase] = useState<"learn" | "pick" | "test" | "result">("learn");
-  const [mode, setMode] = useState<Mode[]>(["look"]);
+  const [mode, setMode] = useState<Mode[]>(savedPlanModes);
   const [order, setOrder] = useState<Word[]>([]); // 测试时打乱顺序，开始测试时定下来
   const [start, setStart] = useState(0);
   const [error, setError] = useState("");
@@ -73,10 +92,17 @@ export default function Study() {
           <section className="card stack">
             <h1>计划测试</h1>
             <p className="muted">只测这次学的 {words.length} 个词，答错的会放进错题本。</p>
-            <ModePicker value={mode} onChange={setMode} />
+            <ModePicker
+              value={mode}
+              onChange={(next) => {
+                setMode(next);
+                savePlanModes(next);
+              }}
+            />
             <button
               className={styles.wide}
               onClick={() => {
+                savePlanModes(mode);
                 setOrder(shuffle(words));
                 setPhase("test");
               }}

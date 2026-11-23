@@ -355,7 +355,7 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 		if err := ctx.Err(); err != nil {
 			return "", err
 		}
-		if normalized, ok := v.speech.normalize(text, voice == "zh_chaowen"); ok {
+		if normalized, ok := v.speech.normalize(text, ttsVoices[voice]); ok {
 			text = normalized
 		}
 		key := voice + "\n" + text
@@ -384,7 +384,7 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 	}
 	normal := func(page *videoPage, zh, en string) error {
 		for i, text := range []string{zh, en} {
-			voice := []string{"zh_chaowen", "af_heart"}[i]
+			voice := []string{"zf_001", "af_heart"}[i]
 			name, err := audio(voice, text)
 			if err != nil {
 				return err

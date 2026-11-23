@@ -80,3 +80,20 @@
 .sentenceInput { width: 100%; max-width: 560px; font-size: 18px; text-align: left; padding: 10px 12px; resize: vertical; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface) 75%, transparent); color: var(--text); font-family: inherit; }
 .compare { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px dashed var(--border); }
 .matched { color: var(--success); font-weight: 700; }
+
+/* 选择题核对后的折叠题解：展开查看其他三个干扰项的意思。 */
+.analysis { margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--border); text-align: left; }
+.analysisToggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); box-shadow: none; }
+@media (hover: hover) {
+  .analysisToggle:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+}
+.analysisArrow { display: inline-block; transition: transform 0.2s ease; font-size: 15px; line-height: 1; }
+.analysisArrowOpen { transform: rotate(180deg); }
+.analysisList { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.analysisItem { padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--glass-edge); }
+.analysisPicked { border-color: color-mix(in srgb, var(--danger) 40%, transparent); background: color-mix(in srgb, var(--danger) 7%, var(--surface)); }
+.analysisHead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.analysisWord { font-size: 15px; font-weight: 700; color: var(--text); }
+.analysisPh { font-size: 13px; color: var(--muted); }
+.analysisTag { margin-left: auto; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.analysisZh { margin: 2px 0 0; font-size: 14px; color: var(--muted); line-height: 1.4; }

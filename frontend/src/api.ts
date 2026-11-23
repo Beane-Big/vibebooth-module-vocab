@@ -4,7 +4,7 @@ export type Example = Phonetic & { en: string; zh: string; src: string };
 // n 是序号（按字母顺序），f 是词频名次（1 最常用）。
 export type Word = Phonetic & { n: number; f: number; w: string; zh: string[]; forms: string[]; ex: Example[] };
 // 选择题的干扰项（后端挑好的）：meaning 是同词性、词频相近、意思不重叠的词，prefix 是开头字母相同的词（看中文选英文用），spelling 是拼写相近、读音不同的词。
-export type Option = { w: string; zh: string };
+export type Option = { w: string; zh: string; us?: string; uk?: string };
 export type Choices = { meaning: Option[]; prefix: Option[]; spelling: Option[] };
 export type Order = "alpha" | "frq" | "random";
 
@@ -111,7 +111,7 @@ const tz = `tz=${new Date().getTimezoneOffset()}`;
 const base = "/api/vocab";
 
 // 朗读音频的网址（GET 返回 MP3，见 speech.ts）。
-export const ttsUrl = (text: string, voice: string) => `${base}/tts?voice=${voice}&text=${encodeURIComponent(text)}&v=2`;
+export const ttsUrl = (text: string, voice: string) => `${base}/tts?voice=${voice}&text=${encodeURIComponent(text)}&v=3`;
 const post = (body: unknown) => ({ method: "POST", body: JSON.stringify(body) });
 
 export const api = {

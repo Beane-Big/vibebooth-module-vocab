@@ -10,6 +10,9 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 WIDTH, HEIGHT = 1080, 1920
 SAMPLE_RATE = 24000
+# 例句逐词拼读稍微放慢语速并拉长词间停顿，避免听起来急促。
+SPELL_SPEED = 0.85
+SPELL_GAP = 0.38
 FFMPEG = os.environ.get("VIDEO_FFMPEG", "ffmpeg")
 FONT_DIR = Path(os.environ.get("VIDEO_FONT_DIR", "/usr/share/fonts/noto"))
 
@@ -101,11 +104,15 @@ def ffmpeg(*args, capture=False):
     ).stdout
 
 
-def pcm(source):
-    """Decode speech at its original 1.0× speed to a uniform PCM format."""
+def pcm(source, *, speed=1.0):
+    """Decode speech to uniform PCM, optionally slowing down with pitch-preserving atempo."""
     if not source:
         return b""
-    audio = ffmpeg("-i",source,"-ar",str(SAMPLE_RATE),"-ac","1","-f","s16le","pipe:1",capture=True)
+    args = ["-i", source]
+    if speed != 1.0:
+        args.extend(["-af", f"atempo={speed}"])
+    args.extend(["-ar", str(SAMPLE_RATE), "-ac", "1", "-f", "s16le", "pipe:1"])
+    audio = ffmpeg(*args, capture=True)
     if not audio or not any(audio):
         raise ValueError(f"Missing audio signal in {source}")
     return audio
@@ -125,7 +132,7 @@ def render_page():
     pause = silence(max(0.3,len(normal)/(2*SAMPLE_RATE)))
     audio = pcm(chinese)+silence(0.25)+normal+pause
     if page["example"] >= 0:
-        audio += silence(0.18).join(map(pcm,tokens))+pause
+        audio += silence(SPELL_GAP).join(pcm(token, speed=SPELL_SPEED) for token in tokens)+pause
     audio += normal+pause
     with wave.open("card.wav","wb") as track:
         track.setparams((1,2,SAMPLE_RATE,0,"NONE","not compressed"))

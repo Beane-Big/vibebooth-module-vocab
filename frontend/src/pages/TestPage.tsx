@@ -11,26 +11,62 @@ import { RecordRow } from "./History";
 import styles from "./pages.module.css";
 
 // 检测页上能选的范围；计划错题（plan）从已学习的计划详情进来，不在这里选。
-const scopeIcons: Record<Exclude<TestScope, "plan">, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong", learned: "book" };
+type SelectableScope = Exclude<TestScope, "plan">;
+const scopeIcons: Record<SelectableScope, IconName> = { recent: "clock", range: "hash", all: "layers", wrong: "wrong", learned: "book" };
 const counts = [10, 20, 30, 50, 100];
 
-// 上次检测选的题型记在这台设备上，下次默认选上。
+// 上次检测选的范围、序号、题数、已学习计划和题型记在这台设备上，下次默认选上。
+const prefsKey = "vocab.testPrefs";
 const modesKey = "vocab.testModes";
-function savedModes(): Mode[] {
+
+type TestPrefs = {
+  scope: SelectableScope;
+  from: number;
+  to: number;
+  learnedId: number;
+  count: number;
+  mode: Mode[];
+};
+
+const defaultPrefs: TestPrefs = { scope: "recent", from: 1, to: 100, learnedId: 0, count: 20, mode: ["look"] };
+
+function parseModes(raw: unknown): Mode[] {
+  const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(",") : [];
+  const list = arr.filter((m): m is Mode => typeof m === "string" && (modes as string[]).includes(m));
+  return list.length ? [...new Set(list)] : ["look"];
+}
+
+function savedPrefs(): TestPrefs {
   try {
-    const list = (localStorage.getItem(modesKey) ?? "").split(",").filter((m): m is Mode => (modes as string[]).includes(m));
-    if (list.length) return list;
+    const raw = localStorage.getItem(prefsKey);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<TestPrefs>;
+      const scope = typeof parsed.scope === "string" && parsed.scope in scopeIcons ? (parsed.scope as SelectableScope) : defaultPrefs.scope;
+      const from = typeof parsed.from === "number" && Number.isFinite(parsed.from) && parsed.from >= 1 ? Math.floor(parsed.from) : defaultPrefs.from;
+      const to = typeof parsed.to === "number" && Number.isFinite(parsed.to) && parsed.to >= 1 ? Math.floor(parsed.to) : defaultPrefs.to;
+      const learnedId = typeof parsed.learnedId === "number" && Number.isFinite(parsed.learnedId) && parsed.learnedId >= 0 ? Math.floor(parsed.learnedId) : defaultPrefs.learnedId;
+      const count = typeof parsed.count === "number" && counts.includes(parsed.count) ? parsed.count : defaultPrefs.count;
+      return { scope, from, to, learnedId, count, mode: parseModes(parsed.mode) };
+    }
+    const legacyModes = localStorage.getItem(modesKey);
+    if (legacyModes) return { ...defaultPrefs, mode: parseModes(legacyModes) };
   } catch {
     // 读不到就用默认
   }
-  return ["look"];
+  return defaultPrefs;
 }
-function saveModes(list: Mode[]) {
+
+function savePrefs(prefs: TestPrefs) {
   try {
-    localStorage.setItem(modesKey, list.join(","));
+    localStorage.setItem(prefsKey, JSON.stringify(prefs));
+    localStorage.setItem(modesKey, prefs.mode.join(","));
   } catch {
     // 存不了就算了
   }
+}
+
+function saveModesOnly(list: Mode[]) {
+  savePrefs({ ...savedPrefs(), mode: list });
 }
 
 // 检测：自己选范围和题型，做完看正确率和答错的词；答错的进错题本，并提前到明天复习。
@@ -39,21 +75,38 @@ function saveModes(list: Mode[]) {
 export default function TestPage() {
   const params = new URLSearchParams(location.search);
   const linkedPlan = Number(params.get("plan"));
-  const planId = params.get("scope") === "learned" ? 0 : linkedPlan;
-  const [learnedId, setLearnedId] = useState(planId ? 0 : linkedPlan);
+  const urlScope = params.get("scope");
+  const planId = urlScope === "learned" ? 0 : linkedPlan;
+  const [initial] = useState(savedPrefs);
+  const [learnedId, setLearnedId] = useState(planId ? 0 : linkedPlan > 0 ? linkedPlan : initial.learnedId);
   const [plans, setPlans] = useState<Plan[]>();
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [settings, setSettings] = useState<Settings>();
-  const [scope, setScope] = useState<TestScope>((params.get("scope") as TestScope) || "recent");
-  const [from, setFrom] = useState(1);
-  const [to, setTo] = useState(100);
-  const [count, setCount] = useState(20);
-  const [mode, setMode] = useState<Mode[]>(savedModes);
+  const [scope, setScope] = useState<SelectableScope>(urlScope && urlScope in scopeIcons ? (urlScope as SelectableScope) : initial.scope);
+  const [from, setFrom] = useState(initial.from);
+  const [to, setTo] = useState(initial.to);
+  const [count, setCount] = useState(initial.count);
+  const [mode, setMode] = useState<Mode[]>(initial.mode);
   const [test, setTest] = useState<WithWords<Test>>();
   const [result, setResult] = useState<WithWords<Test>>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [past, setPast] = useState<Test[]>();
+
+  function updatePrefs(patch: Partial<TestPrefs>) {
+    const next: TestPrefs = { scope, from, to, learnedId, count, mode, ...patch };
+    if (patch.scope !== undefined) setScope(patch.scope);
+    if (patch.from !== undefined) setFrom(patch.from);
+    if (patch.to !== undefined) setTo(patch.to);
+    if (patch.learnedId !== undefined) setLearnedId(patch.learnedId);
+    if (patch.count !== undefined) setCount(patch.count);
+    if (patch.mode !== undefined) setMode(patch.mode);
+    if (planId) {
+      if (patch.mode !== undefined) saveModesOnly(patch.mode);
+    } else {
+      savePrefs(next);
+    }
+  }
 
   useEffect(() => {
     api
@@ -87,7 +140,8 @@ export default function TestPage() {
     setBusy(true);
     setError("");
     try {
-      saveModes(mode);
+      if (planId) saveModesOnly(mode);
+      else savePrefs({ scope, from, to, learnedId, count, mode });
       const joined = mode.join(",");
       setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode: joined } : { scope, from, to, count, plan: scope === "learned" ? learnedId : undefined, mode: joined }));
     } catch (err) {
@@ -135,7 +189,7 @@ export default function TestPage() {
                 </p>
                 <div className={styles.group}>
                   <h2>题型</h2>
-                  <ModePicker value={mode} onChange={setMode} />
+                  <ModePicker value={mode} onChange={(m) => updatePrefs({ mode: m })} />
                 </div>
                 <button className={`${styles.wide} ${styles.sticky}`} onClick={start} disabled={busy || plan.missed.length === 0}>
                   开始检查
@@ -153,7 +207,7 @@ export default function TestPage() {
                 <h2>范围</h2>
                 <div className={`${styles.tiles} ${styles.compact}`} role="radiogroup" aria-label="范围">
                   {(Object.keys(scopeIcons) as (keyof typeof scopeIcons)[]).map((s) => (
-                    <button key={s} type="button" role="radio" aria-checked={s === scope} className={`${styles.tile} ${s === scope ? styles.on : ""}`} onClick={() => setScope(s)}>
+                    <button key={s} type="button" role="radio" aria-checked={s === scope} className={`${styles.tile} ${s === scope ? styles.on : ""}`} onClick={() => updatePrefs({ scope: s })}>
                       <Icon name={scopeIcons[s]} />
                       <strong>{scopeNames[s]}</strong>
                     </button>
@@ -162,7 +216,7 @@ export default function TestPage() {
                 {scope === "learned" && (
                   <label className="field">
                     <span>学习计划</span>
-                    <select value={learnedPlan?.id ?? ""} onChange={(e) => setLearnedId(Number(e.target.value))}>
+                    <select value={learnedPlan?.id ?? ""} onChange={(e) => updatePrefs({ learnedId: Number(e.target.value) })}>
                       <option value="" disabled>{!plans ? "加载中…" : plans.length ? "请选择已学习的计划" : "还没有已完成的学习计划"}</option>
                       {plans?.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -175,9 +229,9 @@ export default function TestPage() {
                 {scope === "range" && (
                   <label className="field">
                     <span>序号</span>
-                    <input type="number" min={1} value={from} onChange={(e) => setFrom(Number(e.target.value))} />
+                    <input type="number" min={1} value={from} onChange={(e) => updatePrefs({ from: Number(e.target.value) })} />
                     到
-                    <input type="number" min={1} value={to} onChange={(e) => setTo(Number(e.target.value))} />
+                    <input type="number" min={1} value={to} onChange={(e) => updatePrefs({ to: Number(e.target.value) })} />
                   </label>
                 )}
               </div>
@@ -186,7 +240,7 @@ export default function TestPage() {
                   <h2>题数</h2>
                   <div className={`${styles.tabs} ${styles.full}`} role="radiogroup" aria-label="题数">
                     {counts.map((n) => (
-                      <button key={n} type="button" role="radio" aria-checked={n === count} className={n === count ? styles.on : ""} onClick={() => setCount(n)}>
+                      <button key={n} type="button" role="radio" aria-checked={n === count} className={n === count ? styles.on : ""} onClick={() => updatePrefs({ count: n })}>
                         {n} 题
                       </button>
                     ))}
@@ -195,7 +249,7 @@ export default function TestPage() {
               )}
               <div className={styles.group}>
                 <h2>题型</h2>
-                <ModePicker value={mode} onChange={setMode} />
+                <ModePicker value={mode} onChange={(m) => updatePrefs({ mode: m })} />
               </div>
               <button className={`${styles.wide} ${styles.sticky}`} onClick={start} disabled={busy || (scope === "learned" && !learnedPlan)}>
                 {scope === "learned" ? "检测全部" : "开始检测"}
