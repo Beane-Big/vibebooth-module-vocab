@@ -124,83 +124,6 @@ def _fade_edges(audio: np.ndarray, rate: int, in_ms: int = 5, out_ms: int = 15) 
     return out
 
 
-def _extract_carrier_middle(samples: np.ndarray, rate: int) -> np.ndarray | None:
-    """从 'One. … <word>. … Me.' 合成音频中安全提取中间目标词（去掉前后锚点词）。"""
-    if len(samples) == 0:
-        return None
-    audio = np.asarray(samples, dtype=np.float32)
-    frame = max(1, rate // 100)  # 10 ms 帧
-    n_frames = len(audio) // frame
-    if n_frames < 30:
-        return None
-    rms = np.sqrt(np.mean(audio[: n_frames * frame].reshape(n_frames, frame) ** 2, axis=1))
-    peak = float(np.max(rms))
-    if peak <= 1e-6:
-        return None
-    # -42 dB 区分人声岛与句间停顿静音
-    threshold = max(1e-4, peak * (10.0 ** (-42.0 / 20.0)))
-    soft_head_thr = max(1e-4, peak * (10.0 ** (-52.0 / 20.0)))
-    soft_tail_thr = max(1e-4, peak * (10.0 ** (-50.0 / 20.0)))
-    active = rms > threshold
-
-    # 合并间隔 < 120 ms 的语音段（保留词内塞音闭塞间隙，如 large 的 /dʒ/ 前闭塞或连字符词内部停顿）
-    min_gap_frames = 12
-    runs: list[list[int]] = []
-    i = 0
-    while i < n_frames:
-        if not active[i]:
-            i += 1
-            continue
-        start = i
-        while i < n_frames and active[i]:
-            i += 1
-        end = i
-        if runs and start - runs[-1][1] < min_gap_frames:
-            runs[-1][1] = end
-        else:
-            runs.append([start, end])
-
-    # 过滤 < 50 ms 的极短杂音点
-    islands = [(s, e) for s, e in runs if e - s >= 5]
-    if len(islands) < 3:
-        return None
-
-    first_s, first_e = islands[0]
-    mid_s, mid_e = islands[1][0], islands[-2][1]
-    last_s, last_e = islands[-1]
-
-    # 严格校验前后锚点（"One" 与 "Me"）及停顿间距，不满足则宁可回退直出，绝不误裁
-    first_dur = (first_e - first_s) * 0.01
-    mid_dur = (mid_e - mid_s) * 0.01
-    last_dur = (last_e - last_s) * 0.01
-    gap_before = mid_s - first_e
-    gap_after = last_s - mid_e
-    if not (0.08 <= first_dur <= 0.85 and 0.08 <= last_dur <= 0.85 and mid_dur >= 0.08):
-        return None
-    if gap_before < min_gap_frames or gap_after < min_gap_frames:
-        return None
-
-    # 在前后停顿中找能量最低的静音谷底作为硬边界，彻底隔离前后锚点词的起音/尾气
-    valley_before = first_e + 2 + int(np.argmin(rms[first_e + 2 : mid_s - 1]))
-    valley_after = mid_e + 2 + int(np.argmin(rms[mid_e + 2 : last_s - 1]))
-
-    # 从目标词两端向外温和扩展到极低阈值（保留轻起音 /ð/ 与词尾 /dʒ/），但不跨过静音谷底
-    true_start = mid_s
-    while true_start > valley_before and rms[true_start - 1] > soft_head_thr:
-        true_start -= 1
-    true_end = mid_e
-    while true_end < valley_after and rms[true_end] > soft_tail_thr:
-        true_end += 1
-
-    head_pad = round(rate * 0.03)
-    tail_pad = round(rate * 0.025)
-    start_sample = max(valley_before * frame, true_start * frame - head_pad)
-    end_sample = min(valley_after * frame, true_end * frame + tail_pad)
-    if end_sample <= start_sample:
-        return None
-    return _fade_edges(audio[start_sample:end_sample], rate)
-
-
 def english_phonemes(text: str, british: bool) -> tuple[str, bool]:
     single_word = bool(STANDALONE_WORD_RE.fullmatch(text))
     low = text.lower()
@@ -215,7 +138,7 @@ def english_phonemes(text: str, british: bool) -> tuple[str, bool]:
             # 孤立功能词（they、he、we、you、to、for、of、go、with 等）在词典中无主重音，
             # 补上主重音使单读清晰饱满，和词典音标一致。
             phonemes = en.apply_stress(phonemes, 2)
-    # Kokoro 上游已知缺陷（hexgrad/kokoro #284、#380）：
+    # Kokoro 上游已知缺陷（hexgrad/kokoro #284）：
     # af_heart 在孤立单词结尾遇到紧缩塞擦音 ʤ（如 large/age/bridge/change）或 ʧ（如 catch/match）时尾音能量几乎归零；
     # 拆成标准两字符 dʒ / tʃ 可恢复完整尾音（bf_emma 原本正常且拆分会反向劣化，故仅针对美音 af_heart）。
     if single_word and not british:
@@ -223,36 +146,32 @@ def english_phonemes(text: str, british: bool) -> tuple[str, bool]:
             phonemes = phonemes[:-1] + "dʒ"
         elif phonemes.endswith("ʧ"):
             phonemes = phonemes[:-1] + "tʃ"
+    if not TERMINAL_PUNCT_RE.search(phonemes):
+        phonemes = phonemes + "."
     return phonemes, single_word
+
+
+def _style_for_single_word(voice: str, phoneme_len: int):
+    """极短孤立词（如 they、do、a 等 < 20 音素）避开 Kokoro 极短区间失真的风格向量，复用句级健康风格向量。"""
+    if phoneme_len >= 20:
+        return voice
+    style_table = kokoro.get_voice_style(voice)
+    row = min(24, len(style_table) - 1)
+    return np.repeat(style_table[row : row + 1], len(style_table), axis=0)
 
 
 def english_audio(text: str, voice: str):
     british = VOICES[voice]
     phonemes, single_word = english_phonemes(text, british)
+    # 不使用带省略号 … 的载体句拼接（Kokoro 会在 … 处产生类似 s 的呼气尾音）；
+    # 直接用健康风格向量 + 标准句点 + dʒ/tʃ 拆分 + 温和裁剪与淡出合成干净单字。
+    voice_arg = _style_for_single_word(voice, len(phonemes)) if single_word else voice
+    samples, rate = kokoro.create(phonemes, voice=voice_arg, is_phonemes=True, trim=False)
     if single_word:
-        # Kokoro 对极短单字（如 they 仅 3–4 音素）会落在短序列风格向量崩溃区（hexgrad/kokoro #228）；
-        # 将目标词放进带长停顿的载体句中一次合成再提取中间词，既拥有正常句级清晰韵律又保持同一音色。
-        # 后锚点用纯浊鼻音起音的 "me"（mˈi / mˈiː）而非送气清塞音 "two"（tˈu），避免词尾带入类似 s/tʰ 的送气尾音。
-        suffix = "mˈiː" if british else "mˈi"
-        carrier = f"wˈʌn. … {phonemes}. … {suffix}."
-        raw, rate = kokoro.create(carrier, voice=voice, is_phonemes=True, trim=False)
-        extracted = _extract_carrier_middle(raw, rate)
-        if extracted is not None and len(extracted) > 0:
-            return extracted, rate
-        print(f"TTS carrier fallback for {voice} {text!r} ({phonemes})", flush=True)
-        # 兜底：若罕见词未能切出三段，用句长区间风格向量 + " ." 直出
-        style_table = kokoro.get_voice_style(voice)
-        fallback_style = np.repeat(style_table[min(28, len(style_table) - 1) : min(28, len(style_table) - 1) + 1], len(style_table), axis=0)
-        samples, rate = kokoro.create(f"{phonemes} .", voice=fallback_style, is_phonemes=True, trim=False)
-        samples = safe_trim(samples, rate, head_ms=60, tail_ms=100)
-        if len(samples) == 0:
-            raise ValueError("English speech produced no audio")
-        return samples, rate
-
-    if not TERMINAL_PUNCT_RE.search(phonemes):
-        phonemes = phonemes + "."
-    samples, rate = kokoro.create(phonemes, voice=voice, is_phonemes=True, trim=False)
-    samples = safe_trim(samples, rate)
+        samples = safe_trim(samples, rate, head_ms=40, tail_ms=45, db_floor=44.0)
+        samples = _fade_edges(samples, rate, in_ms=5, out_ms=15)
+    else:
+        samples = safe_trim(samples, rate)
     if len(samples) == 0:
         raise ValueError("English speech produced no audio")
     return samples, rate
