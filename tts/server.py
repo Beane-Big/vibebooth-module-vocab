@@ -11,6 +11,7 @@ import json
 import os
 import re
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
@@ -229,13 +230,19 @@ def chinese_audio(text: str, voice: str):
 
 
 def synthesize(text: str, voice: str) -> bytes:
+    t0 = time.monotonic()
     with lock:
+        t1 = time.monotonic()
         if voice in ZH_VOICES:
             audio, rate = chinese_audio(text, voice)
         else:
             audio, rate = english_audio(text, voice)
     buf = io.BytesIO()
     sf.write(buf, audio, rate, format="MP3")
+    dt = time.monotonic() - t1
+    wait_dt = t1 - t0
+    if dt >= 0.8 or wait_dt >= 0.5:
+        print(f"TTS {voice} ({len(text)} chars): synth={dt:.2f}s wait={wait_dt:.2f}s", flush=True)
     return buf.getvalue()
 
 

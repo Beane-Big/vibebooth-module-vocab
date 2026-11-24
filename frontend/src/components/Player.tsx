@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { Settings, Word } from "../api";
-import { canSpeak, keepAudioAwake, plainZh, prefetchSpeech, speak, stopSpeaking, wait } from "../speech";
+import { canSpeak, clearPrefetch, keepAudioAwake, onSpeechLoading, plainZh, prefetchSpeech, speak, stopSpeaking, wait } from "../speech";
 import ExitButton from "./ExitButton";
 import Icon from "./Icon";
 import { useImmersive } from "./Nav";
@@ -54,6 +54,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
   // 翻页时朗读的开关记在这台设备上，下次学习沿用；默认关，打开过才读。
   const [readOnEnter, setReadOnEnter] = useState(() => localStorage.getItem("vocab.readOnEnter") === "1");
   const [landscape, setLandscape] = useState(false);
+  const [loadingSpeech, setLoadingSpeech] = useState(false);
   const run = useRef(0); // 每次翻页或停止都加 1，正在进行的朗读看到编号变了就停下
   const stage = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; t: number; dx: number; id: number; moved: boolean } | null>(null);
@@ -129,7 +130,10 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     const { accent, rate } = settings;
     const en = enOf(page);
     if (withZh) {
-      await speak(zhOf(page), "zh-CN", 1);
+      // 中文正在播放时再在后台预取本页英文，既不抢占中文合成，又能衔接紧随其后的英文朗读。
+      const zhPromise = speak(zhOf(page), "zh-CN", 1);
+      prefetchSpeech(en, accent);
+      await zhPromise;
       if (run.current !== id) return 0;
       await wait(zhGap);
     }
@@ -155,15 +159,12 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     const id = ++run.current;
     const entered = shownPos.current !== pos;
     shownPos.current = pos;
+    clearPrefetch();
     stopSpeaking();
-    if (pages[pos + 1]) {
-      prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
-      if (auto && settings.autoZh) prefetchSpeech(zhOf(pages[pos + 1]), "zh-CN");
-    }
     if (auto) {
       const isEx = page.example >= 0;
       const spell = isEx && settings.spellOut;
-      if (spell) for (const w of tokensOf(enOf(page))) prefetchSpeech(w, settings.accent);
+      // 先启动当前页朗读，再把拼读单词和下一页放进低优先级后台预取队列（等当前音频拿到后才依次预取）。
       (async () => {
         const pause = await read(id, isEx ? settings.sentRepeat : settings.wordRepeat, settings.autoZh, spell);
         if (run.current !== id) return;
@@ -171,10 +172,20 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
         await wait(Math.max(0, pause - (reduced() ? 0 : motion.out)));
         if (run.current === id) go(pos + 1);
       })();
-    } else if (readOnEnter && entered) {
-      wait(readDelay).then(() => {
-        if (run.current === id) read(id, 1, false);
-      });
+      if (spell) for (const w of tokensOf(enOf(page))) prefetchSpeech(w, settings.accent);
+      if (pages[pos + 1]) {
+        if (settings.autoZh) prefetchSpeech(zhOf(pages[pos + 1]), "zh-CN");
+        prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
+      }
+    } else {
+      if (readOnEnter && entered) {
+        wait(readDelay).then(() => {
+          if (run.current === id) read(id, 1, false);
+        });
+      }
+      if (pages[pos + 1]) {
+        prefetchSpeech(enOf(pages[pos + 1]), settings.accent);
+      }
     }
     return () => {
       run.current++;
@@ -213,10 +224,13 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  useEffect(() => onSpeechLoading(setLoadingSpeech), []);
+
   useEffect(
     () => () => {
       clearTimeout(sliding.current);
       run.current++;
+      clearPrefetch();
       stopSpeaking();
     },
     [],
@@ -274,7 +288,7 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
         <Icon name="prev" />
       </button>
       {auto ? (
-        <button type="button" className={`${styles.icon} ${styles.main}`} onClick={stop} aria-label="暂停" title="暂停">
+        <button type="button" className={`${styles.icon} ${styles.main} ${loadingSpeech ? styles.loading : ""}`} onClick={stop} aria-label="暂停" title={loadingSpeech ? "语音准备中…" : "暂停"}>
           <Icon name="pause" />
         </button>
       ) : (
@@ -283,7 +297,17 @@ export default function Player({ words, examples, settings, start = 0, onPos, on
         </button>
       )}
       {!auto && (
-        <button type="button" className={styles.icon} onClick={() => read(++run.current, 1, true)} disabled={!canSpeak} aria-label="播放当前卡片" title="播放当前卡片">
+        <button
+          type="button"
+          className={`${styles.icon} ${loadingSpeech ? styles.loading : ""}`}
+          onClick={() => {
+            clearPrefetch();
+            read(++run.current, 1, true);
+          }}
+          disabled={!canSpeak}
+          aria-label="播放当前卡片"
+          title={loadingSpeech ? "语音准备中…" : "播放当前卡片"}
+        >
           <Icon name="replay" />
         </button>
       )}

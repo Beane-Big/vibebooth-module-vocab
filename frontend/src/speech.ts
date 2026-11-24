@@ -51,6 +51,72 @@ function pickVoice(lang: string) {
   return exact.find((v) => v.localService) ?? exact[0] ?? voices.find((v) => v.lang.startsWith(lang.slice(0, 2)));
 }
 
+// 后台预取队列：严格一次只预取一条，且在真实朗读正在等待音频时立刻让路，避免占满浏览器连接或堵住后端合成队列。
+const prefetched = new Set<string>();
+let prefetchQueue: string[] = [];
+let prefetchCtrl: AbortController | null = null;
+let prefetchRunning = false;
+let prefetchGen = 0;
+
+let activeFetches = 0;
+const loadingListeners = new Set<(loading: boolean) => void>();
+function emitLoading() {
+  const loading = activeFetches > 0;
+  for (const fn of loadingListeners) fn(loading);
+}
+
+export function onSpeechLoading(fn: (loading: boolean) => void) {
+  loadingListeners.add(fn);
+  fn(activeFetches > 0);
+  return () => {
+    loadingListeners.delete(fn);
+  };
+}
+
+function abortPrefetch() {
+  prefetchCtrl?.abort();
+  prefetchCtrl = null;
+}
+
+export function clearPrefetch() {
+  prefetchGen++;
+  prefetchQueue = [];
+  abortPrefetch();
+}
+
+function pumpPrefetch() {
+  if (prefetchRunning || activeFetches > 0 || Date.now() < ttsDownUntil) return;
+  while (prefetchQueue.length > 0 && prefetched.has(prefetchQueue[0])) {
+    prefetchQueue.shift();
+  }
+  const url = prefetchQueue.shift();
+  if (!url) return;
+  const gen = prefetchGen;
+  const ctrl = new AbortController();
+  prefetchCtrl = ctrl;
+  prefetchRunning = true;
+  fetch(url, { signal: ctrl.signal, headers: { "X-Vocab-Prefetch": "1" } })
+    .then(async (res) => {
+      if (res.ok) {
+        await res.arrayBuffer();
+        prefetched.add(url);
+      } else if (res.status === 503) {
+        ttsDownUntil = Date.now() + 60_000;
+      }
+    })
+    .catch((err) => {
+      // 如果是因为真实朗读抢占而中断，且页面没切走，放回队头等朗读开始后再继续预取。
+      if (err?.name === "AbortError" && gen === prefetchGen && !prefetched.has(url)) {
+        prefetchQueue.unshift(url);
+      }
+    })
+    .finally(() => {
+      if (prefetchCtrl === ctrl) prefetchCtrl = null;
+      prefetchRunning = false;
+      if (activeFetches === 0) pumpPrefetch();
+    });
+}
+
 // 正在读的这一句；stopSpeaking 调它提前结束。
 let current: (() => void) | null = null;
 
@@ -71,13 +137,29 @@ export function speak(text: string, lang: string, rate = 1): Promise<number> {
 
 function speakTts(text: string, voice: string, lang: string, rate: number): Promise<number> {
   return new Promise((resolve) => {
+    const reqUrl = ttsUrl(text, voice);
     const ctrl = new AbortController();
     let url = "";
     let done = false;
     let start = 0;
+    let fetching = true;
+
+    abortPrefetch();
+    activeFetches++;
+    emitLoading();
+
+    const endFetch = () => {
+      if (!fetching) return;
+      fetching = false;
+      activeFetches = Math.max(0, activeFetches - 1);
+      emitLoading();
+      if (activeFetches === 0) pumpPrefetch();
+    };
+
     const finish = () => {
       if (done) return;
       done = true;
+      endFetch();
       ctrl.abort();
       audio!.onended = audio!.onerror = null;
       audio!.pause();
@@ -90,20 +172,23 @@ function speakTts(text: string, voice: string, lang: string, rate: number): Prom
     const fallback = () => {
       if (done) return;
       done = true;
+      endFetch();
       audio!.onended = audio!.onerror = null;
       if (url) URL.revokeObjectURL(url);
       if (current === finish) current = null;
       speakBrowser(text, lang, rate).then(resolve);
     };
     // 先用 fetch 取音频，能看出是语音容器不可用（503）还是只有这一句不行（502 等）；音频本身走浏览器缓存。
-    fetch(ttsUrl(text, voice), { signal: ctrl.signal })
+    fetch(reqUrl, { signal: ctrl.signal })
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 503) ttsDownUntil = Date.now() + 60_000;
           return fallback();
         }
         const blob = await res.blob();
+        prefetched.add(reqUrl);
         if (done) return;
+        endFetch();
         url = URL.createObjectURL(blob);
         audio!.src = url;
         audio!.playbackRate = rate;
@@ -114,6 +199,7 @@ function speakTts(text: string, voice: string, lang: string, rate: number): Prom
       })
       .catch((err) => {
         if (done) return;
+        endFetch();
         // 浏览器不让自动出声（还没点过页面）时就当这句读完了；断网等其他错误退回浏览器朗读。
         if (err?.name === "NotAllowedError") finish();
         else {
@@ -143,10 +229,14 @@ function speakBrowser(text: string, lang: string, rate: number): Promise<number>
   });
 }
 
-// prefetch 提前让后端合成接下来要读的句子，读到时不用等；结果留在浏览器缓存里。
+// prefetch 把接下来要读的句子放进低优先级串行预取队列，不抢占当前播放。
 export function prefetchSpeech(text: string, lang: string) {
   const voice = ttsVoice[lang];
-  if (text && voice && Date.now() >= ttsDownUntil) fetch(ttsUrl(text, voice)).catch(() => {});
+  if (!text || !voice || Date.now() < ttsDownUntil) return;
+  const url = ttsUrl(text, voice);
+  if (prefetched.has(url) || prefetchQueue.includes(url)) return;
+  prefetchQueue.push(url);
+  pumpPrefetch();
 }
 
 // 车载蓝牙、蓝牙音箱在一段时间没有声音后会关掉音频通道，下一句开始时重新接上，开头有一段淡入，前几个字听不清；

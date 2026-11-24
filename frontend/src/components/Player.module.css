@@ -48,3 +48,11 @@
   .main:hover:not(:disabled) { background: var(--ink); opacity: 0.92; }
 }
 .done { background: var(--ink); color: var(--paper); border-radius: 999px; padding: 10px 22px; box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 25%, transparent); }
+.loading { animation: pulse 1s ease-in-out infinite; opacity: 1; }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.92); opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading { animation: none; }
+}
