@@ -34,11 +34,18 @@ latin_span = re.compile(r"([A-Za-z][A-Za-z0-9]*(?:[ '\u2019-]+[A-Za-z][A-Za-z0-9
 
 
 def english_audio(text: str, voice: str):
-    phonemes, _ = g2p[VOICES[voice]](text)
-    return kokoro.create(phonemes, voice=voice, is_phonemes=True)
+    british = VOICES[voice]
+    isolated = re.fullmatch(r"[A-Za-z]+", text) is not None
+    phonemes, _ = g2p[british](text)
+    if isolated:
+        # Citation forms use Misaki's compact phones (A = eɪ, ʤ = dʒ).
+        forms = {"they": "ðˈA", "large": "lˈɑːʤ" if british else "lˈɑɹʤ"}
+        phonemes = forms.get(text.lower(), phonemes) + "."
+    return kokoro.create(phonemes, voice=voice, is_phonemes=True, trim=not isolated)
 
 
 def chinese_audio(text: str, voice: str):
+    text = text.replace("目的地", "目蒂蒂").replace("能干", "能幹")
     chunks = [chunk.audio_float_array for chunk in piper[voice].synthesize(text)]
     if not chunks:
         raise ValueError("Chinese speech produced no audio")
@@ -53,7 +60,7 @@ def mixed_audio(text: str, voice: str):
         if not part.strip():
             continue
         if latin_span.fullmatch(part):
-            samples, source_rate = english_audio(part, "af_heart")
+            samples, source_rate = english_audio(part, "am_michael")
         elif re.search(r"[\u3400-\u9fff0-9]", part):
             samples, source_rate = chinese_audio(part, voice)
         else:
@@ -121,4 +128,3 @@ if __name__ == "__main__":
         synthesize("准备好了。", v)
     print("vocab-tts 已启动，端口 8880", flush=True)
     ThreadingHTTPServer(("", 8880), Handler).serve_forever()
-

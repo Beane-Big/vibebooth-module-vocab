@@ -101,11 +101,12 @@ def ffmpeg(*args, capture=False):
     ).stdout
 
 
-def pcm(source):
+def pcm(source, tempo=1):
     """Decode speech at its original 1.0× speed to a uniform PCM format."""
     if not source:
         return b""
-    audio = ffmpeg("-i",source,"-ar",str(SAMPLE_RATE),"-ac","1","-f","s16le","pipe:1",capture=True)
+    filters = [] if tempo == 1 else ["-af", f"atempo={tempo}"]
+    audio = ffmpeg("-i",source,*filters,"-ar",str(SAMPLE_RATE),"-ac","1","-f","s16le","pipe:1",capture=True)
     if not audio or not any(audio):
         raise ValueError(f"Missing audio signal in {source}")
     return audio
@@ -125,7 +126,7 @@ def render_page():
     pause = silence(max(0.3,len(normal)/(2*SAMPLE_RATE)))
     audio = pcm(chinese)+silence(0.25)+normal+pause
     if page["example"] >= 0:
-        audio += silence(0.18).join(map(pcm,tokens))+pause
+        audio += silence(0.34).join(pcm(token, tempo=0.92) for token in tokens)+pause
     audio += normal+pause
     with wave.open("card.wav","wb") as track:
         track.setparams((1,2,SAMPLE_RATE,0,"NONE","not compressed"))
@@ -148,4 +149,3 @@ def join_pages():
 
 if __name__ == "__main__":
     {"page": render_page, "join": join_pages}[sys.argv[1]]()
-

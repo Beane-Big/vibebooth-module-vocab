@@ -95,7 +95,9 @@ func (s *speaker) audio(ctx context.Context, voice, text string) ([]byte, error)
 	cacheText := text
 	if voice == "zh_chaowen" {
 		// 中英混读修复后不再复用旧中文音频，但原缓存保留以兼容已有请求。
-		cacheText = "mixed-v2\n" + text
+		cacheText = "mixed-v3\n" + text
+	} else if !strings.ContainsAny(text, " \t") {
+		cacheText = "word-v3\n" + text
 	}
 	sum := sha256.Sum256([]byte(cacheText))
 	name := hex.EncodeToString(sum[:])

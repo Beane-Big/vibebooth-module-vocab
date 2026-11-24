@@ -57,6 +57,7 @@ const shuffle = <T,>(list: T[]) => {
 export default function Quiz({ words, mode, grading, examples, settings, onAnswer, onDone, onExit, exitConfirm }: Props) {
   useImmersive(true);
   const [i, setI] = useState(0);
+  const [explanationOpen, setExplanationOpen] = useState(false);
   const [shown, setShown] = useState(false);
   const [typed, setTyped] = useState("");
   const [checked, setChecked] = useState<boolean | null>(null);
@@ -375,6 +376,17 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
       )}
       {shown && (
         <div className={styles.answer}>
+          {choice && picked !== null && options.length > 1 && (
+            <div>
+              <button type="button" className="link" aria-expanded={explanationOpen}
+                onClick={() => setExplanationOpen(!explanationOpen)}>
+                {explanationOpen ? "收起题解" : "展开题解"}
+              </button>
+              {explanationOpen && <ul>{options.filter(o => o.w !== word.w).map(o => (
+                <li key={o.w}><strong>{o.w}</strong> · {o.zh}</li>
+              ))}</ul>}
+            </div>
+          )}
           {checked !== null && (
             <p className={`${styles.verdict} ${checked ? styles.right : styles.wrong}`}>
               <Icon name={checked ? "check" : "cross"} size={18} />

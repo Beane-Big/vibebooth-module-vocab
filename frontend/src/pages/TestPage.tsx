@@ -40,14 +40,24 @@ export default function TestPage() {
   const params = new URLSearchParams(location.search);
   const linkedPlan = Number(params.get("plan"));
   const planId = params.get("scope") === "learned" ? 0 : linkedPlan;
-  const [learnedId, setLearnedId] = useState(planId ? 0 : linkedPlan);
+  const [defaults] = useState(() => {
+    const fallback = { scope: "recent" as TestScope, count: 20, from: 1, to: 100, learnedId: 0 };
+    try {
+      const v = JSON.parse(localStorage.getItem("vocab.testOptions") ?? "{}");
+      const positive = (n: number, def: number) => Number.isSafeInteger(n) && n > 0 ? n : def;
+      return { scope: Object.prototype.hasOwnProperty.call(scopeIcons, v.scope) ? v.scope as TestScope : fallback.scope,
+        count: counts.includes(v.count) ? Number(v.count) : fallback.count,
+        from: positive(v.from, 1), to: positive(v.to, 100), learnedId: positive(v.learnedId, 0) };
+    } catch { return fallback; }
+  });
+  const [learnedId, setLearnedId] = useState(planId ? 0 : linkedPlan || defaults.learnedId);
   const [plans, setPlans] = useState<Plan[]>();
   const [plan, setPlan] = useState<WithWords<Plan>>();
   const [settings, setSettings] = useState<Settings>();
-  const [scope, setScope] = useState<TestScope>((params.get("scope") as TestScope) || "recent");
-  const [from, setFrom] = useState(1);
-  const [to, setTo] = useState(100);
-  const [count, setCount] = useState(20);
+  const [scope, setScope] = useState<TestScope>((params.get("scope") as TestScope) || defaults.scope);
+  const [from, setFrom] = useState(defaults.from);
+  const [to, setTo] = useState(defaults.to);
+  const [count, setCount] = useState(defaults.count);
   const [mode, setMode] = useState<Mode[]>(savedModes);
   const [test, setTest] = useState<WithWords<Test>>();
   const [result, setResult] = useState<WithWords<Test>>();
@@ -87,9 +97,14 @@ export default function TestPage() {
     setBusy(true);
     setError("");
     try {
-      saveModes(mode);
       const joined = mode.join(",");
       setTest(await api.createTest(planId ? { scope: "plan", plan: planId, count: 0, mode: joined } : { scope, from, to, count, plan: scope === "learned" ? learnedId : undefined, mode: joined }));
+      saveModes(mode);
+      if (!planId) {
+        try {
+          localStorage.setItem("vocab.testOptions", JSON.stringify({ scope, from, to, count, learnedId }));
+        } catch { /* Storage is optional. */ }
+      }
     } catch (err) {
       setError(errorText(err));
     } finally {

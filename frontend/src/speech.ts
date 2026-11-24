@@ -128,7 +128,7 @@ function speakTts(text: string, voice: string, lang: string, rate: number): Prom
 function speakBrowser(text: string, lang: string, rate: number): Promise<number> {
   if (!canBrowserSpeak) return Promise.resolve(0);
   return new Promise((resolve) => {
-    const u = new SpeechSynthesisUtterance(text);
+    const u = new SpeechSynthesisUtterance(lang === "zh-CN" ? text.replace(/目的地/g, "目蒂蒂").replace(/能干/g, "能幹") : text);
     const start = performance.now();
     const timer = setTimeout(() => resolve(start), (1500 + 160 * text.length) / rate);
     u.lang = lang;
