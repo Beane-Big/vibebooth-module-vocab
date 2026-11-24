@@ -1,8 +1,8 @@
 # 背单词的朗读服务，用 onnxruntime / sherpa-onnx 在 CPU 上合成语音：
 #   - 英文：Kokoro-82M v1.0（Apache 2.0）。文字先用 misaki（Kokoro 官方的英文注音，Apache 2.0）转成音素：它有自己的美音、英音词典，
 #     按 spaCy 标出的词性挑同形词的读音；词典里没有的词（多是人名）交给 espeak-ng。
-#     孤立单词（拼读 / 查词 / 单词卡片）自动补强读重音和句末标点，并关闭激进静音裁剪改用保留头尾余量的裁剪，
-#     避免词尾辅音（如 large 的 /dʒ/）被吞掉，或功能词（如 they、the、a、than）读音发虚。
+#     普通单词保持 Kokoro 原生直出与默认裁剪（避免强加句点或句级风格向量带来多余尾音）；
+#     仅定向修复美音 af_heart 词尾 ʤ/ʧ 吞音（如 large 的 /dʒ/）以及孤立功能词（如 they、a、an、than）的弱读/失真。
 #   - 中文（含中英混读）：Kokoro-82M-v1.1-zh（Apache 2.0，由 sherpa-onnx 推理），原生支持同一说话人自然读出中英混排，
 #     彻底消除男声/女声混读，并通过自定义词典精准修正高频多音字（目的地、能干等）。
 # 只在模块内部网络里给后端调用，不对外，也不做缓存：后端把合成好的音频存在卷里，同一句只合成一次。
@@ -77,19 +77,20 @@ lock = threading.Lock()
 # 孤立英文单词（拼读 / 查词 / 单词页）时，misaki 会把部分功能词按句内弱读输出（如 a→ɐ、an→ɐn、than→ðən、they→ðA），
 # 这里强制转为词典标准强读音素，避免单读发虚或读偏。
 STANDALONE_WORD_RE = re.compile(r"^[A-Za-z0-9'’-]+$")
-TERMINAL_PUNCT_RE = re.compile(r"[.!?…。！？]$")
 ENGLISH_VOWELS = frozenset("AIOQWYaiuæɑɒɔəɛɜɪʊʌᵻ")
 STANDALONE_OVERRIDES = {
     False: {"a": "ˈA", "an": "ˈæn", "am": "ˈæm", "the": "ðˈə", "than": "ðˈæn"},
     True: {"a": "ˈA", "an": "ˈan", "am": "ˈam", "the": "ðˈə", "than": "ðˈan"},
 }
+# 仅对极少数在极短风格向量上明显读偏的孤立词（目前实测仅 they）复用中短句风格行，绝不波及普通单词。
+SHORT_STYLE_WORDS = frozenset({"they"})
 LATIN_TOKEN_RE = re.compile(r"[A-Za-z]+(?:['’-][A-Za-z]+)*")
 CJK_PUNCT_MAP = {"，": ",", "、": ",", "。": ".", "！": "!", "？": "?", "；": ";", "：": ",", "…": "…"}
 DIGIT_ZH_MAP = {"0": "零", "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九"}
 
 
 def safe_trim(samples: np.ndarray, rate: int, head_ms: int = 40, tail_ms: int = 80, db_floor: float = 48.0) -> np.ndarray:
-    """温和裁剪首尾纯静音，保留充足头尾缓冲，防止裁剪掉词首清擦音（/ð/、/θ/、/f/）和词尾辅音释放（如 /dʒ/、/tʃ/、/t/、/d/）。"""
+    """温和裁剪中文音频首尾纯静音，保留充足头尾缓冲。"""
     if len(samples) == 0:
         return samples
     audio = np.asarray(samples, dtype=np.float32)
@@ -110,18 +111,6 @@ def safe_trim(samples: np.ndarray, rate: int, head_ms: int = 40, tail_ms: int = 
     start = max(0, int(active[0]) * frame - head_pad)
     end = min(len(audio), int(active[-1] + 1) * frame + tail_pad)
     return audio[start:end]
-
-
-def _fade_edges(audio: np.ndarray, rate: int, in_ms: int = 5, out_ms: int = 15) -> np.ndarray:
-    """在首尾加极短淡入淡出，避免裁剪边界出现轻微爆音或尾气声。"""
-    n_in = min(round(rate * in_ms / 1000), len(audio) // 4)
-    n_out = min(round(rate * out_ms / 1000), len(audio) // 4)
-    out = audio.copy()
-    if n_in > 1:
-        out[:n_in] *= np.linspace(0.0, 1.0, n_in, dtype=np.float32)
-    if n_out > 1:
-        out[-n_out:] *= np.linspace(1.0, 0.0, n_out, dtype=np.float32)
-    return out
 
 
 def english_phonemes(text: str, british: bool) -> tuple[str, bool]:
@@ -146,32 +135,23 @@ def english_phonemes(text: str, british: bool) -> tuple[str, bool]:
             phonemes = phonemes[:-1] + "dʒ"
         elif phonemes.endswith("ʧ"):
             phonemes = phonemes[:-1] + "tʃ"
-    if not TERMINAL_PUNCT_RE.search(phonemes):
-        phonemes = phonemes + "."
+    # 不给孤立单词额外追加句点 "."，避免 Kokoro 在单词末尾合成句末呼气尾音。
     return phonemes, single_word
 
 
-def _style_for_single_word(voice: str, phoneme_len: int):
-    """极短孤立词（如 they、do、a 等 < 20 音素）避开 Kokoro 极短区间失真的风格向量，复用句级健康风格向量。"""
-    if phoneme_len >= 20:
-        return voice
+def _style_row(voice: str, row: int):
     style_table = kokoro.get_voice_style(voice)
-    row = min(24, len(style_table) - 1)
-    return np.repeat(style_table[row : row + 1], len(style_table), axis=0)
+    idx = min(row, len(style_table) - 1)
+    return np.repeat(style_table[idx : idx + 1], len(style_table), axis=0)
 
 
 def english_audio(text: str, voice: str):
     british = VOICES[voice]
     phonemes, single_word = english_phonemes(text, british)
-    # 不使用带省略号 … 的载体句拼接（Kokoro 会在 … 处产生类似 s 的呼气尾音）；
-    # 直接用健康风格向量 + 标准句点 + dʒ/tʃ 拆分 + 温和裁剪与淡出合成干净单字。
-    voice_arg = _style_for_single_word(voice, len(phonemes)) if single_word else voice
-    samples, rate = kokoro.create(phonemes, voice=voice_arg, is_phonemes=True, trim=False)
-    if single_word:
-        samples = safe_trim(samples, rate, head_ms=40, tail_ms=45, db_floor=44.0)
-        samples = _fade_edges(samples, rate, in_ms=5, out_ms=15)
-    else:
-        samples = safe_trim(samples, rate)
+    # 普通英文单词与整句全部保持原生 voice + trim=True（与 0.7.7 一致），杜绝风格向量跨长度错配带来的 s 类尾音；
+    # 仅对 SHORT_STYLE_WORDS（如 they）定向使用稳定风格行。
+    voice_arg = _style_row(voice, 16) if (single_word and text.lower() in SHORT_STYLE_WORDS) else voice
+    samples, rate = kokoro.create(phonemes, voice=voice_arg, is_phonemes=True, trim=True)
     if len(samples) == 0:
         raise ValueError("English speech produced no audio")
     return samples, rate
@@ -318,6 +298,7 @@ if __name__ == "__main__":
     # 先各合成一句，把模型和词典都加载好，第一次朗读不用等。
     synthesize("Ready.", "af_heart")
     synthesize("large", "af_heart")
+    synthesize("they", "af_heart")
     for v in ZH_VOICES:
         synthesize("准备好了。", v)
     print("vocab-tts 已启动，端口 8880", flush=True)

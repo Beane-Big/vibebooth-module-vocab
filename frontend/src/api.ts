@@ -111,7 +111,7 @@ const tz = `tz=${new Date().getTimezoneOffset()}`;
 const base = "/api/vocab";
 
 // 朗读音频的网址（GET 返回 MP3，见 speech.ts）。
-export const ttsUrl = (text: string, voice: string) => `${base}/tts?voice=${voice}&text=${encodeURIComponent(text)}&v=6`;
+export const ttsUrl = (text: string, voice: string) => `${base}/tts?voice=${voice}&text=${encodeURIComponent(text)}&v=7`;
 const post = (body: unknown) => ({ method: "POST", body: JSON.stringify(body) });
 
 export const api = {
