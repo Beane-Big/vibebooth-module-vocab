@@ -111,10 +111,12 @@ func (s *speaker) normalize(text string, zh bool) (string, bool) {
 
 func (s *speaker) cachePath(voice, text string) string {
 	cacheText := text
-	// 中文新模型（zf_001）与英文孤立单词（无空格，修复了吞尾音与功能词重音）使用 v3 缓存键；
+	// 中文新模型（zf_001）使用 v3 缓存键；英文孤立单词（无空格，升级为 dʒ/tʃ 拆分 + 载体句清晰合成）使用 v4 缓存键；
 	// 英文整句沿用原有缓存键，升级后可直接命中服务器上已经缓存好的英文例句音频。
-	if ttsVoices[voice] || !strings.ContainsAny(text, " \t\r\n") {
+	if ttsVoices[voice] {
 		cacheText = "tts-v3\n" + text
+	} else if !strings.ContainsAny(text, " \t\r\n") {
+		cacheText = "tts-v4\n" + text
 	}
 	sum := sha256.Sum256([]byte(cacheText))
 	name := hex.EncodeToString(sum[:])

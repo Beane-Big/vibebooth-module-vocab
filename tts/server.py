@@ -112,7 +112,85 @@ def safe_trim(samples: np.ndarray, rate: int, head_ms: int = 40, tail_ms: int = 
     return audio[start:end]
 
 
-def english_phonemes(text: str, british: bool) -> str:
+def _fade_edges(audio: np.ndarray, rate: int, fade_ms: int = 5) -> np.ndarray:
+    """在首尾加极短淡入淡出，避免裁剪边界出现轻微爆音。"""
+    n = min(round(rate * fade_ms / 1000), len(audio) // 4)
+    if n <= 1:
+        return audio
+    out = audio.copy()
+    ramp = np.linspace(0.0, 1.0, n, dtype=np.float32)
+    out[:n] *= ramp
+    out[-n:] *= ramp[::-1]
+    return out
+
+
+def _extract_carrier_middle(samples: np.ndarray, rate: int) -> np.ndarray | None:
+    """从 'One. … <word> . … Two.' 合成音频中安全提取中间目标词（去掉前后锚点词）。"""
+    if len(samples) == 0:
+        return None
+    audio = np.asarray(samples, dtype=np.float32)
+    frame = max(1, rate // 100)  # 10 ms 帧
+    n_frames = len(audio) // frame
+    if n_frames < 30:
+        return None
+    rms = np.sqrt(np.mean(audio[: n_frames * frame].reshape(n_frames, frame) ** 2, axis=1))
+    peak = float(np.max(rms))
+    if peak <= 1e-6:
+        return None
+    # -42 dB 区分人声岛与句间停顿静音
+    threshold = max(1e-4, peak * (10.0 ** (-42.0 / 20.0)))
+    active = rms > threshold
+
+    # 合并间隔 < 140 ms 的语音段（保留词内塞音闭塞间隙，如 large 的 /dʒ/ 前闭塞或连字符词内部停顿）
+    min_gap_frames = 14
+    runs: list[list[int]] = []
+    i = 0
+    while i < n_frames:
+        if not active[i]:
+            i += 1
+            continue
+        start = i
+        while i < n_frames and active[i]:
+            i += 1
+        end = i
+        if runs and start - runs[-1][1] < min_gap_frames:
+            runs[-1][1] = end
+        else:
+            runs.append([start, end])
+
+    # 过滤 < 50 ms 的极短杂音点
+    islands = [(s, e) for s, e in runs if e - s >= 5]
+    if len(islands) < 3:
+        return None
+
+    first_s, first_e = islands[0]
+    mid_s, mid_e = islands[1][0], islands[-2][1]
+    last_s, last_e = islands[-1]
+
+    # 严格校验前后锚点（"One" 与 "Two"）及停顿间距，不满足则宁可回退直出，绝不误裁
+    first_dur = (first_e - first_s) * 0.01
+    mid_dur = (mid_e - mid_s) * 0.01
+    last_dur = (last_e - last_s) * 0.01
+    gap_before = mid_s - first_e
+    gap_after = last_s - mid_e
+    if not (0.08 <= first_dur <= 0.85 and 0.08 <= last_dur <= 0.85 and mid_dur >= 0.08):
+        return None
+    if gap_before < min_gap_frames or gap_after < min_gap_frames:
+        return None
+
+    # 留足 90 ms 头部与 120 ms 尾部余量（覆盖轻辅音起音 /ð/、/θ/ 与词尾释放 /dʒ/、/tʃ/），同时绝不越过前后停顿中点
+    mid_gap_before = ((first_e + mid_s) // 2) * frame
+    mid_gap_after = ((mid_e + last_s) // 2) * frame
+    head_pad = round(rate * 0.09)
+    tail_pad = round(rate * 0.12)
+    start_sample = max(mid_gap_before, mid_s * frame - head_pad)
+    end_sample = min(mid_gap_after, mid_e * frame + tail_pad)
+    if end_sample <= start_sample:
+        return None
+    return _fade_edges(audio[start_sample:end_sample], rate)
+
+
+def english_phonemes(text: str, british: bool) -> tuple[str, bool]:
     single_word = bool(STANDALONE_WORD_RE.fullmatch(text))
     low = text.lower()
     overrides = STANDALONE_OVERRIDES[british]
@@ -126,14 +204,41 @@ def english_phonemes(text: str, british: bool) -> str:
             # 孤立功能词（they、he、we、you、to、for、of、go、with 等）在词典中无主重音，
             # 补上主重音使单读清晰饱满，和词典音标一致。
             phonemes = en.apply_stress(phonemes, 2)
-    # 末尾补句点，让 Kokoro 的时长预测器为词尾辅音（特别是 large 的 /dʒ/、age、bridge 等）留出完整发声帧。
-    if not TERMINAL_PUNCT_RE.search(phonemes):
-        phonemes = phonemes + "."
-    return phonemes
+    # Kokoro 上游已知缺陷（hexgrad/kokoro #284、#380）：
+    # af_heart 在孤立单词结尾遇到紧缩塞擦音 ʤ（如 large/age/bridge/change）或 ʧ（如 catch/match）时尾音能量几乎归零；
+    # 拆成标准两字符 dʒ / tʃ 可恢复完整尾音（bf_emma 原本正常且拆分会反向劣化，故仅针对美音 af_heart）。
+    if single_word and not british:
+        if phonemes.endswith("ʤ"):
+            phonemes = phonemes[:-1] + "dʒ"
+        elif phonemes.endswith("ʧ"):
+            phonemes = phonemes[:-1] + "tʃ"
+    return phonemes, single_word
 
 
 def english_audio(text: str, voice: str):
-    phonemes = english_phonemes(text, VOICES[voice])
+    british = VOICES[voice]
+    phonemes, single_word = english_phonemes(text, british)
+    if single_word:
+        # Kokoro 对极短单字（如 they 仅 3–4 音素）会落在短序列风格向量崩溃区（hexgrad/kokoro #228）；
+        # 将目标词放进带长停顿的载体句中一次合成再提取中间词，既拥有正常句级清晰韵律又保持同一音色。
+        suffix = "tˈuː" if british else "tˈu"
+        carrier = f"wˈʌn. … {phonemes} . … {suffix}."
+        raw, rate = kokoro.create(carrier, voice=voice, is_phonemes=True, trim=False)
+        extracted = _extract_carrier_middle(raw, rate)
+        if extracted is not None and len(extracted) > 0:
+            return extracted, rate
+        print(f"TTS carrier fallback for {voice} {text!r} ({phonemes})", flush=True)
+        # 兜底：若罕见词未能切出三段，用句长区间风格向量 + " ." 直出
+        style_table = kokoro.get_voice_style(voice)
+        fallback_style = np.repeat(style_table[min(28, len(style_table) - 1) : min(28, len(style_table) - 1) + 1], len(style_table), axis=0)
+        samples, rate = kokoro.create(f"{phonemes} .", voice=fallback_style, is_phonemes=True, trim=False)
+        samples = safe_trim(samples, rate, head_ms=60, tail_ms=100)
+        if len(samples) == 0:
+            raise ValueError("English speech produced no audio")
+        return samples, rate
+
+    if not TERMINAL_PUNCT_RE.search(phonemes):
+        phonemes = phonemes + "."
     samples, rate = kokoro.create(phonemes, voice=voice, is_phonemes=True, trim=False)
     samples = safe_trim(samples, rate)
     if len(samples) == 0:
@@ -281,6 +386,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     # 先各合成一句，把模型和词典都加载好，第一次朗读不用等。
     synthesize("Ready.", "af_heart")
+    synthesize("large", "af_heart")
     for v in ZH_VOICES:
         synthesize("准备好了。", v)
     print("vocab-tts 已启动，端口 8880", flush=True)
