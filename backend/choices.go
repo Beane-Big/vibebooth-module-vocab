@@ -16,10 +16,12 @@ import (
 // 意思重叠按释义里的词条判断：词条去掉“很”“的”“地”这类虚字后，有一条相同或者一条包含另一条，就算重叠
 // （quick 的“快的”和 quickly 的“很快地”、soon 的“快”都算重叠）。宁可多排除一些，词库够大，换别的词就是。
 
-// Option 是一个选项：单词和它的第一条释义。
+// Option 是一个选项：单词、第一条释义及美音/英音音标（题解展开时展示）。
 type Option struct {
 	W  string `json:"w"`
 	Zh string `json:"zh"`
+	Us string `json:"us,omitempty"`
+	Uk string `json:"uk,omitempty"`
 }
 
 // Choices 是一个词的三类干扰项，各三个（词库太小凑不够时会少）。
@@ -115,7 +117,7 @@ func option(w *Word) Option {
 	if len(w.Zh) > 0 {
 		zh = w.Zh[0]
 	}
-	return Option{W: w.W, Zh: zh}
+	return Option{W: w.W, Zh: zh, Us: w.Us, Uk: w.Uk}
 }
 
 func (d *Deck) Choices(w *Word, r *rand.Rand) Choices {

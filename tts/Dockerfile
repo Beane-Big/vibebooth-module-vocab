@@ -21,10 +21,11 @@ COPY fetch_models.py ./
 RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models model
 COPY voices.py ./
 RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_models.py /models voices
-# 中文：Piper 的声音、g2pW 模型和 BERT 分词表，运行时都从 /models 读，不再联网。
+# 中文（含中英混读）：Kokoro-82M-v1.1-zh（sherpa-onnx）与多音字修正词典，运行时全部从 /models 读，不再联网。
+COPY zh_assets ./zh_assets
 COPY fetch_zh.py ./
 RUN HF_ENDPOINT="$HF_ENDPOINT" python fetch_zh.py /models
-ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+ENV HF_HUB_OFFLINE=1
 COPY server.py .
 RUN useradd --uid 10001 --no-create-home app
 USER app

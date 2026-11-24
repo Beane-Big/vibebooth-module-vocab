@@ -17,5 +17,4 @@
 - 英文注音：[misaki](https://github.com/hexgrad/misaki)，Apache 2.0 许可证；词性标注用 [spaCy](https://spacy.io) 和 en_core_web_sm，MIT 许可证。
 - 词典查不到的词用 [eSpeak NG](https://github.com/espeak-ng/espeak-ng) 注音（GPL-3.0 许可证，作为独立程序在容器里运行）。
 - 推理：[kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx)（MIT）和 [ONNX Runtime](https://onnxruntime.ai)（MIT）。
-- 中文语音：[Piper](https://github.com/OHF-Voice/piper1-gpl)（piper-tts），GPL-3.0 许可证，作为独立程序在容器里运行；声音 [zh_CN-chaowen-medium](https://huggingface.co/rhasspy/piper-voices/tree/main/zh/zh_CN/chaowen/medium)，训练数据为 CC0。
-- 中文多音字注音：[g2pW](https://github.com/GitYCC/g2pW)，Apache 2.0 许可证；分词器 [bert-base-chinese](https://huggingface.co/google-bert/bert-base-chinese)，Apache 2.0 许可证，经 [transformers](https://github.com/huggingface/transformers)（Apache 2.0）加载。
+- 中文与中英混读语音：[Kokoro-82M-v1.1-zh](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh)，Apache 2.0 许可证，INT8 ONNX 打包来自 [csukuangfj/kokoro-int8-multi-lang-v1_1](https://huggingface.co/csukuangfj/kokoro-int8-multi-lang-v1_1)（Apache 2.0），经 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)（Apache 2.0）推理；用到其中的中文女声 `zf_001`（sid=3）。

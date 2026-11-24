@@ -63,6 +63,8 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   const [selected, setSelected] = useState<string | null>(null); // 选择题点选了哪个，还没确定
   const [picked, setPicked] = useState<string | null>(null); // 选择题确定的答案，"" 是不认识
   const [choices, setChoices] = useState<Record<string, Choices>>();
+  // 选择题核对后的“题解”折叠状态：每次新开检测默认关闭，同一次检测内切题时沿用上一题的展开/关闭状态。
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const results = useRef<Result[]>([]);
@@ -101,8 +103,9 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     const c = choices[word.w];
     // 听音选拼写用拼写相近的词；看中文选英文用开头相同的词；选中文时用意思相近的词。
     const distractors = dirs[i] ? c?.meaning : m === "listen" ? c?.spelling : c?.prefix;
-    return shuffle([{ w: word.w, zh: word.zh[0] ?? "" }, ...(distractors ?? [])]);
+    return shuffle([{ w: word.w, zh: word.zh[0] ?? "", us: word.us, uk: word.uk }, ...(distractors ?? [])]);
   }, [word, choice, choices, m, dirs, i]);
+  const otherOptions = useMemo(() => options.filter((o) => o.w !== word?.w), [options, word]);
   const toZh = dirs[i];
 
   const say = (text: string) => speak(text, settings.accent, settings.rate);
@@ -415,6 +418,34 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
               </p>
               {settings.sentencePh && phOf(ex, settings.accent) && <p className={styles.ph}>[ {phOf(ex, settings.accent)} ]</p>}
               <p className="muted">{ex.zh}</p>
+            </div>
+          )}
+          {choice && picked !== null && otherOptions.length > 0 && (
+            <div className={styles.analysis}>
+              <button type="button" className={styles.analysisToggle} aria-expanded={showAnalysis} onClick={() => setShowAnalysis((open) => !open)}>
+                <span>题解 · 其他选项释义</span>
+                <span className={`${styles.analysisArrow} ${showAnalysis ? styles.analysisArrowOpen : ""}`} aria-hidden="true">
+                  ▾
+                </span>
+              </button>
+              {showAnalysis && (
+                <ul className={styles.analysisList}>
+                  {otherOptions.map((o) => {
+                    const ph = o.us || o.uk ? phOf({ us: o.us ?? "", uk: o.uk ?? "" }, settings.accent) : "";
+                    const chosenWrong = o.w === picked;
+                    return (
+                      <li key={o.w} className={`${styles.analysisItem} ${chosenWrong ? styles.analysisPicked : ""}`}>
+                        <div className={styles.analysisHead}>
+                          <strong className={styles.analysisWord}>{o.w}</strong>
+                          {ph && <span className={styles.analysisPh}>[ {ph} ]</span>}
+                          {chosenWrong && <span className={styles.analysisTag}>你选的</span>}
+                        </div>
+                        <p className={styles.analysisZh}>{o.zh}</p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           )}
         </div>
