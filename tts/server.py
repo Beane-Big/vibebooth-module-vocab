@@ -112,20 +112,20 @@ def safe_trim(samples: np.ndarray, rate: int, head_ms: int = 40, tail_ms: int = 
     return audio[start:end]
 
 
-def _fade_edges(audio: np.ndarray, rate: int, fade_ms: int = 5) -> np.ndarray:
-    """在首尾加极短淡入淡出，避免裁剪边界出现轻微爆音。"""
-    n = min(round(rate * fade_ms / 1000), len(audio) // 4)
-    if n <= 1:
-        return audio
+def _fade_edges(audio: np.ndarray, rate: int, in_ms: int = 5, out_ms: int = 15) -> np.ndarray:
+    """在首尾加极短淡入淡出，避免裁剪边界出现轻微爆音或尾气声。"""
+    n_in = min(round(rate * in_ms / 1000), len(audio) // 4)
+    n_out = min(round(rate * out_ms / 1000), len(audio) // 4)
     out = audio.copy()
-    ramp = np.linspace(0.0, 1.0, n, dtype=np.float32)
-    out[:n] *= ramp
-    out[-n:] *= ramp[::-1]
+    if n_in > 1:
+        out[:n_in] *= np.linspace(0.0, 1.0, n_in, dtype=np.float32)
+    if n_out > 1:
+        out[-n_out:] *= np.linspace(1.0, 0.0, n_out, dtype=np.float32)
     return out
 
 
 def _extract_carrier_middle(samples: np.ndarray, rate: int) -> np.ndarray | None:
-    """从 'One. … <word> . … Two.' 合成音频中安全提取中间目标词（去掉前后锚点词）。"""
+    """从 'One. … <word>. … Me.' 合成音频中安全提取中间目标词（去掉前后锚点词）。"""
     if len(samples) == 0:
         return None
     audio = np.asarray(samples, dtype=np.float32)
@@ -139,10 +139,12 @@ def _extract_carrier_middle(samples: np.ndarray, rate: int) -> np.ndarray | None
         return None
     # -42 dB 区分人声岛与句间停顿静音
     threshold = max(1e-4, peak * (10.0 ** (-42.0 / 20.0)))
+    soft_head_thr = max(1e-4, peak * (10.0 ** (-52.0 / 20.0)))
+    soft_tail_thr = max(1e-4, peak * (10.0 ** (-50.0 / 20.0)))
     active = rms > threshold
 
-    # 合并间隔 < 140 ms 的语音段（保留词内塞音闭塞间隙，如 large 的 /dʒ/ 前闭塞或连字符词内部停顿）
-    min_gap_frames = 14
+    # 合并间隔 < 120 ms 的语音段（保留词内塞音闭塞间隙，如 large 的 /dʒ/ 前闭塞或连字符词内部停顿）
+    min_gap_frames = 12
     runs: list[list[int]] = []
     i = 0
     while i < n_frames:
@@ -167,7 +169,7 @@ def _extract_carrier_middle(samples: np.ndarray, rate: int) -> np.ndarray | None
     mid_s, mid_e = islands[1][0], islands[-2][1]
     last_s, last_e = islands[-1]
 
-    # 严格校验前后锚点（"One" 与 "Two"）及停顿间距，不满足则宁可回退直出，绝不误裁
+    # 严格校验前后锚点（"One" 与 "Me"）及停顿间距，不满足则宁可回退直出，绝不误裁
     first_dur = (first_e - first_s) * 0.01
     mid_dur = (mid_e - mid_s) * 0.01
     last_dur = (last_e - last_s) * 0.01
@@ -178,13 +180,22 @@ def _extract_carrier_middle(samples: np.ndarray, rate: int) -> np.ndarray | None
     if gap_before < min_gap_frames or gap_after < min_gap_frames:
         return None
 
-    # 留足 90 ms 头部与 120 ms 尾部余量（覆盖轻辅音起音 /ð/、/θ/ 与词尾释放 /dʒ/、/tʃ/），同时绝不越过前后停顿中点
-    mid_gap_before = ((first_e + mid_s) // 2) * frame
-    mid_gap_after = ((mid_e + last_s) // 2) * frame
-    head_pad = round(rate * 0.09)
-    tail_pad = round(rate * 0.12)
-    start_sample = max(mid_gap_before, mid_s * frame - head_pad)
-    end_sample = min(mid_gap_after, mid_e * frame + tail_pad)
+    # 在前后停顿中找能量最低的静音谷底作为硬边界，彻底隔离前后锚点词的起音/尾气
+    valley_before = first_e + 2 + int(np.argmin(rms[first_e + 2 : mid_s - 1]))
+    valley_after = mid_e + 2 + int(np.argmin(rms[mid_e + 2 : last_s - 1]))
+
+    # 从目标词两端向外温和扩展到极低阈值（保留轻起音 /ð/ 与词尾 /dʒ/），但不跨过静音谷底
+    true_start = mid_s
+    while true_start > valley_before and rms[true_start - 1] > soft_head_thr:
+        true_start -= 1
+    true_end = mid_e
+    while true_end < valley_after and rms[true_end] > soft_tail_thr:
+        true_end += 1
+
+    head_pad = round(rate * 0.03)
+    tail_pad = round(rate * 0.025)
+    start_sample = max(valley_before * frame, true_start * frame - head_pad)
+    end_sample = min(valley_after * frame, true_end * frame + tail_pad)
     if end_sample <= start_sample:
         return None
     return _fade_edges(audio[start_sample:end_sample], rate)
@@ -221,8 +232,9 @@ def english_audio(text: str, voice: str):
     if single_word:
         # Kokoro 对极短单字（如 they 仅 3–4 音素）会落在短序列风格向量崩溃区（hexgrad/kokoro #228）；
         # 将目标词放进带长停顿的载体句中一次合成再提取中间词，既拥有正常句级清晰韵律又保持同一音色。
-        suffix = "tˈuː" if british else "tˈu"
-        carrier = f"wˈʌn. … {phonemes} . … {suffix}."
+        # 后锚点用纯浊鼻音起音的 "me"（mˈi / mˈiː）而非送气清塞音 "two"（tˈu），避免词尾带入类似 s/tʰ 的送气尾音。
+        suffix = "mˈiː" if british else "mˈi"
+        carrier = f"wˈʌn. … {phonemes}. … {suffix}."
         raw, rate = kokoro.create(carrier, voice=voice, is_phonemes=True, trim=False)
         extracted = _extract_carrier_middle(raw, rate)
         if extracted is not None and len(extracted) > 0:
