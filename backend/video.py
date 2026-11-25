@@ -142,7 +142,7 @@ def render_page():
         "-c:v","libx264","-threads","2","-preset","ultrafast","-tune","stillimage",
         "-crf","20","-pix_fmt","yuv420p","-af","volume=4dB,alimiter=limit=0.89:level=0",
         "-c:a","aac","-ac","2","-ar","48000","-b:a","160k",
-        "-t",str(len(audio)/(2*SAMPLE_RATE)),f"card-{index:03}.mp4",
+        "-t",str(len(audio)/(2*SAMPLE_RATE)),f"card-{index:06}.mp4",
     )
 
 
