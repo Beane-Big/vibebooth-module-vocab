@@ -243,8 +243,8 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		if in.From < 1 || in.From > len(v.deck.Words) || in.Count < 1 || in.Count > 20 || in.Count > len(v.deck.Words)-in.From+1 {
-			writeError(w, http.StatusBadRequest, "请选择词库内的 1 至 20 个单词")
+		if in.From < 1 || in.From > len(v.deck.Words) || in.Count < 1 || in.Count > len(v.deck.Words)-in.From+1 {
+			writeError(w, http.StatusBadRequest, "请选择词库范围内的有效词数")
 			return
 		}
 		words = v.deck.Range(in.From, in.Count)

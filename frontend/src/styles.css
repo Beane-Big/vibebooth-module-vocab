@@ -181,7 +181,7 @@ input[type="checkbox"] { flex: none; width: 20px; height: 20px; accent-color: va
 /* 表单的一行：左边说明、右边控件，窄屏换行。 */
 .field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .field > span:first-child { min-width: 7em; }
-.field input[type="number"] { flex: 0 0 7em; }
+.field input[type="number"], .field input[inputmode="numeric"] { flex: 0 0 7em; }
 
 /* 手机上导航（Nav）是底部悬浮的标签栏，页面底部给它留出位置。 */
 @media (max-width: 600px) {

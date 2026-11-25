@@ -16,14 +16,19 @@ type State = { next: number; total: number; completed: boolean; jobs: Job[] | nu
 function loadCount(): number {
   try {
     const value = Number(localStorage.getItem(countKey));
-    if (Number.isInteger(value) && value >= 1 && value <= 20) return value;
+    if (Number.isInteger(value) && value >= 1) return value;
   } catch { /* ignore */ }
   return 20;
 }
 
 function saveCount(value: number) {
-  if (!Number.isInteger(value) || value < 1 || value > 20) return;
+  if (!Number.isInteger(value) || value < 1) return;
   try { localStorage.setItem(countKey, String(value)); } catch { /* ignore */ }
+}
+
+function parseIntInput(raw: string): number {
+  const digits = raw.replace(/\D+/g, "");
+  return digits ? Number(digits) : 0;
 }
 
 // 共享列表定时刷新，只有成功的新导出推进默认序号，重做历史记录保持原进度。
@@ -108,7 +113,7 @@ export default function VideoExport() {
   const jobs = data.jobs ?? [];
   const hasRunning = jobs.some(job => job.state === "running");
   const running = busy || stopping || assetBusy || hasRunning;
-  const valid = Number.isInteger(from) && from >= 1 && from <= data.total && Number.isInteger(count) && count >= 1 && count <= 20 && from + count - 1 <= data.total;
+  const valid = Number.isInteger(from) && from >= 1 && from <= data.total && Number.isInteger(count) && count >= 1 && from + count - 1 <= data.total;
   const file = (id: number) => base + "/file?id=" + id;
   return (
     <main className="content stack">
@@ -116,8 +121,8 @@ export default function VideoExport() {
         <h1>视频导出</h1>
         {data.completed && <p className="muted">已生成至词库末尾，可调整范围重新生成。</p>}
         <form className="stack" onSubmit={event => { event.preventDefault(); if (valid && !running) void start(); }}>
-          <label className="field">起始词序号<input type="number" min={1} max={data.total} value={from || ""} onChange={event => { const value = Number(event.target.value); setFrom(value); if (value >= 1 && value <= data.total) setCount(current => Math.min(current, data.total - value + 1)); }} disabled={running} required /></label>
-          <label className="field">词数<input type="number" min={1} max={Math.max(1, Math.min(20, data.total - from + 1))} value={count || ""} onChange={event => { const value = Number(event.target.value); setCount(value); saveCount(value); }} disabled={running} required /></label>
+          <label className="field">起始词序号<input type="text" inputMode="numeric" pattern="[0-9]*" value={from || ""} onChange={event => { const value = parseIntInput(event.target.value); setFrom(value); if (value >= 1 && value <= data.total) setCount(current => Math.min(current, data.total - value + 1)); }} disabled={running} required /></label>
+          <label className="field">词数<input type="text" inputMode="numeric" pattern="[0-9]*" value={count || ""} onChange={event => { const value = parseIntInput(event.target.value); setCount(value); saveCount(value); }} disabled={running} required /></label>
           <div className="actions">
             <button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button>
             {hasRunning && <button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止生成"}</button>}
