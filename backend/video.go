@@ -208,6 +208,7 @@ func (v *videoExporter) register(api *http.ServeMux) {
 	api.HandleFunc("DELETE /api/vocab/video", guard(v.stop))
 	api.HandleFunc("GET /api/vocab/video/file", guard(v.download))
 	api.HandleFunc("GET /api/vocab/video/assets", guard(v.assetStatus))
+	api.HandleFunc("POST /api/vocab/video/assets/cover", guard(v.setCover))
 	api.HandleFunc("POST /api/vocab/video/assets/{kind}", guard(v.uploadAsset))
 	api.HandleFunc("GET /api/vocab/video/assets/{kind}", guard(v.assetFile))
 	api.HandleFunc("DELETE /api/vocab/video/assets/{kind}", guard(v.removeAsset))
