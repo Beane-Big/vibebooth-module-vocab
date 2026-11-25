@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,6 +35,7 @@ type videoJob struct {
 	ID        int64      `json:"id"`
 	From      int        `json:"from"`
 	Count     int        `json:"count"`
+	Name      string     `json:"name,omitempty"`
 	CreatedAt time.Time  `json:"createdAt"`
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 	Retry     bool       `json:"retry"`
@@ -211,12 +213,50 @@ func (v *videoExporter) register(api *http.ServeMux) {
 	api.HandleFunc("DELETE /api/vocab/video/assets/{kind}", guard(v.removeAsset))
 }
 
+func sanitizeVideoName(raw string) string {
+	name := strings.TrimSpace(raw)
+	if len(name) >= 4 && strings.EqualFold(name[len(name)-4:], ".mp4") {
+		name = strings.TrimSpace(name[:len(name)-4])
+	}
+	var b strings.Builder
+	count := 0
+	for _, r := range name {
+		if r < 0x20 || r == 0x7f || strings.ContainsRune(`/\\:*?"<>|`, r) {
+			continue
+		}
+		if count >= 100 {
+			break
+		}
+		b.WriteRune(r)
+		count++
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func videoDownloadDisposition(id int64, name string) string {
+	fallback := fmt.Sprintf("vocab-%d.mp4", id)
+	if name == "" {
+		return fmt.Sprintf("attachment; filename=%q", fallback)
+	}
+	filename := name + ".mp4"
+	ascii := filename
+	for _, r := range filename {
+		if r < 0x20 || r > 0x7e || r == '"' || r == '\\' || r == ';' {
+			ascii = fallback
+			break
+		}
+	}
+	return fmt.Sprintf("attachment; filename=%q; filename*=UTF-8''%s", ascii, url.PathEscape(filename))
+}
+
 // 新生成成功才推进序号。重做旧记录时复用快照，另建一条历史且不推进。
 func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		From    int
-		Count   int
-		RetryID int64
+		From        int
+		Count       int
+		RetryID     int64
+		Name        string
+		AppendRange bool
 	}
 	if !decode(w, r, &in) {
 		return
@@ -228,13 +268,15 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var words []*Word
+	var name string
 	if in.RetryID != 0 {
 		for _, job := range v.jobs {
 			if job.ID == in.RetryID {
 				words = job.Words
-				// 重生成使用当前上传的素材，词表仍复用历史快照。
+				// 重生成使用当前上传的素材，词表和名称仍复用历史快照。
 				in.From = job.From
 				in.Count = job.Count
+				name = job.Name
 				break
 			}
 		}
@@ -248,6 +290,10 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		words = v.deck.Range(in.From, in.Count)
+		name = sanitizeVideoName(in.Name)
+		if name != "" && in.AppendRange {
+			name = fmt.Sprintf("%s-%d-%d", name, in.From, in.From+in.Count-1)
+		}
 	}
 	for _, word := range words {
 		if len(word.Ex) < 2 {
@@ -268,7 +314,7 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	job := &videoJob{videoStatus: videoStatus{State: "running", Total: len(words) * 3}, ID: id, From: in.From, Count: in.Count, CreatedAt: time.Now().UTC(), Retry: in.RetryID != 0, Words: words, dir: dir}
+	job := &videoJob{videoStatus: videoStatus{State: "running", Total: len(words) * 3}, ID: id, From: in.From, Count: in.Count, Name: name, CreatedAt: time.Now().UTC(), Retry: in.RetryID != 0, Words: words, dir: dir}
 	v.jobs = append([]*videoJob{job}, v.jobs...)
 	if err := v.saveLocked(); err != nil {
 		v.jobs = v.jobs[1:]
@@ -324,9 +370,11 @@ func (v *videoExporter) download(w http.ResponseWriter, r *http.Request) {
 	v.mu.Lock()
 	v.cleanupLocked(time.Now())
 	var file *os.File
+	var name string
 	for _, job := range v.jobs {
 		if job.ID == id && job.State == "ready" {
 			file, _ = os.Open(filepath.Join(job.dir, "video.mp4"))
+			name = job.Name
 			break
 		}
 	}
@@ -338,7 +386,7 @@ func (v *videoExporter) download(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	w.Header().Set("Content-Type", "video/mp4")
 	if r.URL.Query().Get("download") == "1" {
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=vocab-%d.mp4", id))
+		w.Header().Set("Content-Disposition", videoDownloadDisposition(id, name))
 	}
 	http.ServeContent(w, r, "video.mp4", time.Time{}, file)
 }

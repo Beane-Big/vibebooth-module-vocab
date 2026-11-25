@@ -249,3 +249,103 @@ func TestVideoCancelRunningExport(t *testing.T) {
 		t.Fatalf("unexpected restored state after cancel: next=%d jobs=%+v", restored.next, restored.jobs)
 	}
 }
+
+// 验证自定义视频名称、可选拼接词序号范围、下载头编码以及重试复用名称。
+func TestVideoCustomNameAndDownloadHeader(t *testing.T) {
+	if got := sanitizeVideoName("  每日背单词.MP4  "); got != "每日背单词" {
+		t.Fatalf("sanitize .mp4: got %q", got)
+	}
+	if got := sanitizeVideoName(`a/b\c:d*e?f"g<h>i|j`); got != "abcdefghij" {
+		t.Fatalf("sanitize invalid chars: got %q", got)
+	}
+	if got := videoDownloadDisposition(7, ""); got != `attachment; filename="vocab-7.mp4"` {
+		t.Fatalf("default disposition: got %q", got)
+	}
+	if got := videoDownloadDisposition(7, "daily-1-5"); got != `attachment; filename="daily-1-5.mp4"; filename*=UTF-8''daily-1-5.mp4` {
+		t.Fatalf("ascii disposition: got %q", got)
+	}
+	if got := videoDownloadDisposition(7, "高频词-1-20"); !strings.Contains(got, `filename="vocab-7.mp4"`) || !strings.Contains(got, `filename*=UTF-8''%E9%AB%98%E9%A2%91%E8%AF%8D-1-20.mp4`) {
+		t.Fatalf("unicode disposition: got %q", got)
+	}
+
+	store, err := OpenStore(filepath.Join(t.TempDir(), "video.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.db.Close()
+	words := make([]Word, 25)
+	for i := range words {
+		words[i] = Word{
+			N:  i + 1,
+			W:  "apple",
+			Zh: []string{"n. 苹果"},
+			Ex: []Example{
+				{En: "Eat an apple.", Zh: "吃一个苹果。"},
+				{En: "The apple is red.", Zh: "这个苹果是红的。"},
+			},
+		}
+	}
+	deck := &Deck{Words: words}
+	tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("fake-mp3"))
+	}))
+	defer tts.Close()
+	speech := newSpeaker(tts.URL, filepath.Join(t.TempDir(), "tts"), deck, Dict{})
+	dir := t.TempDir()
+	v := &videoExporter{deck: deck, speech: speech, db: store.db, dir: dir}
+	if err = v.initialize(); err != nil {
+		t.Fatal(err)
+	}
+
+	// 验证不拼接范围时保持原名称，拼接范围时追加 -from-to，并在下载头中生效。
+	cases := []struct {
+		body     string
+		wantName string
+	}{
+		{`{"from":1,"count":10,"name":"高频词","appendRange":false}`, "高频词"},
+		{`{"from":11,"count":10,"name":"高频词","appendRange":true}`, "高频词-11-20"},
+		{`{"from":21,"count":5,"name":"","appendRange":true}`, ""},
+	}
+	t.Setenv("VIDEO_RENDERER", filepath.Join(t.TempDir(), "missing.py"))
+	for i, tc := range cases {
+		rec := httptest.NewRecorder()
+		v.start(rec, httptest.NewRequest(http.MethodPost, "/api/vocab/video", strings.NewReader(tc.body)))
+		if rec.Code != http.StatusAccepted {
+			t.Fatalf("case %d start: %d %s", i, rec.Code, rec.Body)
+		}
+		v.mu.Lock()
+		done := v.done
+		job := v.jobs[0]
+		v.mu.Unlock()
+		if done != nil {
+			<-done
+		}
+		if job.Name != tc.wantName {
+			t.Fatalf("case %d: want name %q, got %q", i, tc.wantName, job.Name)
+		}
+	}
+
+	// 准备就绪后验证下载接口返回正确的 Content-Disposition。
+	v.mu.Lock()
+	job := v.jobs[1] // 高频词-11-20
+	job.State = "ready"
+	if err = os.MkdirAll(job.dir, 0700); err != nil {
+		v.mu.Unlock()
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(job.dir, "video.mp4"), []byte("mp4"), 0600); err != nil {
+		v.mu.Unlock()
+		t.Fatal(err)
+	}
+	v.mu.Unlock()
+
+	dl := httptest.NewRecorder()
+	v.download(dl, httptest.NewRequest(http.MethodGet, "/api/vocab/video/file?id="+strconv.FormatInt(job.ID, 10)+"&download=1", nil))
+	if dl.Code != http.StatusOK {
+		t.Fatalf("download: %d %s", dl.Code, dl.Body)
+	}
+	if got := dl.Header().Get("Content-Disposition"); !strings.Contains(got, "%E9%AB%98%E9%A2%91%E8%AF%8D-11-20.mp4") {
+		t.Fatalf("unexpected download header: %q", got)
+	}
+}
+
