@@ -5,6 +5,7 @@ import VideoAssets from "./VideoAssets";
 import styles from "./pages.module.css";
 
 const base = "/api/vocab/video";
+const countKey = "vocab.videoCount";
 type Job = {
   id: number; state: "running" | "ready" | "expired" | "failed" | "canceled";
   from: number; count: number; done: number; total: number;
@@ -12,12 +13,25 @@ type Job = {
 };
 type State = { next: number; total: number; completed: boolean; jobs: Job[] | null };
 
+function loadCount(): number {
+  try {
+    const value = Number(localStorage.getItem(countKey));
+    if (Number.isInteger(value) && value >= 1 && value <= 20) return value;
+  } catch { /* ignore */ }
+  return 20;
+}
+
+function saveCount(value: number) {
+  if (!Number.isInteger(value) || value < 1 || value > 20) return;
+  try { localStorage.setItem(countKey, String(value)); } catch { /* ignore */ }
+}
+
 // 共享列表定时刷新，只有成功的新导出推进默认序号，重做历史记录保持原进度。
 export default function VideoExport() {
   const [allowed, setAllowed] = useState<boolean>();
   const [data, setData] = useState<State>();
   const [from, setFrom] = useState(1);
-  const [count, setCount] = useState(20);
+  const [count, setCount] = useState(loadCount);
   const [busy, setBusy] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [assetBusy, setAssetBusy] = useState(false);
@@ -38,7 +52,7 @@ export default function VideoExport() {
   function apply(value: State) {
     if (previousNext.current !== value.next || previousCompleted.current !== value.completed) {
       setFrom(value.next);
-      setCount(Math.min(20, value.total - value.next + 1));
+      setCount(Math.min(loadCount(), value.total - value.next + 1));
       previousNext.current = value.next;
       previousCompleted.current = value.completed;
     }
@@ -103,7 +117,7 @@ export default function VideoExport() {
         {data.completed && <p className="muted">已生成至词库末尾，可调整范围重新生成。</p>}
         <form className="stack" onSubmit={event => { event.preventDefault(); if (valid && !running) void start(); }}>
           <label className="field">起始词序号<input type="number" min={1} max={data.total} value={from || ""} onChange={event => { const value = Number(event.target.value); setFrom(value); if (value >= 1 && value <= data.total) setCount(current => Math.min(current, data.total - value + 1)); }} disabled={running} required /></label>
-          <label className="field">词数<input type="number" min={1} max={Math.max(1, Math.min(20, data.total - from + 1))} value={count || ""} onChange={event => setCount(Number(event.target.value))} disabled={running} required /></label>
+          <label className="field">词数<input type="number" min={1} max={Math.max(1, Math.min(20, data.total - from + 1))} value={count || ""} onChange={event => { const value = Number(event.target.value); setCount(value); saveCount(value); }} disabled={running} required /></label>
           <div className="actions">
             <button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button>
             {hasRunning && <button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止生成"}</button>}
