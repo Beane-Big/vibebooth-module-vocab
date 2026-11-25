@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/Beane-Big/vibebooth/packages/sdk-go/auth"
@@ -65,6 +67,9 @@ type videoExporter struct {
 	dir       string
 	mu        sync.Mutex // 状态、文件清理和新任务占位由同一把锁保护。
 	running   bool
+	cancel    context.CancelFunc
+	canceled  bool
+	done      chan struct{}
 	next      int
 	completed bool
 	jobs      []*videoJob
@@ -168,7 +173,7 @@ func (v *videoExporter) cleanupLocked(now time.Time) {
 			continue
 		}
 		expired := job.ExpiresAt != nil && !now.Before(*job.ExpiresAt)
-		if expired || job.State == "failed" || job.State == "expired" {
+		if expired || job.State == "failed" || job.State == "canceled" || job.State == "expired" {
 			if err := os.RemoveAll(job.dir); err != nil {
 				slog.Warn("清理视频文件失败", "id", job.ID, "err", err)
 				continue
@@ -198,6 +203,7 @@ func (v *videoExporter) register(api *http.ServeMux) {
 	}
 	api.HandleFunc("POST /api/vocab/video", guard(v.start))
 	api.HandleFunc("GET /api/vocab/video", guard(v.status))
+	api.HandleFunc("DELETE /api/vocab/video", guard(v.stop))
 	api.HandleFunc("GET /api/vocab/video/file", guard(v.download))
 	api.HandleFunc("GET /api/vocab/video/assets", guard(v.assetStatus))
 	api.HandleFunc("POST /api/vocab/video/assets/{kind}", guard(v.uploadAsset))
@@ -270,9 +276,35 @@ func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
+	done := make(chan struct{})
 	v.running = true
-	go v.render(job)
+	v.cancel = cancel
+	v.canceled = false
+	v.done = done
+	go v.render(ctx, cancel, done, job)
 	writeJSON(w, http.StatusAccepted, job)
+}
+
+func (v *videoExporter) stop(w http.ResponseWriter, r *http.Request) {
+	v.mu.Lock()
+	if !v.running || v.cancel == nil {
+		v.mu.Unlock()
+		writeError(w, http.StatusConflict, "当前没有正在生成的视频")
+		return
+	}
+	v.canceled = true
+	cancel := v.cancel
+	done := v.done
+	v.mu.Unlock()
+	cancel()
+	if done != nil {
+		select {
+		case <-done:
+		case <-r.Context().Done():
+		}
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (v *videoExporter) status(w http.ResponseWriter, r *http.Request) {
@@ -311,8 +343,8 @@ func (v *videoExporter) download(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, "video.mp4", time.Time{}, file)
 }
 
-func (v *videoExporter) render(job *videoJob) {
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
+func (v *videoExporter) render(ctx context.Context, cancel context.CancelFunc, done chan struct{}, job *videoJob) {
+	defer close(done)
 	defer cancel()
 	err := v.makeVideo(ctx, job, job.Words)
 	v.mu.Lock()
@@ -323,8 +355,16 @@ func (v *videoExporter) render(job *videoJob) {
 // finishLocked 原子保存完成状态和共享进度，调用方持有 mu。
 func (v *videoExporter) finishLocked(job *videoJob, err error) {
 	oldNext, oldCompleted := v.next, v.completed
+	canceled := v.canceled
+	v.cancel = nil
+	v.canceled = false
+	v.done = nil
 	job.State = "ready"
-	if err != nil {
+	if canceled {
+		slog.Info("视频导出已终止", "id", job.ID)
+		job.State = "canceled"
+		os.RemoveAll(job.dir)
+	} else if err != nil {
 		slog.Warn("视频导出失败", "err", err)
 		job.State = "failed"
 		os.RemoveAll(job.dir)
@@ -340,7 +380,9 @@ func (v *videoExporter) finishLocked(job *videoJob, err error) {
 	if err := v.saveLocked(); err != nil {
 		slog.Error("保存视频生成结果失败", "err", err)
 		v.next, v.completed = oldNext, oldCompleted
-		job.State = "failed"
+		if !canceled {
+			job.State = "failed"
+		}
 		os.RemoveAll(job.dir)
 	}
 	v.running = false
@@ -398,10 +440,21 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 		cmd.Dir = job.dir
 		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Cancel = func() error {
+			err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+			if errors.Is(err, syscall.ESRCH) {
+				return os.ErrProcessDone
+			}
+			return err
+		}
 		return cmd.Run()
 	}
 	for index, word := range words {
 		for example := -1; example < 2; example++ {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			page := videoPage{Word: word, Example: example, Index: index + 1}
 			if example < 0 {
 				zh := ""
@@ -423,6 +476,9 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 					}
 					page.Audio = append(page.Audio, name)
 				}
+			}
+			if err := ctx.Err(); err != nil {
+				return err
 			}
 			data, err := json.Marshal(page)
 			if err != nil {

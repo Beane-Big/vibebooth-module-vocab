@@ -6,7 +6,7 @@ import styles from "./pages.module.css";
 
 const base = "/api/vocab/video";
 type Job = {
-  id: number; state: "running" | "ready" | "expired" | "failed";
+  id: number; state: "running" | "ready" | "expired" | "failed" | "canceled";
   from: number; count: number; done: number; total: number;
   createdAt: string; expiresAt?: string; retry: boolean;
 };
@@ -19,6 +19,7 @@ export default function VideoExport() {
   const [from, setFrom] = useState(1);
   const [count, setCount] = useState(20);
   const [busy, setBusy] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [assetBusy, setAssetBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<number>();
@@ -75,9 +76,24 @@ export default function VideoExport() {
     }
   }
 
+  async function stop() {
+    setStopping(true);
+    setError("");
+    try {
+      await request(base, { method: "DELETE" });
+      const value = await request<State>(base);
+      if (mounted.current) apply(value);
+    } catch (err) {
+      if (mounted.current) setError(errorText(err));
+    } finally {
+      if (mounted.current) setStopping(false);
+    }
+  }
+
   if (!allowed || !data) return <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">{allowed === false ? "没有视频导出权限" : "加载中…"}</p>}</main>;
   const jobs = data.jobs ?? [];
-  const running = busy || assetBusy || jobs.some(job => job.state === "running");
+  const hasRunning = jobs.some(job => job.state === "running");
+  const running = busy || stopping || assetBusy || hasRunning;
   const valid = Number.isInteger(from) && from >= 1 && from <= data.total && Number.isInteger(count) && count >= 1 && count <= 20 && from + count - 1 <= data.total;
   const file = (id: number) => base + "/file?id=" + id;
   return (
@@ -88,10 +104,13 @@ export default function VideoExport() {
         <form className="stack" onSubmit={event => { event.preventDefault(); if (valid && !running) void start(); }}>
           <label className="field">起始词序号<input type="number" min={1} max={data.total} value={from || ""} onChange={event => { const value = Number(event.target.value); setFrom(value); if (value >= 1 && value <= data.total) setCount(current => Math.min(current, data.total - value + 1)); }} disabled={running} required /></label>
           <label className="field">词数<input type="number" min={1} max={Math.max(1, Math.min(20, data.total - from + 1))} value={count || ""} onChange={event => setCount(Number(event.target.value))} disabled={running} required /></label>
-          <div className="actions"><button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button></div>
+          <div className="actions">
+            <button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button>
+            {hasRunning && <button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止生成"}</button>}
+          </div>
         </form>
       </section>
-      <VideoAssets disabled={busy || jobs.some(job => job.state === "running")} onBusy={setAssetBusy} />
+      <VideoAssets disabled={busy || stopping || hasRunning} onBusy={setAssetBusy} />
       <section className="stack">
         <h2>生成记录</h2>
         {jobs.length === 0 && <p className="muted">暂无生成记录</p>}
@@ -99,7 +118,11 @@ export default function VideoExport() {
           <article className="card stack" key={job.id}>
             <h3>第 {job.from}–{job.from + job.count - 1} 个词 · {job.count} 个词</h3>
             <time className="muted">{new Date(job.createdAt).toLocaleString()}</time>
-            {job.state === "running" && <label>正在生成 {job.done} / {job.total}<progress value={job.done} max={job.total} /></label>}
+            {job.state === "running" && <>
+              <label>正在生成 {job.done} / {job.total}<progress value={job.done} max={job.total} /></label>
+              <div className="actions"><button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止生成"}</button></div>
+            </>}
+            {job.state === "canceled" && <p className="muted">已终止</p>}
             {job.state === "expired" && <p className="muted">视频已过期</p>}
             {job.state === "failed" && <p className="error">生成失败</p>}
             {job.state === "ready" && <>
@@ -110,7 +133,7 @@ export default function VideoExport() {
               </div>
               {preview === job.id && <video key={job.id} src={file(job.id)} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: "65vh" }} />}
             </>}
-            {(job.state === "expired" || job.state === "failed") && <div className="actions"><button className="secondary" disabled={running} onClick={() => void start(job.id)}>重新生成</button></div>}
+            {(job.state === "expired" || job.state === "failed" || job.state === "canceled") && <div className="actions"><button className="secondary" disabled={running} onClick={() => void start(job.id)}>重新生成</button></div>}
           </article>
         ))}
       </section>
