@@ -6,9 +6,11 @@ import styles from "./pages.module.css";
 
 const base = "/api/vocab/video";
 const countKey = "vocab.videoCount";
+const nameKey = "vocab.videoName";
+const appendRangeKey = "vocab.videoAppendRange";
 type Job = {
   id: number; state: "running" | "ready" | "expired" | "failed" | "canceled";
-  from: number; count: number; done: number; total: number;
+  from: number; count: number; name?: string; done: number; total: number;
   createdAt: string; expiresAt?: string; retry: boolean;
 };
 type State = { next: number; total: number; completed: boolean; jobs: Job[] | null };
@@ -26,6 +28,22 @@ function saveCount(value: number) {
   try { localStorage.setItem(countKey, String(value)); } catch { /* ignore */ }
 }
 
+function loadName(): string {
+  try { return localStorage.getItem(nameKey) ?? ""; } catch { return ""; }
+}
+
+function saveName(value: string) {
+  try { localStorage.setItem(nameKey, value); } catch { /* ignore */ }
+}
+
+function loadAppendRange(): boolean {
+  try { return localStorage.getItem(appendRangeKey) === "1"; } catch { return false; }
+}
+
+function saveAppendRange(value: boolean) {
+  try { localStorage.setItem(appendRangeKey, value ? "1" : "0"); } catch { /* ignore */ }
+}
+
 function parseIntInput(raw: string): number {
   const digits = raw.replace(/\D+/g, "");
   return digits ? Number(digits) : 0;
@@ -37,6 +55,8 @@ export default function VideoExport() {
   const [data, setData] = useState<State>();
   const [from, setFrom] = useState(1);
   const [count, setCount] = useState(loadCount);
+  const [name, setName] = useState(loadName);
+  const [appendRange, setAppendRange] = useState(loadAppendRange);
   const [busy, setBusy] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [assetBusy, setAssetBusy] = useState(false);
@@ -85,7 +105,7 @@ export default function VideoExport() {
     setBusy(true);
     setError("");
     try {
-      await request<Job>(base, { method: "POST", body: JSON.stringify(retryID ? { retryID } : { from, count }) });
+      await request<Job>(base, { method: "POST", body: JSON.stringify(retryID ? { retryID } : { from, count, name, appendRange }) });
       const value = await request<State>(base);
       if (mounted.current) { apply(value); setPreview(undefined); }
     } catch (err) {
@@ -123,6 +143,8 @@ export default function VideoExport() {
         <form className="stack" onSubmit={event => { event.preventDefault(); if (valid && !running) void start(); }}>
           <label className="field">起始词序号<input type="text" inputMode="numeric" pattern="[0-9]*" value={from || ""} onChange={event => { const value = parseIntInput(event.target.value); setFrom(value); if (value >= 1 && value <= data.total) setCount(current => Math.min(current, data.total - value + 1)); }} disabled={running} required /></label>
           <label className="field">词数<input type="text" inputMode="numeric" pattern="[0-9]*" value={count || ""} onChange={event => { const value = parseIntInput(event.target.value); setCount(value); saveCount(value); }} disabled={running} required /></label>
+          <label className="field">视频名称<input type="text" maxLength={100} value={name} onChange={event => { setName(event.target.value); saveName(event.target.value); }} disabled={running} /></label>
+          <label className="field"><input type="checkbox" checked={appendRange} onChange={event => { setAppendRange(event.target.checked); saveAppendRange(event.target.checked); }} disabled={running} />名称后拼接词序号范围</label>
           <div className="actions">
             <button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button>
             {hasRunning && <button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止生成"}</button>}
@@ -135,7 +157,8 @@ export default function VideoExport() {
         {jobs.length === 0 && <p className="muted">暂无生成记录</p>}
         {jobs.map(job => (
           <article className="card stack" key={job.id}>
-            <h3>第 {job.from}–{job.from + job.count - 1} 个词 · {job.count} 个词</h3>
+            <h3>{job.name || `第 ${job.from}–${job.from + job.count - 1} 个词 · ${job.count} 个词`}</h3>
+            {job.name && <p className="muted">第 {job.from}–{job.from + job.count - 1} 个词 · {job.count} 个词</p>}
             <time className="muted">{new Date(job.createdAt).toLocaleString()}</time>
             {job.state === "running" && <>
               <label>正在生成 {job.done} / {job.total}<progress value={job.done} max={job.total} /></label>
@@ -148,7 +171,7 @@ export default function VideoExport() {
               {job.expiresAt && <p className="muted">保留至 {new Date(job.expiresAt).toLocaleString()}</p>}
               <div className="actions">
                 <button className="secondary" onClick={() => setPreview(preview === job.id ? undefined : job.id)}>{preview === job.id ? "收起预览" : "预览"}</button>
-                <a className={styles.button} href={file(job.id) + "&download=1"}>下载 MP4</a>
+                <a className={styles.button} href={file(job.id) + "&download=1"} download={(job.name || `vocab-${job.id}`) + ".mp4"}>下载 MP4</a>
               </div>
               {preview === job.id && <video key={job.id} src={file(job.id)} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: "65vh" }} />}
             </>}
