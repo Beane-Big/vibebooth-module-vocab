@@ -25,9 +25,9 @@ type videoAsset struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func validVideoAsset(kind string) bool { return kind == "intro" || kind == "outro" }
+func validVideoAsset(kind string) bool { return kind == "intro" || kind == "outro" || kind == "cover" }
 
-// 只保留当前片头和片尾。新任务先复制素材，替换素材不会改动已经开始的导出。
+// 只保留当前片头、片尾和封面。新任务先复制素材，替换素材不会改动已经开始的导出。
 func (v *videoExporter) loadAssets() error {
 	if err := os.MkdirAll(filepath.Join(v.dir, "assets"), 0700); err != nil {
 		return err
@@ -100,6 +100,11 @@ func (v *videoExporter) assetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer f.Close()
+	if kind == "cover" {
+		w.Header().Set("Content-Type", "image/jpeg")
+		http.ServeContent(w, r, "cover.jpg", time.Time{}, f)
+		return
+	}
 	w.Header().Set("Content-Type", "video/mp4")
 	http.ServeContent(w, r, kind+".mp4", time.Time{}, f)
 }
@@ -131,7 +136,7 @@ func (v *videoExporter) removeAsset(w http.ResponseWriter, r *http.Request) {
 // 先上传到临时文件并转码，完成后才发布新素材。失败时原素材继续可用。
 func (v *videoExporter) uploadAsset(w http.ResponseWriter, r *http.Request) {
 	kind := r.PathValue("kind")
-	if !validVideoAsset(kind) {
+	if kind != "intro" && kind != "outro" {
 		writeError(w, http.StatusNotFound, "没有这类素材")
 		return
 	}
@@ -276,10 +281,119 @@ func normalizeVideoAsset(ctx context.Context, input, output string) (float64, er
 	return duration, nil
 }
 
-// 在持锁的新任务创建阶段复制两份素材；文件名也是渲染器的拼接顺序约定。
+// 从已上传的片头视频截取指定时间点的一帧作为共享封面。
+func (v *videoExporter) setCover(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Time float64
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if math.IsNaN(in.Time) || math.IsInf(in.Time, 0) || in.Time < 0 {
+		writeError(w, http.StatusBadRequest, "请选择有效的时间点")
+		return
+	}
+	v.mu.Lock()
+	if v.assetBusy || v.running {
+		v.mu.Unlock()
+		writeError(w, http.StatusConflict, "视频或素材正在生成，请完成后再设置封面")
+		return
+	}
+	intro := v.assets["intro"]
+	if intro == nil {
+		v.mu.Unlock()
+		writeError(w, http.StatusBadRequest, "请先上传片头视频")
+		return
+	}
+	introPath := filepath.Join(v.dir, "assets", intro.File)
+	ts := in.Time
+	if intro.Duration > 0 && ts > intro.Duration {
+		ts = intro.Duration
+	}
+	extractAt := ts
+	if intro.Duration > 0.05 && extractAt > intro.Duration-0.05 {
+		extractAt = intro.Duration - 0.05
+	}
+	v.assetBusy = true
+	v.mu.Unlock()
+	defer func() { v.mu.Lock(); v.assetBusy = false; v.mu.Unlock() }()
+
+	output, err := os.CreateTemp(filepath.Join(v.dir, "assets"), "cover-*.jpg")
+	if fail(w, err) {
+		return
+	}
+	name := output.Name()
+	if err = output.Close(); fail(w, err) {
+		os.Remove(name)
+		return
+	}
+	published := false
+	defer func() {
+		if !published {
+			os.Remove(name)
+		}
+	}()
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	if err := extractVideoCover(ctx, introPath, extractAt, name); err != nil {
+		slog.Warn("截取片头封面失败", "err", err)
+		writeError(w, http.StatusBadRequest, "无法从片头截取封面")
+		return
+	}
+	stat, err := os.Stat(name)
+	if fail(w, err) {
+		return
+	}
+	asset := &videoAsset{File: filepath.Base(name), Duration: ts, Size: stat.Size(), UpdatedAt: time.Now().UTC()}
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	_, err = v.db.Exec("INSERT INTO video_assets(kind,file,duration,size,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(kind) DO UPDATE SET file=excluded.file,duration=excluded.duration,size=excluded.size,updated_at=excluded.updated_at",
+		"cover", asset.File, asset.Duration, asset.Size, asset.UpdatedAt.Format(time.RFC3339Nano))
+	if fail(w, err) {
+		return
+	}
+	old := v.assets["cover"]
+	v.assets["cover"] = asset
+	published = true
+	if old != nil {
+		if err := os.Remove(filepath.Join(v.dir, "assets", old.File)); err != nil && !os.IsNotExist(err) {
+			slog.Warn("清理旧封面失败", "err", err)
+		}
+	}
+	writeJSON(w, http.StatusOK, asset)
+}
+
+// -ss 放在 -i 之后实现逐帧精准定位，避免只落到最近关键帧。
+func extractVideoCover(ctx context.Context, input string, ts float64, output string) error {
+	args := []string{
+		"-hide_banner", "-loglevel", "error", "-y",
+		"-i", input,
+		"-ss", strconv.FormatFloat(ts, 'f', 3, 64),
+		"-frames:v", "1",
+		"-q:v", "2",
+		output,
+	}
+	if data, err := exec.CommandContext(ctx, env("VIDEO_FFMPEG", "ffmpeg"), args...).CombinedOutput(); err != nil {
+		return fmt.Errorf("extract cover: %w: %s", err, data)
+	}
+	stat, err := os.Stat(output)
+	if err != nil || stat.Size() == 0 {
+		return errors.New("empty cover frame")
+	}
+	return nil
+}
+
+// 在持锁的新任务创建阶段复制素材；文件名也是渲染器的拼接顺序约定。
 func (v *videoExporter) copyAssetsLocked(dir string) error {
-	for _, kind := range []string{"intro", "outro"} {
-		asset := v.assets[kind]
+	for _, spec := range []struct {
+		kind string
+		name string
+	}{
+		{"intro", "intro-upload.mp4"},
+		{"outro", "outro-upload.mp4"},
+		{"cover", "cover-upload.jpg"},
+	} {
+		asset := v.assets[spec.kind]
 		if asset == nil {
 			continue
 		}
@@ -287,7 +401,7 @@ func (v *videoExporter) copyAssetsLocked(dir string) error {
 		if err != nil {
 			return err
 		}
-		dest, err := os.Create(filepath.Join(dir, kind+"-upload.mp4"))
+		dest, err := os.Create(filepath.Join(dir, spec.name))
 		if err != nil {
 			source.Close()
 			return err

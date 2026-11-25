@@ -149,8 +149,29 @@ def render_page():
 def join_pages():
     """Join rendered pages in order and write the download with a seekable header."""
     clips = sorted(Path.cwd().glob("intro-*.mp4")) + sorted(Path.cwd().glob("card-*.mp4")) + sorted(Path.cwd().glob("outro-*.mp4"))
+    cover = Path("cover-upload.jpg")
+    if cover.exists():
+        ffmpeg(
+            "-loop", "1", "-framerate", "24", "-i", str(cover),
+            "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=0xeaf0f8,setsar=1",
+            "-c:v", "libx264", "-threads", "2", "-preset", "ultrafast", "-tune", "stillimage",
+            "-crf", "20", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-ac", "2", "-ar", "48000", "-b:a", "160k",
+            "-t", "0.05", "cover-000.mp4",
+        )
+        clips = [Path("cover-000.mp4")] + clips
     Path("concat.txt").write_text("".join(f"file '{p.name}'\n" for p in clips),encoding="ascii")
-    ffmpeg("-f","concat","-safe","0","-i","concat.txt","-c","copy","-movflags","+faststart","video.mp4")
+    if cover.exists():
+        ffmpeg(
+            "-f", "concat", "-safe", "0", "-i", "concat.txt",
+            "-i", str(cover),
+            "-map", "0", "-map", "1",
+            "-c", "copy", "-disposition:v:1", "attached_pic",
+            "-movflags", "+faststart", "video.mp4",
+        )
+    else:
+        ffmpeg("-f","concat","-safe","0","-i","concat.txt","-c","copy","-movflags","+faststart","video.mp4")
 
 
 if __name__ == "__main__":

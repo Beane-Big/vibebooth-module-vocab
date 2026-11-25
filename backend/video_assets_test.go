@@ -138,3 +138,98 @@ func TestVideoAssetProbeCancellation(t *testing.T) {
 		t.Fatal("cancelled normalization succeeded")
 	}
 }
+
+// 验证从片头视频截取指定时间点作为封面：入参校验、文件输出与读取、任务复制、重启恢复及移除。
+func TestVideoCoverFromIntroFrame(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "assets.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.db.Close()
+	dir := t.TempDir()
+	v := &videoExporter{deck: &Deck{Words: make([]Word, 10)}, db: store.db, dir: dir}
+	if err = v.initialize(); err != nil {
+		t.Fatal(err)
+	}
+
+	// 未上传片头时不能设置封面。
+	rec := httptest.NewRecorder()
+	v.setCover(rec, httptest.NewRequest(http.MethodPost, "/api/vocab/video/assets/cover", bytes.NewBufferString(`{"time":2}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 without intro, got %d", rec.Code)
+	}
+
+	// 准备模拟片头与模拟 ffmpeg（记录参数并写出非空 JPEG 字节）。
+	introFile := "clip-intro.mp4"
+	if err = os.WriteFile(filepath.Join(dir, "assets", introFile), []byte("mp4"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	v.assets["intro"] = &videoAsset{File: introFile, Duration: 5.0, Size: 3}
+	argsLog := filepath.Join(t.TempDir(), "ffmpeg-args.txt")
+	fakeFFmpeg := filepath.Join(t.TempDir(), "fake-ffmpeg.sh")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + argsLog + "\nfor last; do :; done\nprintf 'JPEGDATA' > \"$last\"\n"
+	if err = os.WriteFile(fakeFFmpeg, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIDEO_FFMPEG", fakeFFmpeg)
+
+	// 负数时间点被拒绝。
+	bad := httptest.NewRecorder()
+	v.setCover(bad, httptest.NewRequest(http.MethodPost, "/api/vocab/video/assets/cover", bytes.NewBufferString(`{"time":-1}`)))
+	if bad.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for negative time, got %d", bad.Code)
+	}
+
+	// 截取 2.0 秒处的帧作为封面。
+	ok := httptest.NewRecorder()
+	v.setCover(ok, httptest.NewRequest(http.MethodPost, "/api/vocab/video/assets/cover", bytes.NewBufferString(`{"time":2}`)))
+	if ok.Code != http.StatusOK {
+		t.Fatalf("setCover: %d %s", ok.Code, ok.Body)
+	}
+	cover := v.assets["cover"]
+	if cover == nil || cover.Duration != 2 || cover.Size != 8 {
+		t.Fatalf("unexpected cover asset: %+v", cover)
+	}
+	loggedArgs, err := os.ReadFile(argsLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(loggedArgs, []byte("2.000")) {
+		t.Fatalf("expected 2.000 timestamp in ffmpeg args, got %s", loggedArgs)
+	}
+
+	// 读取封面接口返回 image/jpeg。
+	getReq := httptest.NewRequest(http.MethodGet, "/api/vocab/video/assets/cover", nil)
+	getReq.SetPathValue("kind", "cover")
+	getRec := httptest.NewRecorder()
+	v.assetFile(getRec, getReq)
+	if getRec.Code != http.StatusOK || getRec.Header().Get("Content-Type") != "image/jpeg" || getRec.Body.String() != "JPEGDATA" {
+		t.Fatalf("assetFile cover: code=%d ct=%q body=%q", getRec.Code, getRec.Header().Get("Content-Type"), getRec.Body.String())
+	}
+
+	// 任务目录复制包含 cover-upload.jpg。
+	jobDir := t.TempDir()
+	if err = v.copyAssetsLocked(jobDir); err != nil {
+		t.Fatal(err)
+	}
+	if copied, err := os.ReadFile(filepath.Join(jobDir, "cover-upload.jpg")); err != nil || string(copied) != "JPEGDATA" {
+		t.Fatalf("copied cover mismatch: %v %q", err, copied)
+	}
+
+	// 重启后可从 SQLite 恢复封面，并可移除。
+	restored := &videoExporter{deck: v.deck, db: store.db, dir: dir}
+	if err = restored.initialize(); err != nil {
+		t.Fatal(err)
+	}
+	if restored.assets["cover"] == nil || restored.assets["cover"].File != cover.File {
+		t.Fatalf("cover lost after restart: %+v", restored.assets["cover"])
+	}
+	delReq := httptest.NewRequest(http.MethodDelete, "/api/vocab/video/assets/cover", nil)
+	delReq.SetPathValue("kind", "cover")
+	delRec := httptest.NewRecorder()
+	restored.removeAsset(delRec, delReq)
+	if delRec.Code != http.StatusNoContent || restored.assets["cover"] != nil {
+		t.Fatalf("remove cover failed: %d", delRec.Code)
+	}
+}
+
