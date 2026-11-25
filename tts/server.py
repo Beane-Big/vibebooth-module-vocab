@@ -32,7 +32,7 @@ g2p = {b: en.G2P(british=b, fallback=espeak.EspeakFallback(british=b), unk="") f
 zh_tts_config = sherpa_onnx.OfflineTtsConfig(
     model=sherpa_onnx.OfflineTtsModelConfig(
         kokoro=sherpa_onnx.OfflineTtsKokoroModelConfig(
-            model=f"{ZH_DIR}/model.int8.onnx",
+            model=f"{ZH_DIR}/model.onnx",
             voices=f"{ZH_DIR}/voices.bin",
             tokens=f"{ZH_DIR}/tokens.txt",
             lexicon=f"{ZH_DIR}/lexicon-us-en.txt,{ZH_DIR}/lexicon-zh.txt,{ZH_DIR}/lexicon-custom.txt",
@@ -224,6 +224,56 @@ def _mixed_tokens_for_zh(text: str) -> list[str]:
     return tokens
 
 
+def enhance_chinese_audio(samples: np.ndarray, rate: int) -> np.ndarray:
+    """提升中文语音清晰度与响度：零相位人声存在感 EQ + 活跃段响度归一化 + 软拐点防削波。"""
+    x = np.asarray(samples, dtype=np.float32)
+    if len(x) == 0:
+        return x
+
+    # 1. 前后补零后做频域零相位均衡（避免循环卷积导致头尾咔哒声）：
+    #    - 90 Hz 高通去掉超低频隆隆声；
+    #    - 260 Hz 轻微衰减（-1.5 dB）减轻发闷感；
+    #    - 3.2 kHz 人声清晰度提升（+4.5 dB）+ 5 kHz 以上柔和空气感（+3.0 dB），补足 Kokoro-zh 中高频能量。
+    pad = min(1024, max(256, rate // 24))
+    padded = np.pad(x, (pad, pad), mode="constant")
+    spec = np.fft.rfft(padded)
+    freqs = np.fft.rfftfreq(len(padded), 1.0 / rate)
+    hp = 1.0 / np.sqrt(1.0 + (90.0 / np.maximum(freqs, 1.0)) ** 4)
+    hp[0] = 0.0
+    logf = np.log2(np.maximum(freqs, 20.0))
+    eq_db = (
+        -1.5 * np.exp(-0.5 * ((logf - np.log2(260.0)) / 0.55) ** 2)
+        + 4.5 * np.exp(-0.5 * ((logf - np.log2(3200.0)) / 0.85) ** 2)
+        + 3.0 / (1.0 + np.exp(-(freqs - 5000.0) / 800.0))
+    )
+    gain = hp * (10.0 ** (eq_db / 20.0))
+    y = np.fft.irfft(spec * gain, n=len(padded))[pad : pad + len(x)].astype(np.float32)
+
+    # 2. 按活跃语音段 RMS 归一化到 -18.5 dBFS（略高于英文原始 -20.5 dBFS 以平衡中高频听感，上限增益 3.5x 防放大静音底噪）。
+    frame = max(1, rate // 100)
+    n_frames = len(y) // frame
+    if n_frames > 0:
+        frms = np.sqrt(np.mean(y[: n_frames * frame].reshape(n_frames, frame) ** 2, axis=1))
+        peak_rms = float(np.max(frms))
+        if peak_rms > 1e-6:
+            active = frms[frms > max(1e-4, peak_rms * (10.0 ** (-30.0 / 20.0)))]
+            active_rms = float(np.sqrt(np.mean(active**2))) if len(active) else peak_rms
+            target_rms = 10.0 ** (-18.5 / 20.0)
+            scale = min(3.5, target_rms / max(active_rms, 1e-6))
+            y = y * scale
+
+    # 3. 软拐点峰值限幅（ceiling -1.0 dBFS ≈ 0.891），避免爆音或削波失真。
+    ceiling = 0.891
+    knee = 0.75
+    abs_y = np.abs(y)
+    over = abs_y > knee
+    if np.any(over):
+        excess = abs_y[over] - knee
+        span = ceiling - knee
+        y[over] = np.sign(y[over]) * (knee + span * np.tanh(excess / span))
+    return np.clip(y, -ceiling, ceiling).astype(np.float32)
+
+
 def chinese_audio(text: str, voice: str):
     gen_config = sherpa_onnx.GenerationConfig()
     gen_config.sid = ZH_VOICES[voice]
@@ -242,6 +292,7 @@ def chinese_audio(text: str, voice: str):
     samples = safe_trim(np.asarray(audio.samples, dtype=np.float32), audio.sample_rate)
     if len(samples) == 0:
         raise ValueError("Chinese speech produced no audio")
+    samples = enhance_chinese_audio(samples, audio.sample_rate)
     return samples, audio.sample_rate
 
 
@@ -254,7 +305,8 @@ def synthesize(text: str, voice: str) -> bytes:
         else:
             audio, rate = english_audio(text, voice)
     buf = io.BytesIO()
-    sf.write(buf, audio, rate, format="MP3")
+    # 默认 MP3 码率仅约 63 kbps，高频齿音易发糊；固定 128 kbps（CONSTANT + 0.2）在极小体积下保持清脆人声。
+    sf.write(buf, audio, rate, format="MP3", bitrate_mode="CONSTANT", compression_level=0.2)
     dt = time.monotonic() - t1
     wait_dt = t1 - t0
     if dt >= 0.8 or wait_dt >= 0.5:
