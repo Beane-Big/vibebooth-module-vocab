@@ -349,3 +349,114 @@ func TestVideoCustomNameAndDownloadHeader(t *testing.T) {
 	}
 }
 
+// 验证删除未过期与已过期任务、拒绝删除运行中任务，以及章节信息加载与持久化。
+func TestVideoDeleteAndChapters(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 not installed")
+	}
+	store, err := OpenStore(filepath.Join(t.TempDir(), "video.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.db.Close()
+
+	tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("fake-mp3"))
+	}))
+	defer tts.Close()
+
+	deck := &Deck{Words: []Word{{
+		N:  1,
+		W:  "apple",
+		Zh: []string{"n. 苹果"},
+		Ex: []Example{
+			{En: "Eat an apple.", Zh: "吃一个苹果。"},
+			{En: "The apple is red.", Zh: "这个苹果是红的。"},
+		},
+	}}}
+	speech := newSpeaker(tts.URL, filepath.Join(t.TempDir(), "tts"), deck, Dict{})
+	dir := t.TempDir()
+	v := &videoExporter{deck: deck, speech: speech, db: store.db, dir: dir}
+	if err = v.initialize(); err != nil {
+		t.Fatal(err)
+	}
+
+	// 模拟渲染器：验证 page.json 携带起始词序号 from，join 时读取 words.json 输出 video.mp4 与 chapters.json。
+	renderer := filepath.Join(t.TempDir(), "fake-renderer.py")
+	script := "import json, pathlib, sys\n" +
+		"if sys.argv[1] == 'page':\n" +
+		"    page = json.loads(pathlib.Path('page.json').read_text(encoding='utf-8'))\n" +
+		"    assert page['from'] == 1, page\n" +
+		"elif sys.argv[1] == 'join':\n" +
+		"    meta = json.loads(pathlib.Path('words.json').read_text(encoding='utf-8'))\n" +
+		"    pathlib.Path('chapters.json').write_text(json.dumps([{'start': 0, 'end': 12.5, 'title': f\"{meta['from']}. {meta['words'][0]}\"}]), encoding='utf-8')\n" +
+		"    pathlib.Path('video.mp4').write_bytes(b'mp4')\n"
+	if err = os.WriteFile(renderer, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIDEO_RENDERER", renderer)
+
+	startResp := httptest.NewRecorder()
+	v.start(startResp, httptest.NewRequest(http.MethodPost, "/api/vocab/video", strings.NewReader(`{"from":1,"count":1}`)))
+	if startResp.Code != http.StatusAccepted {
+		t.Fatalf("start: %d %s", startResp.Code, startResp.Body)
+	}
+	v.mu.Lock()
+	done := v.done
+	v.mu.Unlock()
+	if done != nil {
+		<-done
+	}
+
+	v.mu.Lock()
+	readyJob := v.jobs[0]
+	v.mu.Unlock()
+	if readyJob.State != "ready" || len(readyJob.Chapters) != 1 || readyJob.Chapters[0].Title != "1. apple" {
+		t.Fatalf("unexpected ready job chapters: %+v", readyJob)
+	}
+
+	// 添加一条已过期和一条运行中记录测试删除边界。
+	expiredJob := &videoJob{videoStatus: videoStatus{State: "expired"}, ID: 2, dir: filepath.Join(dir, "2")}
+	runningJob := &videoJob{videoStatus: videoStatus{State: "running"}, ID: 3, dir: filepath.Join(dir, "3")}
+	v.mu.Lock()
+	v.jobs = append([]*videoJob{runningJob, expiredJob}, v.jobs...)
+	if err = v.saveLocked(); err != nil {
+		v.mu.Unlock()
+		t.Fatal(err)
+	}
+	v.mu.Unlock()
+
+	callRemove := func(id string) int {
+		req := httptest.NewRequest(http.MethodDelete, "/api/vocab/video/"+id, nil)
+		req.SetPathValue("id", id)
+		rec := httptest.NewRecorder()
+		v.remove(rec, req)
+		return rec.Code
+	}
+	if code := callRemove("999"); code != http.StatusNotFound {
+		t.Fatalf("expected 404 for unknown id, got %d", code)
+	}
+	if code := callRemove("3"); code != http.StatusConflict {
+		t.Fatalf("expected 409 for running job, got %d", code)
+	}
+	if code := callRemove("2"); code != http.StatusNoContent {
+		t.Fatalf("expected 204 deleting expired job, got %d", code)
+	}
+	if code := callRemove("1"); code != http.StatusNoContent {
+		t.Fatalf("expected 204 deleting ready job, got %d", code)
+	}
+	if _, err = os.Stat(readyJob.dir); !os.IsNotExist(err) {
+		t.Fatal("deleted ready job dir still exists")
+	}
+
+	// 重启后仅剩未删除的记录。
+	restored := &videoExporter{deck: deck, speech: speech, db: store.db, dir: dir}
+	if err = restored.initialize(); err != nil {
+		t.Fatal(err)
+	}
+	if len(restored.jobs) != 1 || restored.jobs[0].ID != 3 {
+		t.Fatalf("unexpected jobs after restart: %+v", restored.jobs)
+	}
+}
+
+
