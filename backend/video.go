@@ -29,17 +29,24 @@ type videoStatus struct {
 	Total int    `json:"total"`
 }
 
+type videoChapter struct {
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+	Title string  `json:"title"`
+}
+
 // 视频历史共享保存。词表快照用于过期重做，避免词库更新改变旧视频内容。
 type videoJob struct {
 	videoStatus
-	ID        int64      `json:"id"`
-	From      int        `json:"from"`
-	Count     int        `json:"count"`
-	Name      string     `json:"name,omitempty"`
-	CreatedAt time.Time  `json:"createdAt"`
-	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-	Retry     bool       `json:"retry"`
-	Words     []*Word    `json:"-"`
+	ID        int64          `json:"id"`
+	From      int            `json:"from"`
+	Count     int            `json:"count"`
+	Name      string         `json:"name,omitempty"`
+	Chapters  []videoChapter `json:"chapters,omitempty"`
+	CreatedAt time.Time      `json:"createdAt"`
+	ExpiresAt *time.Time     `json:"expiresAt,omitempty"`
+	Retry     bool           `json:"retry"`
+	Words     []*Word        `json:"-"`
 	dir       string
 }
 
@@ -59,6 +66,7 @@ type videoPage struct {
 	Word    *Word    `json:"word"`
 	Example int      `json:"example"`
 	Index   int      `json:"index"`
+	From    int      `json:"from"`
 	Audio   []string `json:"audio"`
 }
 
@@ -206,6 +214,7 @@ func (v *videoExporter) register(api *http.ServeMux) {
 	api.HandleFunc("POST /api/vocab/video", guard(v.start))
 	api.HandleFunc("GET /api/vocab/video", guard(v.status))
 	api.HandleFunc("DELETE /api/vocab/video", guard(v.stop))
+	api.HandleFunc("DELETE /api/vocab/video/{id}", guard(v.remove))
 	api.HandleFunc("GET /api/vocab/video/file", guard(v.download))
 	api.HandleFunc("GET /api/vocab/video/assets", guard(v.assetStatus))
 	api.HandleFunc("POST /api/vocab/video/assets/cover", guard(v.setCover))
@@ -350,6 +359,46 @@ func (v *videoExporter) stop(w http.ResponseWriter, r *http.Request) {
 		case <-done:
 		case <-r.Context().Done():
 		}
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (v *videoExporter) remove(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "请选择生成记录")
+		return
+	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	index := -1
+	for i, job := range v.jobs {
+		if job.ID == id {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		writeError(w, http.StatusNotFound, "没有这条生成记录")
+		return
+	}
+	job := v.jobs[index]
+	if job.State == "running" {
+		writeError(w, http.StatusConflict, "正在生成的视频请先终止后再删除")
+		return
+	}
+	oldJobs := v.jobs
+	nextJobs := make([]*videoJob, 0, len(v.jobs)-1)
+	nextJobs = append(nextJobs, v.jobs[:index]...)
+	nextJobs = append(nextJobs, v.jobs[index+1:]...)
+	v.jobs = nextJobs
+	if err := v.saveLocked(); err != nil {
+		v.jobs = oldJobs
+		fail(w, err)
+		return
+	}
+	if err := os.RemoveAll(job.dir); err != nil {
+		slog.Warn("删除视频文件失败", "id", job.ID, "err", err)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -504,7 +553,7 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			page := videoPage{Word: word, Example: example, Index: index + 1}
+			page := videoPage{Word: word, Example: example, Index: index + 1, From: job.From}
 			if example < 0 {
 				zh := ""
 				if len(word.Zh) > 0 {
@@ -544,8 +593,29 @@ func (v *videoExporter) makeVideo(ctx context.Context, job *videoJob, words []*W
 			v.mu.Unlock()
 		}
 	}
+	wordTitles := make([]string, len(words))
+	for i, word := range words {
+		wordTitles[i] = word.W
+	}
+	meta := struct {
+		From  int      `json:"from"`
+		Words []string `json:"words"`
+	}{From: job.From, Words: wordTitles}
+	if data, err := json.Marshal(meta); err != nil {
+		return err
+	} else if err = os.WriteFile(filepath.Join(job.dir, "words.json"), data, 0600); err != nil {
+		return err
+	}
 	if err := run("join"); err != nil {
 		return err
+	}
+	if raw, err := os.ReadFile(filepath.Join(job.dir, "chapters.json")); err == nil {
+		var chapters []videoChapter
+		if err = json.Unmarshal(raw, &chapters); err == nil {
+			v.mu.Lock()
+			job.Chapters = chapters
+			v.mu.Unlock()
+		}
 	}
 	// 下载只需要成片，其余中间文件合成成功后清除。
 	files, err := os.ReadDir(job.dir)

@@ -14,6 +14,7 @@ SAMPLE_RATE = 24000
 SPELL_SPEED = 0.85
 SPELL_GAP = 0.38
 FFMPEG = os.environ.get("VIDEO_FFMPEG", "ffmpeg")
+FFPROBE = os.environ.get("VIDEO_FFPROBE", "ffprobe")
 FONT_DIR = Path(os.environ.get("VIDEO_FONT_DIR", "/usr/share/fonts/noto"))
 
 
@@ -57,7 +58,8 @@ def card(page, total, output):
     for y, width in ((236,23),(246,18),(256,14)):
         draw.rounded_rectangle((118,y,118+width,y+4), 2, fill="white")
     draw.text((174,220), "背单词", font=font(47,bold=True,cjk=True), fill="#17284b", anchor="lt")
-    draw.text((977,232), f"{page['index']:02d} / {total:02d}", font=font(35), fill="#435984", anchor="rt")
+    start = page.get("from") or 1
+    draw.text((977,232), f"{start + page['index'] - 1:02d} / {start + total - 1:02d}", font=font(35), fill="#435984", anchor="rt")
     step = (page["index"]-1)*3+page["example"]+2
     draw.rounded_rectangle((104,313,976,322), 5, fill="#dce5fb")
     draw.rounded_rectangle((104,313,104+round(872*step/(total*3)),322), 5, fill="#4d70dd")
@@ -146,9 +148,76 @@ def render_page():
     )
 
 
+def probe_duration(path):
+    """Return clip duration in seconds using ffprobe."""
+    out = subprocess.run(
+        [FFPROBE, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
+        check=True, stdout=subprocess.PIPE, text=True,
+    ).stdout.strip()
+    return float(out)
+
+
+def escape_ffmeta(text):
+    """Escape special characters for FFMETADATA1 values."""
+    text = text.replace("\\", "\\\\").replace("=", "\\=").replace(";", "\\;").replace("#", "\\#")
+    return text.replace("\r", " ").replace("\n", " ")
+
+
+def build_chapters(cover_clips, intro_clips, card_clips, outro_clips):
+    """Compute per-word chapters, write chapters.json and chapters.txt (FFMETADATA1)."""
+    words_file = Path("words.json")
+    if not words_file.exists():
+        return False
+    meta = json.loads(words_file.read_text(encoding="utf-8"))
+    if isinstance(meta, dict):
+        start_num = meta.get("from") or 1
+        words = meta.get("words") or []
+    else:
+        start_num = 1
+        words = meta
+    if not words:
+        return False
+    chapters = []
+    cursor = 0.0
+    cover_dur = sum(probe_duration(p) for p in cover_clips)
+    intro_dur = sum(probe_duration(p) for p in intro_clips)
+    if intro_dur > 0:
+        chapters.append({"start": 0.0, "end": round(cover_dur + intro_dur, 3), "title": "片头"})
+        cursor = cover_dur + intro_dur
+    else:
+        cursor = cover_dur
+    for i, word in enumerate(words):
+        group = card_clips[i * 3 : (i + 1) * 3]
+        if not group:
+            break
+        dur = sum(probe_duration(p) for p in group)
+        start = 0.0 if i == 0 and not chapters else cursor
+        end = cursor + dur
+        chapters.append({"start": round(start, 3), "end": round(end, 3), "title": f"{start_num + i}. {word}"})
+        cursor = end
+    outro_dur = sum(probe_duration(p) for p in outro_clips)
+    if outro_dur > 0:
+        chapters.append({"start": round(cursor, 3), "end": round(cursor + outro_dur, 3), "title": "片尾"})
+    if not chapters:
+        return False
+    Path("chapters.json").write_text(json.dumps(chapters, ensure_ascii=False), encoding="utf-8")
+    lines = [";FFMETADATA1\n"]
+    for ch in chapters:
+        start_ms = round(ch["start"] * 1000)
+        end_ms = max(start_ms + 1, round(ch["end"] * 1000))
+        lines.append("[CHAPTER]\nTIMEBASE=1/1000\n")
+        lines.append(f"START={start_ms}\nEND={end_ms}\n")
+        lines.append(f"title={escape_ffmeta(ch['title'])}\n")
+    Path("chapters.txt").write_text("".join(lines), encoding="utf-8")
+    return True
+
+
 def join_pages():
     """Join rendered pages in order and write the download with a seekable header."""
-    clips = sorted(Path.cwd().glob("intro-*.mp4")) + sorted(Path.cwd().glob("card-*.mp4")) + sorted(Path.cwd().glob("outro-*.mp4"))
+    intro_clips = sorted(Path.cwd().glob("intro-*.mp4"))
+    card_clips = sorted(Path.cwd().glob("card-*.mp4"))
+    outro_clips = sorted(Path.cwd().glob("outro-*.mp4"))
+    cover_clips = []
     cover = Path("cover-upload.jpg")
     if cover.exists():
         ffmpeg(
@@ -160,18 +229,31 @@ def join_pages():
             "-c:a", "aac", "-ac", "2", "-ar", "48000", "-b:a", "160k",
             "-t", "0.05", "cover-000.mp4",
         )
-        clips = [Path("cover-000.mp4")] + clips
+        cover_clips = [Path("cover-000.mp4")]
+    clips = cover_clips + intro_clips + card_clips + outro_clips
     Path("concat.txt").write_text("".join(f"file '{p.name}'\n" for p in clips),encoding="ascii")
+    has_chapters = build_chapters(cover_clips, intro_clips, card_clips, outro_clips)
+    args = ["-f", "concat", "-safe", "0", "-i", "concat.txt"]
+    next_input = 1
+    cover_input = None
+    chapters_input = None
     if cover.exists():
-        ffmpeg(
-            "-f", "concat", "-safe", "0", "-i", "concat.txt",
-            "-i", str(cover),
-            "-map", "0", "-map", "1",
-            "-c", "copy", "-disposition:v:1", "attached_pic",
-            "-movflags", "+faststart", "video.mp4",
-        )
-    else:
-        ffmpeg("-f","concat","-safe","0","-i","concat.txt","-c","copy","-movflags","+faststart","video.mp4")
+        args.extend(["-i", str(cover)])
+        cover_input = next_input
+        next_input += 1
+    if has_chapters:
+        args.extend(["-f", "ffmetadata", "-i", "chapters.txt"])
+        chapters_input = next_input
+    args.extend(["-map", "0"])
+    if cover_input is not None:
+        args.extend(["-map", str(cover_input)])
+    if chapters_input is not None:
+        args.extend(["-map_metadata", str(chapters_input), "-map_chapters", str(chapters_input)])
+    args.extend(["-c", "copy"])
+    if cover_input is not None:
+        args.extend(["-disposition:v:1", "attached_pic"])
+    args.extend(["-movflags", "+faststart", "video.mp4"])
+    ffmpeg(*args)
 
 
 if __name__ == "__main__":

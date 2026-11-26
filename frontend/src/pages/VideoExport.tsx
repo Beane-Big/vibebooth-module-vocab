@@ -8,9 +8,10 @@ const base = "/api/vocab/video";
 const countKey = "vocab.videoCount";
 const nameKey = "vocab.videoName";
 const appendRangeKey = "vocab.videoAppendRange";
+type Chapter = { start: number; end: number; title: string };
 type Job = {
   id: number; state: "running" | "ready" | "expired" | "failed" | "canceled";
-  from: number; count: number; name?: string; done: number; total: number;
+  from: number; count: number; name?: string; chapters?: Chapter[]; done: number; total: number;
   createdAt: string; expiresAt?: string; retry: boolean;
 };
 type State = { next: number; total: number; completed: boolean; jobs: Job[] | null };
@@ -49,6 +50,31 @@ function parseIntInput(raw: string): number {
   return digits ? Number(digits) : 0;
 }
 
+function formatTime(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${String(h).padStart(2, "0")}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+async function copyText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.style.position = "fixed";
+  area.style.opacity = "0";
+  document.body.appendChild(area);
+  area.select();
+  document.execCommand("copy");
+  document.body.removeChild(area);
+}
+
 // 共享列表定时刷新，只有成功的新导出推进默认序号，重做历史记录保持原进度。
 export default function VideoExport() {
   const [allowed, setAllowed] = useState<boolean>();
@@ -59,6 +85,8 @@ export default function VideoExport() {
   const [appendRange, setAppendRange] = useState(loadAppendRange);
   const [busy, setBusy] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [deleting, setDeleting] = useState<number>();
+  const [copied, setCopied] = useState<number>();
   const [assetBusy, setAssetBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<number>();
@@ -129,6 +157,36 @@ export default function VideoExport() {
     }
   }
 
+  async function remove(id: number) {
+    setDeleting(id);
+    setError("");
+    try {
+      await request(base + "/" + id, { method: "DELETE" });
+      const value = await request<State>(base);
+      if (mounted.current) {
+        apply(value);
+        setPreview(current => current === id ? undefined : current);
+      }
+    } catch (err) {
+      if (mounted.current) setError(errorText(err));
+    } finally {
+      if (mounted.current) setDeleting(undefined);
+    }
+  }
+
+  async function copyChapters(job: Job) {
+    if (!job.chapters?.length) return;
+    const text = job.chapters.map(c => `${formatTime(c.start)} ${c.title}`).join("\n");
+    try {
+      await copyText(text);
+      if (!mounted.current) return;
+      setCopied(job.id);
+      setTimeout(() => { if (mounted.current) setCopied(current => current === job.id ? undefined : current); }, 2000);
+    } catch (err) {
+      if (mounted.current) setError(errorText(err));
+    }
+  }
+
   if (!allowed || !data) return <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">{allowed === false ? "没有视频导出权限" : "加载中…"}</p>}</main>;
   const jobs = data.jobs ?? [];
   const hasRunning = jobs.some(job => job.state === "running");
@@ -170,12 +228,20 @@ export default function VideoExport() {
             {job.state === "ready" && <>
               {job.expiresAt && <p className="muted">保留至 {new Date(job.expiresAt).toLocaleString()}</p>}
               <div className="actions">
-                <button className="secondary" onClick={() => setPreview(preview === job.id ? undefined : job.id)}>{preview === job.id ? "收起预览" : "预览"}</button>
+                <button type="button" className="secondary" onClick={() => setPreview(preview === job.id ? undefined : job.id)}>{preview === job.id ? "收起预览" : "预览"}</button>
                 <a className={styles.button} href={file(job.id) + "&download=1"} download={(job.name || `vocab-${job.id}`) + ".mp4"}>下载 MP4</a>
+                {job.chapters && job.chapters.length > 0 && <button type="button" className="secondary" onClick={() => void copyChapters(job)}>{copied === job.id ? "已复制章节" : "复制章节"}</button>}
+                <button type="button" className="secondary" disabled={running} onClick={() => void start(job.id)}>重新生成</button>
+                <button type="button" className="secondary" disabled={deleting === job.id} onClick={() => void remove(job.id)}>删除</button>
               </div>
               {preview === job.id && <video key={job.id} src={file(job.id)} controls playsInline preload="metadata" style={{ width: "100%", maxHeight: "65vh" }} />}
             </>}
-            {(job.state === "expired" || job.state === "failed" || job.state === "canceled") && <div className="actions"><button className="secondary" disabled={running} onClick={() => void start(job.id)}>重新生成</button></div>}
+            {(job.state === "expired" || job.state === "failed" || job.state === "canceled") && (
+              <div className="actions">
+                <button type="button" className="secondary" disabled={running} onClick={() => void start(job.id)}>重新生成</button>
+                <button type="button" className="secondary" disabled={deleting === job.id} onClick={() => void remove(job.id)}>删除</button>
+              </div>
+            )}
           </article>
         ))}
       </section>
