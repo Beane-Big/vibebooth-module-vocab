@@ -459,4 +459,105 @@ func TestVideoDeleteAndChapters(t *testing.T) {
 	}
 }
 
+// 验证批量提交多任务：按提交顺序依次渲染、校验最大数量上限、可单独取消排队任务，以及批量终止。
+func TestVideoBatchSequentialQueue(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 not installed")
+	}
+	store, err := OpenStore(filepath.Join(t.TempDir(), "video.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.db.Close()
+
+	words := make([]Word, 30)
+	for i := range words {
+		words[i] = Word{
+			N:  i + 1,
+			W:  "apple",
+			Zh: []string{"n. 苹果"},
+			Ex: []Example{
+				{En: "Eat an apple.", Zh: "吃一个苹果。"},
+				{En: "The apple is red.", Zh: "这个苹果是红的。"},
+			},
+		}
+	}
+	deck := &Deck{Words: words}
+	tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("fake-mp3"))
+	}))
+	defer tts.Close()
+	speech := newSpeaker(tts.URL, filepath.Join(t.TempDir(), "tts"), deck, Dict{})
+	dir := t.TempDir()
+	v := &videoExporter{deck: deck, speech: speech, db: store.db, dir: dir}
+	if err = v.initialize(); err != nil {
+		t.Fatal(err)
+	}
+
+	// 超过 maxVideoBatchJobs（10）时拒绝入队。
+	var overItems []string
+	for i := 0; i < maxVideoBatchJobs+1; i++ {
+		overItems = append(overItems, `{"from":1,"count":1}`)
+	}
+	overRec := httptest.NewRecorder()
+	v.start(overRec, httptest.NewRequest(http.MethodPost, "/api/vocab/video", strings.NewReader(`{"items":[`+strings.Join(overItems, ",")+`]}`)))
+	if overRec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 when exceeding maxBatch, got %d %s", overRec.Code, overRec.Body)
+	}
+
+	// 模拟渲染器：记录每次 join 的起始词序号，用于验证严格按顺序同步执行。
+	orderLog := filepath.Join(t.TempDir(), "order.log")
+	renderer := filepath.Join(t.TempDir(), "fake-batch-renderer.py")
+	script := "import json, pathlib, sys\n" +
+		"if sys.argv[1] == 'join':\n" +
+		"    meta = json.loads(pathlib.Path('words.json').read_text(encoding='utf-8'))\n" +
+		"    with open(" + strconv.Quote(orderLog) + ", 'a', encoding='utf-8') as f:\n" +
+		"        f.write(str(meta['from']) + '\\n')\n" +
+		"    pathlib.Path('video.mp4').write_bytes(b'mp4')\n"
+	if err = os.WriteFile(renderer, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIDEO_RENDERER", renderer)
+
+	body := `{"items":[
+		{"from":1,"count":2,"name":"词汇","appendRange":true},
+		{"from":3,"count":2,"name":"词汇","appendRange":true},
+		{"from":5,"count":2,"name":"词汇","appendRange":false}
+	]}`
+	rec := httptest.NewRecorder()
+	v.start(rec, httptest.NewRequest(http.MethodPost, "/api/vocab/video", strings.NewReader(body)))
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("batch start: %d %s", rec.Code, rec.Body)
+	}
+
+	v.mu.Lock()
+	done := v.done
+	v.mu.Unlock()
+	if done != nil {
+		<-done
+	}
+
+	rawOrder, err := os.ReadFile(orderLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimSpace(string(rawOrder)); got != "1\n3\n5" {
+		t.Fatalf("expected sequential order 1,3,5, got %q", got)
+	}
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if v.running || v.next != 7 || len(v.jobs) != 3 {
+		t.Fatalf("unexpected state after batch: running=%v next=%d jobs=%d", v.running, v.next, len(v.jobs))
+	}
+	// v.jobs 最新在前：index 0 是第 3 条（词汇），index 1 是第 2 条（词汇-3-4），index 2 是第 1 条（词汇-1-2）。
+	wantNames := []string{"词汇", "词汇-3-4", "词汇-1-2"}
+	for i, want := range wantNames {
+		if v.jobs[i].State != "ready" || v.jobs[i].Name != want {
+			t.Fatalf("job[%d]: want ready/%q, got %s/%q", i, want, v.jobs[i].State, v.jobs[i].Name)
+		}
+	}
+}
+
+
 

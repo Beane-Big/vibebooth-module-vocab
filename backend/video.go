@@ -21,7 +21,10 @@ import (
 	"github.com/Beane-Big/vibebooth/packages/sdk-go/auth"
 )
 
-const videoPermission = "video-export"
+const (
+	videoPermission   = "video-export"
+	maxVideoBatchJobs = 10
+)
 
 type videoStatus struct {
 	State string `json:"state"`
@@ -60,6 +63,7 @@ type videoState struct {
 	Completed bool        `json:"completed"`
 	Jobs      []*videoJob `json:"jobs"`
 	Total     int         `json:"total"`
+	MaxBatch  int         `json:"maxBatch"`
 }
 
 type videoPage struct {
@@ -116,7 +120,7 @@ func (v *videoExporter) initialize() error {
 			job := &record.Job
 			job.Words = record.Words
 			job.dir = filepath.Join(v.dir, strconv.FormatInt(job.ID, 10))
-			if job.State == "running" {
+			if job.State == "running" || job.State == "queued" {
 				job.State = "failed"
 			}
 			v.jobs = append(v.jobs, job)
@@ -179,7 +183,7 @@ func (v *videoExporter) saveLocked() error {
 // 先删除过期文件，再更新状态。失败时保留到期时间，下次清理继续重试。
 func (v *videoExporter) cleanupLocked(now time.Time) {
 	for _, job := range v.jobs {
-		if job.State == "running" {
+		if job.State == "running" || job.State == "queued" {
 			continue
 		}
 		expired := job.ExpiresAt != nil && !now.Before(*job.ExpiresAt)
@@ -259,87 +263,210 @@ func videoDownloadDisposition(id int64, name string) string {
 	return fmt.Sprintf("attachment; filename=%q; filename*=UTF-8''%s", ascii, url.PathEscape(filename))
 }
 
-// 新生成成功才推进序号。重做旧记录时复用快照，另建一条历史且不推进。
+type videoTaskInput struct {
+	From        int    `json:"from"`
+	Count       int    `json:"count"`
+	Name        string `json:"name"`
+	AppendRange bool   `json:"appendRange"`
+}
+
+func (v *videoExporter) activeCountLocked() int {
+	n := 0
+	for _, job := range v.jobs {
+		if job.State == "running" || job.State == "queued" {
+			n++
+		}
+	}
+	return n
+}
+
+// nextQueuedLocked 按入队先后（ID 从小到大）取下一个待生成任务。
+func (v *videoExporter) nextQueuedLocked() *videoJob {
+	for i := len(v.jobs) - 1; i >= 0; i-- {
+		if v.jobs[i].State == "queued" {
+			return v.jobs[i]
+		}
+	}
+	return nil
+}
+
+// 新生成成功才推进序号。支持单条、重做或批量提交，队列按提交顺序依次渲染。
 func (v *videoExporter) start(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		From        int
-		Count       int
-		RetryID     int64
-		Name        string
-		AppendRange bool
+		From        int              `json:"from"`
+		Count       int              `json:"count"`
+		RetryID     int64            `json:"retryID"`
+		Name        string           `json:"name"`
+		AppendRange bool             `json:"appendRange"`
+		Items       []videoTaskInput `json:"items"`
 	}
 	if !decode(w, r, &in) {
 		return
 	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	if v.running || v.assetBusy {
-		writeError(w, http.StatusConflict, "已有视频正在生成")
+	if v.assetBusy {
+		writeError(w, http.StatusConflict, "素材正在处理中，请稍后再试")
 		return
 	}
-	var words []*Word
-	var name string
-	if in.RetryID != 0 {
-		for _, job := range v.jobs {
-			if job.ID == in.RetryID {
-				words = job.Words
-				// 重生成使用当前上传的素材，词表和名称仍复用历史快照。
-				in.From = job.From
-				in.Count = job.Count
-				name = job.Name
-				break
-			}
-		}
-		if len(words) == 0 {
-			writeError(w, http.StatusNotFound, "没有这条生成记录")
+
+	type preparedTask struct {
+		from  int
+		count int
+		name  string
+		retry bool
+		words []*Word
+	}
+	var specs []preparedTask
+	batchMode := in.Items != nil
+
+	if batchMode {
+		if len(in.Items) == 0 {
+			writeError(w, http.StatusBadRequest, "请至少添加一个生成任务")
 			return
+		}
+		if v.activeCountLocked()+len(in.Items) > maxVideoBatchJobs {
+			writeError(w, http.StatusBadRequest, fmt.Sprintf("最多同时排队 %d 个生成任务", maxVideoBatchJobs))
+			return
+		}
+		specs = make([]preparedTask, 0, len(in.Items))
+		for idx, item := range in.Items {
+			if item.From < 1 || item.From > len(v.deck.Words) || item.Count < 1 || item.Count > len(v.deck.Words)-item.From+1 {
+				writeError(w, http.StatusBadRequest, fmt.Sprintf("第 %d 条任务的词数超出词库范围", idx+1))
+				return
+			}
+			words := v.deck.Range(item.From, item.Count)
+			for _, word := range words {
+				if len(word.Ex) < 2 {
+					writeError(w, http.StatusBadRequest, fmt.Sprintf("第 %d 条任务所选单词不足两条例句", idx+1))
+					return
+				}
+			}
+			name := sanitizeVideoName(item.Name)
+			if name != "" && item.AppendRange {
+				name = fmt.Sprintf("%s-%d-%d", name, item.From, item.From+item.Count-1)
+			}
+			specs = append(specs, preparedTask{from: item.From, count: item.Count, name: name, words: words})
 		}
 	} else {
-		if in.From < 1 || in.From > len(v.deck.Words) || in.Count < 1 || in.Count > len(v.deck.Words)-in.From+1 {
-			writeError(w, http.StatusBadRequest, "请选择词库范围内的有效词数")
+		if v.activeCountLocked()+1 > maxVideoBatchJobs {
+			writeError(w, http.StatusBadRequest, fmt.Sprintf("最多同时排队 %d 个生成任务", maxVideoBatchJobs))
 			return
 		}
-		words = v.deck.Range(in.From, in.Count)
-		name = sanitizeVideoName(in.Name)
-		if name != "" && in.AppendRange {
-			name = fmt.Sprintf("%s-%d-%d", name, in.From, in.From+in.Count-1)
+		var words []*Word
+		var name string
+		if in.RetryID != 0 {
+			for _, job := range v.jobs {
+				if job.ID == in.RetryID {
+					words = job.Words
+					// 重生成使用当前上传的素材，词表和名称仍复用历史快照。
+					in.From = job.From
+					in.Count = job.Count
+					name = job.Name
+					break
+				}
+			}
+			if len(words) == 0 {
+				writeError(w, http.StatusNotFound, "没有这条生成记录")
+				return
+			}
+		} else {
+			if in.From < 1 || in.From > len(v.deck.Words) || in.Count < 1 || in.Count > len(v.deck.Words)-in.From+1 {
+				writeError(w, http.StatusBadRequest, "请选择词库范围内的有效词数")
+				return
+			}
+			words = v.deck.Range(in.From, in.Count)
+			name = sanitizeVideoName(in.Name)
+			if name != "" && in.AppendRange {
+				name = fmt.Sprintf("%s-%d-%d", name, in.From, in.From+in.Count-1)
+			}
 		}
-	}
-	for _, word := range words {
-		if len(word.Ex) < 2 {
-			writeError(w, http.StatusBadRequest, "所选单词不足两条例句")
-			return
+		for _, word := range words {
+			if len(word.Ex) < 2 {
+				writeError(w, http.StatusBadRequest, "所选单词不足两条例句")
+				return
+			}
 		}
+		specs = append(specs, preparedTask{from: in.From, count: in.Count, name: name, retry: in.RetryID != 0, words: words})
 	}
-	id := int64(1)
+
+	nextID := int64(1)
 	if len(v.jobs) > 0 {
-		id = v.jobs[0].ID + 1
+		nextID = v.jobs[0].ID + 1
 	}
-	dir := filepath.Join(v.dir, strconv.FormatInt(id, 10))
-	if fail(w, os.Mkdir(dir, 0700)) {
+	now := time.Now().UTC()
+	created := make([]*videoJob, 0, len(specs))
+	for i, spec := range specs {
+		id := nextID + int64(i)
+		job := &videoJob{
+			videoStatus: videoStatus{State: "queued", Total: len(spec.words) * 3},
+			ID:          id,
+			From:        spec.from,
+			Count:       spec.count,
+			Name:        spec.name,
+			CreatedAt:   now,
+			Retry:       spec.retry,
+			Words:       spec.words,
+			dir:         filepath.Join(v.dir, strconv.FormatInt(id, 10)),
+		}
+		created = append(created, job)
+	}
+	oldJobs := v.jobs
+	// 新建任务按 ID 倒序放在最前面，保持历史列表始终最新在前。
+	prepended := make([]*videoJob, 0, len(created)+len(v.jobs))
+	for i := len(created) - 1; i >= 0; i-- {
+		prepended = append(prepended, created[i])
+	}
+	prepended = append(prepended, v.jobs...)
+	v.jobs = prepended
+
+	if !v.running {
+		first := v.nextQueuedLocked()
+		if err := v.prepareJobDirLocked(first); err != nil {
+			v.jobs = oldJobs
+			fail(w, err)
+			return
+		}
+		first.State = "running"
+		if err := v.saveLocked(); err != nil {
+			v.jobs = oldJobs
+			os.RemoveAll(first.dir)
+			fail(w, err)
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
+		done := make(chan struct{})
+		v.running = true
+		v.cancel = cancel
+		v.canceled = false
+		v.done = done
+		go v.runQueue(ctx, cancel, done, first)
+	} else {
+		if err := v.saveLocked(); err != nil {
+			v.jobs = oldJobs
+			fail(w, err)
+			return
+		}
+	}
+
+	if batchMode {
+		writeJSON(w, http.StatusAccepted, struct {
+			Jobs []*videoJob `json:"jobs"`
+		}{Jobs: created})
 		return
 	}
-	if err := v.copyAssetsLocked(dir); err != nil {
-		os.RemoveAll(dir)
-		fail(w, err)
-		return
+	writeJSON(w, http.StatusAccepted, created[0])
+}
+
+func (v *videoExporter) prepareJobDirLocked(job *videoJob) error {
+	if err := os.Mkdir(job.dir, 0700); err != nil {
+		return err
 	}
-	job := &videoJob{videoStatus: videoStatus{State: "running", Total: len(words) * 3}, ID: id, From: in.From, Count: in.Count, Name: name, CreatedAt: time.Now().UTC(), Retry: in.RetryID != 0, Words: words, dir: dir}
-	v.jobs = append([]*videoJob{job}, v.jobs...)
-	if err := v.saveLocked(); err != nil {
-		v.jobs = v.jobs[1:]
-		os.RemoveAll(dir)
-		fail(w, err)
-		return
+	if err := v.copyAssetsLocked(job.dir); err != nil {
+		os.RemoveAll(job.dir)
+		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Minute)
-	done := make(chan struct{})
-	v.running = true
-	v.cancel = cancel
-	v.canceled = false
-	v.done = done
-	go v.render(ctx, cancel, done, job)
-	writeJSON(w, http.StatusAccepted, job)
+	return nil
 }
 
 func (v *videoExporter) stop(w http.ResponseWriter, r *http.Request) {
@@ -350,6 +477,15 @@ func (v *videoExporter) stop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v.canceled = true
+	for _, job := range v.jobs {
+		if job.State == "queued" {
+			job.State = "canceled"
+			os.RemoveAll(job.dir)
+		}
+	}
+	if err := v.saveLocked(); err != nil {
+		slog.Error("保存取消排队状态失败", "err", err)
+	}
 	cancel := v.cancel
 	done := v.done
 	v.mu.Unlock()
@@ -408,7 +544,7 @@ func (v *videoExporter) status(w http.ResponseWriter, r *http.Request) {
 	defer v.mu.Unlock()
 	v.cleanupLocked(time.Now())
 	// 在锁内编码，避免后台渲染进度更新时读取到不一致的数据。
-	writeJSON(w, http.StatusOK, videoState{v.next, v.completed, v.jobs, len(v.deck.Words)})
+	writeJSON(w, http.StatusOK, videoState{v.next, v.completed, v.jobs, len(v.deck.Words), maxVideoBatchJobs})
 }
 
 func (v *videoExporter) download(w http.ResponseWriter, r *http.Request) {
@@ -441,13 +577,44 @@ func (v *videoExporter) download(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, "video.mp4", time.Time{}, file)
 }
 
-func (v *videoExporter) render(ctx context.Context, cancel context.CancelFunc, done chan struct{}, job *videoJob) {
+// runQueue 顺序渲染队列中的视频任务，每次只渲染一个，避免并发争抢 CPU/内存与 TTS。
+func (v *videoExporter) runQueue(ctx context.Context, cancel context.CancelFunc, done chan struct{}, first *videoJob) {
 	defer close(done)
-	defer cancel()
-	err := v.makeVideo(ctx, job, job.Words)
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	v.finishLocked(job, err)
+	job := first
+	for job != nil {
+		err := v.makeVideo(ctx, job, job.Words)
+		cancel()
+
+		v.mu.Lock()
+		v.finishLocked(job, err)
+		next := v.nextQueuedLocked()
+		for next != nil {
+			if prepErr := v.prepareJobDirLocked(next); prepErr != nil {
+				slog.Warn("准备排队视频目录失败", "id", next.ID, "err", prepErr)
+				next.State = "failed"
+				os.RemoveAll(next.dir)
+				_ = v.saveLocked()
+				next = v.nextQueuedLocked()
+				continue
+			}
+			next.State = "running"
+			if saveErr := v.saveLocked(); saveErr != nil {
+				slog.Error("保存排队视频运行状态失败", "id", next.ID, "err", saveErr)
+				next.State = "failed"
+				os.RemoveAll(next.dir)
+				next = v.nextQueuedLocked()
+				continue
+			}
+			ctx, cancel = context.WithTimeout(context.Background(), 45*time.Minute)
+			v.running = true
+			v.cancel = cancel
+			v.canceled = false
+			v.done = done
+			break
+		}
+		job = next
+		v.mu.Unlock()
+	}
 }
 
 // finishLocked 原子保存完成状态和共享进度，调用方持有 mu。

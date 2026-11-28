@@ -10,14 +10,17 @@ const base = "/api/vocab/video";
 const countKey = "vocab.videoCount";
 const nameKey = "vocab.videoName";
 const appendRangeKey = "vocab.videoAppendRange";
+const defaultMaxBatch = 10;
+
 type Tab = "create" | "list";
 type Chapter = { start: number; end: number; title: string };
 type Job = {
-  id: number; state: "running" | "ready" | "expired" | "failed" | "canceled";
+  id: number; state: "queued" | "running" | "ready" | "expired" | "failed" | "canceled";
   from: number; count: number; name?: string; chapters?: Chapter[]; done: number; total: number;
   createdAt: string; expiresAt?: string; retry: boolean;
 };
-type State = { next: number; total: number; completed: boolean; jobs: Job[] | null };
+type State = { next: number; total: number; completed: boolean; jobs: Job[] | null; maxBatch?: number };
+type DraftTask = { key: number; from: number; count: number; name: string; appendRange: boolean };
 
 function loadCount(): number {
   try {
@@ -84,15 +87,31 @@ async function copyText(text: string) {
   document.body.removeChild(area);
 }
 
-// 共享列表定时刷新，只有成功的新导出推进默认序号，重做历史记录保持原进度。
+// 计算下一条默认起始序号：若已有运行中或排队中的新任务，自动衔接在最后一个非重做任务之后。
+function defaultStartFrom(value: State): number {
+  let start = value.next;
+  for (const job of value.jobs ?? []) {
+    if (!job.retry && (job.state === "running" || job.state === "queued")) {
+      start = Math.max(start, job.from + job.count);
+    }
+  }
+  return Math.max(1, Math.min(value.total, start));
+}
+
+function isTaskValid(task: DraftTask, total: number): boolean {
+  return Number.isInteger(task.from) && task.from >= 1 && task.from <= total && Number.isInteger(task.count) && task.count >= 1 && task.from + task.count - 1 <= total;
+}
+
+// 共享列表定时刷新，支持一次配置多条任务按顺序依次制作，只有成功的新导出推进默认序号。
 export default function VideoExport() {
   const [allowed, setAllowed] = useState<boolean>();
   const [data, setData] = useState<State>();
   const [tab, setTab] = useState<Tab>("create");
-  const [from, setFrom] = useState(1);
-  const [count, setCount] = useState(loadCount);
-  const [name, setName] = useState(loadName);
-  const [appendRange, setAppendRange] = useState(loadAppendRange);
+  const nextRowKey = useRef(2);
+  const [tasks, setTasks] = useState<DraftTask[]>(() => [
+    { key: 1, from: 1, count: loadCount(), name: loadName(), appendRange: loadAppendRange() },
+  ]);
+  const dirty = useRef(false);
   const [busy, setBusy] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [deleting, setDeleting] = useState<number>();
@@ -101,8 +120,7 @@ export default function VideoExport() {
   const [assetBusy, setAssetBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<number>();
-  const previousNext = useRef<number | undefined>(undefined);
-  const previousCompleted = useRef(false);
+  const previousAnchor = useRef<number | undefined>(undefined);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -113,12 +131,24 @@ export default function VideoExport() {
     return () => { mounted.current = false; };
   }, []);
 
+  function resetDraft(value: State) {
+    const startFrom = defaultStartFrom(value);
+    const defaultCount = Math.min(loadCount(), value.total - startFrom + 1);
+    setTasks([{
+      key: nextRowKey.current++,
+      from: startFrom,
+      count: Math.max(1, defaultCount),
+      name: loadName(),
+      appendRange: loadAppendRange(),
+    }]);
+    dirty.current = false;
+    previousAnchor.current = startFrom;
+  }
+
   function apply(value: State) {
-    if (previousNext.current !== value.next || previousCompleted.current !== value.completed) {
-      setFrom(value.next);
-      setCount(Math.min(loadCount(), value.total - value.next + 1));
-      previousNext.current = value.next;
-      previousCompleted.current = value.completed;
+    const anchor = defaultStartFrom(value);
+    if (!dirty.current && previousAnchor.current !== anchor) {
+      resetDraft(value);
     }
     setData(value);
   }
@@ -140,14 +170,72 @@ export default function VideoExport() {
     return () => { live = false; clearTimeout(timer); };
   }, [allowed]);
 
+  function updateTask(key: number, patch: Partial<Omit<DraftTask, "key">>) {
+    dirty.current = true;
+    setTasks(current => current.map((task, idx) => {
+      if (task.key !== key) return task;
+      const updated = { ...task, ...patch };
+      if (idx === 0) {
+        if (patch.count !== undefined) saveCount(patch.count);
+        if (patch.name !== undefined) saveName(patch.name);
+        if (patch.appendRange !== undefined) saveAppendRange(patch.appendRange);
+      }
+      return updated;
+    }));
+  }
+
+  function addTask() {
+    if (!data) return;
+    const maxBatch = data.maxBatch || defaultMaxBatch;
+    const activeCount = (data.jobs ?? []).filter(job => job.state === "running" || job.state === "queued").length;
+    if (tasks.length >= Math.max(0, maxBatch - activeCount)) return;
+    const last = tasks[tasks.length - 1];
+    const nextFromRaw = last.from >= 1 && last.count >= 1 ? last.from + last.count : defaultStartFrom(data);
+    const nextFrom = Math.min(data.total, Math.max(1, nextFromRaw));
+    const baseCount = last.count >= 1 ? last.count : loadCount();
+    const nextCount = Math.max(1, Math.min(baseCount, data.total - nextFrom + 1));
+    dirty.current = true;
+    setTasks(current => [
+      ...current,
+      {
+        key: nextRowKey.current++,
+        from: nextFrom,
+        count: nextCount,
+        name: last.name,
+        appendRange: last.appendRange,
+      },
+    ]);
+  }
+
+  function removeTask(key: number) {
+    dirty.current = true;
+    setTasks(current => current.length > 1 ? current.filter(task => task.key !== key) : current);
+  }
+
   async function start(retryID?: number) {
     setBusy(true);
     setError("");
     try {
-      await request<Job>(base, { method: "POST", body: JSON.stringify(retryID ? { retryID } : { from, count, name, appendRange }) });
+      if (retryID) {
+        await request<Job>(base, { method: "POST", body: JSON.stringify({ retryID }) });
+      } else {
+        const last = tasks[tasks.length - 1];
+        if (last) {
+          saveCount(last.count);
+          saveName(last.name);
+          saveAppendRange(last.appendRange);
+        }
+        await request(base, {
+          method: "POST",
+          body: JSON.stringify({
+            items: tasks.map(({ from, count, name, appendRange }) => ({ from, count, name, appendRange })),
+          }),
+        });
+      }
       const value = await request<State>(base);
       if (mounted.current) {
-        apply(value);
+        if (!retryID) resetDraft(value);
+        setData(value);
         setPreview(undefined);
         setTab("list");
       }
@@ -205,14 +293,19 @@ export default function VideoExport() {
 
   if (!allowed || !data) return <main className="content">{error ? <p className="error">{error}</p> : <p className="muted">{allowed === false ? "没有视频导出权限" : "加载中…"}</p>}</main>;
   const jobs = data.jobs ?? [];
-  const hasRunning = jobs.some(job => job.state === "running");
-  const running = busy || stopping || assetBusy || hasRunning;
-  const valid = Number.isInteger(from) && from >= 1 && from <= data.total && Number.isInteger(count) && count >= 1 && from + count - 1 <= data.total;
+  const maxBatch = data.maxBatch || defaultMaxBatch;
+  const activeCount = jobs.filter(job => job.state === "running" || job.state === "queued").length;
+  const hasRunning = activeCount > 0;
+  const remainingSlots = Math.max(0, maxBatch - activeCount);
+  const canAddMore = tasks.length < remainingSlots;
+  const allValid = tasks.length > 0 && tasks.length <= remainingSlots && tasks.every(task => isTaskValid(task, data.total));
+  const submitDisabled = busy || stopping || assetBusy || !allValid;
+  const retryDisabled = busy || stopping || assetBusy || remainingSlots < 1;
   const file = (id: number) => base + "/file?id=" + id;
   const previewJob = preview !== undefined ? jobs.find(job => job.id === preview && job.state === "ready") : undefined;
 
   return (
-    <main className={`content stack ${tab === "list" ? videoStyles.wide : ""}`}>
+    <main className={`content stack ${videoStyles.wide}`}>
       <div className={`${styles.tabs} ${styles.full}`} role="tablist">
         <button type="button" role="tab" aria-selected={tab === "create"} className={tab === "create" ? styles.on : ""} onClick={() => setTab("create")}>制作视频</button>
         <button type="button" role="tab" aria-selected={tab === "list"} className={tab === "list" ? styles.on : ""} onClick={() => setTab("list")}>视频列表<span className={styles.count}>{jobs.length}</span></button>
@@ -223,14 +316,97 @@ export default function VideoExport() {
           <section className="card stack">
             <h1>制作视频</h1>
             {data.completed && <p className="muted">已生成至词库末尾，可调整范围重新生成。</p>}
-            <form className="stack" onSubmit={event => { event.preventDefault(); if (valid && !running) void start(); }}>
-              <label className="field">起始词序号<input type="text" inputMode="numeric" pattern="[0-9]*" value={from || ""} onChange={event => { const value = parseIntInput(event.target.value); setFrom(value); if (value >= 1 && value <= data.total) setCount(current => Math.min(current, data.total - value + 1)); }} disabled={running} required /></label>
-              <label className="field">词数<input type="text" inputMode="numeric" pattern="[0-9]*" value={count || ""} onChange={event => { const value = parseIntInput(event.target.value); setCount(value); saveCount(value); }} disabled={running} required /></label>
-              <label className="field">视频名称<input type="text" maxLength={100} value={name} onChange={event => { setName(event.target.value); saveName(event.target.value); }} disabled={running} /></label>
-              <label className="field"><input type="checkbox" checked={appendRange} onChange={event => { setAppendRange(event.target.checked); saveAppendRange(event.target.checked); }} disabled={running} />名称后拼接词序号范围</label>
+            <form className="stack" onSubmit={event => { event.preventDefault(); if (!submitDisabled) void start(); }}>
+              <div className={videoStyles.taskList}>
+                <div className={videoStyles.taskHeader} aria-hidden="true">
+                  <span>#</span>
+                  <span>起始词序号</span>
+                  <span>词数</span>
+                  <span>视频名称</span>
+                  <span />
+                  <span />
+                </div>
+                {tasks.map((task, idx) => {
+                  const rowValid = isTaskValid(task, data.total);
+                  return (
+                    <div key={task.key} className={`${videoStyles.taskRow} ${rowValid ? "" : videoStyles.taskInvalid}`}>
+                      <span className={videoStyles.taskIndex}>{idx + 1}</span>
+                      <label className={videoStyles.taskCell}>
+                        <span className={videoStyles.cellLabel}>起始词序号</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={task.from || ""}
+                          onChange={event => {
+                            const value = parseIntInput(event.target.value);
+                            const nextCount = value >= 1 && value <= data.total ? Math.min(task.count, data.total - value + 1) : task.count;
+                            updateTask(task.key, { from: value, count: nextCount });
+                          }}
+                          disabled={busy || stopping}
+                          required
+                        />
+                      </label>
+                      <label className={videoStyles.taskCell}>
+                        <span className={videoStyles.cellLabel}>词数</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={task.count || ""}
+                          onChange={event => updateTask(task.key, { count: parseIntInput(event.target.value) })}
+                          disabled={busy || stopping}
+                          required
+                        />
+                      </label>
+                      <label className={`${videoStyles.taskCell} ${videoStyles.taskNameCell}`}>
+                        <span className={videoStyles.cellLabel}>视频名称</span>
+                        <input
+                          type="text"
+                          maxLength={100}
+                          value={task.name}
+                          onChange={event => updateTask(task.key, { name: event.target.value })}
+                          disabled={busy || stopping}
+                        />
+                      </label>
+                      <label className={videoStyles.taskCheck}>
+                        <input
+                          type="checkbox"
+                          checked={task.appendRange}
+                          onChange={event => updateTask(task.key, { appendRange: event.target.checked })}
+                          disabled={busy || stopping}
+                        />
+                        <span>名称后拼接词序号范围</span>
+                      </label>
+                      <button
+                        type="button"
+                        className={videoStyles.taskRemove}
+                        disabled={tasks.length <= 1 || busy || stopping}
+                        onClick={() => removeTask(task.key)}
+                        aria-label={`移除第 ${idx + 1} 条任务`}
+                        title="移除"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className={videoStyles.addRow}>
+                <button type="button" className="secondary" disabled={!canAddMore || busy || stopping} onClick={addTask}>
+                  + 添加任务
+                </button>
+                <span className="muted">
+                  {activeCount > 0 ? `队列中 ${activeCount} / ${maxBatch}，本次 ${tasks.length} 条` : `${tasks.length} / ${maxBatch}`}
+                </span>
+              </div>
+
               <div className="actions">
-                <button type="submit" disabled={!valid || running || (data.completed && from === data.next)}>生成视频</button>
-                {hasRunning && <button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止生成"}</button>}
+                <button type="submit" disabled={submitDisabled}>
+                  {tasks.length > 1 ? `生成 ${tasks.length} 个视频` : "生成视频"}
+                </button>
+                {hasRunning && <button type="button" className="danger" disabled={stopping} onClick={() => void stop()}>{stopping ? "正在终止…" : "终止全部"}</button>}
               </div>
             </form>
           </section>
@@ -238,6 +414,14 @@ export default function VideoExport() {
         </>
       ) : (
         <section className="card stack">
+          {hasRunning && (
+            <div className={videoStyles.listBar}>
+              <span className="muted">队列中 {activeCount} / {maxBatch}</span>
+              <button type="button" className={videoStyles.actDanger} disabled={stopping} onClick={() => void stop()}>
+                {stopping ? "终止中…" : "终止全部"}
+              </button>
+            </div>
+          )}
           {jobs.length === 0 ? (
             <p className="muted">暂无生成记录</p>
           ) : (
@@ -260,6 +444,7 @@ export default function VideoExport() {
                         <td className={videoStyles.nameCell} title={label}>{label}</td>
                         <td>{job.from}–{job.from + job.count - 1}（{job.count}词）</td>
                         <td>
+                          {job.state === "queued" && <span className={videoStyles.queued}>排队中</span>}
                           {job.state === "running" && (
                             <span className={videoStyles.statusCell}>
                               <span>{job.done}/{job.total}</span>
@@ -274,6 +459,9 @@ export default function VideoExport() {
                         <td className="muted" title={job.expiresAt ? `保留至 ${new Date(job.expiresAt).toLocaleString()}` : undefined}>{formatStamp(job.createdAt)}</td>
                         <td>
                           <div className={videoStyles.rowActions}>
+                            {job.state === "queued" && (
+                              <button type="button" className={videoStyles.act} disabled={deleting === job.id || stopping} onClick={() => void remove(job.id)}>取消</button>
+                            )}
                             {job.state === "running" && (
                               <button type="button" className={videoStyles.actDanger} disabled={stopping} onClick={() => void stop()}>{stopping ? "终止中…" : "终止"}</button>
                             )}
@@ -283,11 +471,11 @@ export default function VideoExport() {
                               {job.chapters && job.chapters.length > 0 && (
                                 <button type="button" className={videoStyles.act} onClick={() => void copyChapters(job)}>{copied === job.id ? "已复制" : "章节"}</button>
                               )}
-                              <button type="button" className={videoStyles.act} disabled={running} onClick={() => void start(job.id)}>重做</button>
+                              <button type="button" className={videoStyles.act} disabled={retryDisabled} onClick={() => void start(job.id)}>重做</button>
                               <button type="button" className={videoStyles.act} disabled={deleting === job.id} onClick={() => setConfirmDelete(job)}>删除</button>
                             </>}
                             {(job.state === "expired" || job.state === "failed" || job.state === "canceled") && <>
-                              <button type="button" className={videoStyles.act} disabled={running} onClick={() => void start(job.id)}>重做</button>
+                              <button type="button" className={videoStyles.act} disabled={retryDisabled} onClick={() => void start(job.id)}>重做</button>
                               <button type="button" className={videoStyles.act} disabled={deleting === job.id} onClick={() => void remove(job.id)}>删除</button>
                             </>}
                           </div>
