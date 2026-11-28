@@ -21,6 +21,7 @@ const cache = join(root, ".cache", "deck");
 const out = join(root, "backend", "deck", "core.json");
 const dictOut = join(root, "backend", "deck", "dict.json");
 const extraFile = join(root, "deck", "extra.json");
+const wordReplacementsFile = join(root, "deck", "word-replacements.json");
 
 const TOP = 3000; // 词频前多少名
 const PER_WORD = 5; // 每个词存几条例句，用户在 2–5 条之间选
@@ -125,6 +126,23 @@ const similar = (a, b) => {
   return n / (a.size + b.size - n) > 0.5;
 };
 
+// 过滤不适合家庭/学习及自媒体发布的例句（色情低俗、自杀自残、恐袭凶杀、毒品赌博、涉政敏感、外网平台、粗口脏话）。
+const unsafeExamplePatterns = [
+  /(口交|做爱|性交|性传播|强奸|猥亵|妓女|嫖|色情|黄片|裸体|脱衣|内裤|胸罩|乳房|缩胸|高潮|避孕|堕胎|流产|卖淫|荡妇|情妇|婊子|网袜|\b(oral sex|blowjob|porn|rape|raped|prostitute|prostitution|whore|slut|naked|nude|orgasm|condom|abortion|intercourse|sexy|sexually transmitted|breast reduction|stripper|stripped and|stripped to the waist|breasts|nipple|penis|vagina|panties|thong|thongs|fishnet|erotic|masturbat\w*)\b)/i,
+  /(自杀|轻生|割腕|上吊|跳楼|切腹|服毒|自残|\b(suicide|kill myself|kill himself|kill herself|commit suicide|hang himself|hang herself|slit.*wrist|seppuku)\b)/i,
+  /(恐怖主义|恐怖分子|恐怖份子|恐袭|炸弹|轰炸|催泪弹|爆炸物|原子弹|暗杀|屠杀|大屠杀|连环杀手|杀手|谋杀|枪击|开枪|射杀|砍死|捅死|勒死|毒死|中了枪|\b(terrorist|terrorism|bombs?|bombed|bombing|tear-gas|massacre|assassinate|assassination|serial killer|murder|murderer|murdered|mass shooting|school shooting|shooting victim|shot dead|behead|torture)\b)/i,
+  /(毒品|吸毒|贩毒|大麻|可卡因|海洛因|鸦片|冰毒|赌场|赌博|博彩|瘾君子|\b(cocaine|heroin|marijuana|cannabis|opium|opiate|meth|drug dealer|drug problem|selling drugs|addicted to drugs|gamble|gambling|casino)\b)/i,
+  /(最高领袖|最高领导人|独裁|政变|政权|抗议|游行示威|示威游行|罢工|推翻|颠覆|纳粹|希特勒|斯大林|毛泽东|习近平|特朗普|川普|拜登|普京|普丁|奥巴马|台湾|台币|西藏|新疆|香港|钓鱼岛|朝鲜|以色列|巴勒斯坦|加沙|乌克兰|俄罗斯|苏联|共产党|国民党|民主党|共和党|自由主义|人权|言论自由|审查|封锁|禁止.*访问|\b(hitler|nazi|stalin|mao|trump|biden|putin|obama|taiwan|taiwanese|tibet|xinjiang|hong kong|north korea|israel|palestine|gaza|ukraine|russia|russian|soviet|communist|protest|protested|protesting|dictator|dictatorship|regime|coup|overthrow|censorship|human rights|free speech|supreme leader|democrat|democrats|republican|republicans)\b)/i,
+  /(推特|脸书|油管|谷歌|维基百科|电报|暗网|\b(youtube|twitter|facebook|instagram|tiktok|whatsapp|telegram|google|reddit|netflix|wikipedia|wechat|douyin)\b)/i,
+  /(他妈的|混蛋|蠢货|白痴|滚开|去死|闭嘴|婊子|瞎BB|不屌|找个毛|鬼话|\b(fuck|fucking|shit|bullshit|damn|bitch|bastard|asshole|crap|hell|shut up|idiot|moron)\b)/i,
+];
+const benignExamplePattern = /(with the naked eye|to the naked eye|film crew is shooting|as if to complain)/i;
+function isUnsafeExample(en, zh) {
+  const text = `${en} || ${zh}`;
+  if (benignExamplePattern.test(en) && !/(口交|自杀|婊子|避孕套|堕胎|恐怖|毒品)/.test(text)) return false;
+  return unsafeExamplePatterns.some((re) => re.test(text));
+}
+
 // ecdict 逐行读 ECDICT，返回每一行的字段对象。
 async function* ecdict(file) {
   let header;
@@ -148,11 +166,17 @@ async function main() {
   const us = loadUS(files["cmudict.dict"]);
   const uk = loadUK(files["britfone.csv"]);
 
-  // 1. 选词
+  // 1. 选词（按 deck/word-replacements.json 原位替换敏感词，保持总词数与字母顺序稳定）
+  const wordReplacements = existsSync(wordReplacementsFile) ? JSON.parse(readFileSync(wordReplacementsFile, "utf8")) : {};
+  const excludedWords = new Set(Object.keys(wordReplacements));
+  const includedWords = new Set(Object.values(wordReplacements));
   const words = [];
+  const seenWords = new Set();
   for await (const r of ecdict(files["ecdict.csv"])) {
+    if (!/^[a-z]+$/.test(r.word) || excludedWords.has(r.word) || seenWords.has(r.word)) continue;
     const frq = Number(r.frq);
-    if (!frq || frq > TOP || !/^[a-z]+$/.test(r.word)) continue;
+    const forced = includedWords.has(r.word);
+    if (!forced && (!frq || frq > TOP)) continue;
     const forms = new Set([r.word]);
     for (const x of r.exchange.split("/")) {
       const [k, v] = x.split(":");
@@ -161,9 +185,12 @@ async function main() {
     const zh = cleanTranslation(r.translation, r.pos);
     if (!zh.length) continue;
     const pos = isHeteronym([us, uk], r.word) ? zh[0].split(" ")[0] : "";
-    words.push({ frq, w: r.word, us: phoneticOf(us, r.word, pos), uk: phoneticOf(uk, r.word, pos), zh, forms: [...forms] });
+    seenWords.add(r.word);
+    words.push({ frq: frq || 999999, w: r.word, us: phoneticOf(us, r.word, pos), uk: phoneticOf(uk, r.word, pos), zh, forms: [...forms] });
   }
-  words.sort((a, b) => a.frq - b.frq);
+  const missingReplacements = [...includedWords].filter((w) => !seenWords.has(w));
+  if (missingReplacements.length) throw new Error(`替换词在 ECDICT 中缺失或无有效释义：${missingReplacements.join(", ")}`);
+  words.sort((a, b) => a.frq - b.frq || (a.w < b.w ? -1 : 1));
   console.log(`选出 ${words.length} 个词`);
 
   // 2. 中英句对
@@ -194,7 +221,7 @@ async function main() {
     }
   }
 
-  // 3. 每个词挑例句：长度接近 8 个词、不带常见人名、用原形的优先，去掉几乎重复的句子。
+  // 3. 每个词挑例句：长度接近 8 个词、不带常见人名、用原形的优先，过滤敏感句并去掉几乎重复的句子。
   const extra = existsSync(extraFile) ? JSON.parse(readFileSync(extraFile, "utf8")) : {};
   // 按原句来源替换审核过的例句，保留它原来的选句位置。
   const replacements = JSON.parse(readFileSync(join(root, "deck", "example-replacements.json"), "utf8"));
@@ -212,15 +239,17 @@ async function main() {
     const ex = [];
     const seen = [];
     for (const c of [...scored, ...(extra[x.w] ?? []).map((e) => ({ ...e, extra: true }))]) {
-      const t = tokens(c.en);
+      const zh = c.extra ? c.zh : toSimplified(cmn.get(pairs.get(c.id)));
+      const src = c.extra ? "extra" : `tatoeba:${c.id}`;
+      const overridden = replacements[src];
+      const finalEn = overridden ? overridden.en : c.en;
+      const finalZh = overridden ? overridden.zh : zh;
+      if (!c.extra && !overridden && isUnsafeExample(finalEn, finalZh)) continue;
+      const t = tokens(finalEn);
       if (seen.some((s) => similar(s, t))) continue;
       seen.push(t);
-      ex.push(c.extra ? { en: c.en, zh: c.zh, src: "extra" } : { en: c.en, zh: toSimplified(cmn.get(pairs.get(c.id))), src: `tatoeba:${c.id}` });
+      ex.push({ en: finalEn, zh: finalZh, src: overridden ? "extra" : src });
       if (ex.length === PER_WORD) break;
-    }
-    for (const [index, example] of ex.entries()) {
-      const replacement = replacements[example.src];
-      if (replacement) ex[index] = { ...replacement, src: "extra" };
     }
     if (ex.length < PER_WORD) short++;
     return { n: 0, f: i + 1, w: x.w, us: x.us, uk: x.uk, zh: x.zh, forms: x.forms, ex };
