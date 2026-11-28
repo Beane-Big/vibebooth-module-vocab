@@ -1,5 +1,5 @@
 /* 出题卡片：顶部一条细进度条和题型标签，中间是题目，下面是答案面板和作答按钮。 */
-.quiz { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px; }
+.quiz { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px; flex-shrink: 0; }
 /* 答完后可以左滑进下一题：横向手势交给卡片，竖向照常滚动。 */
 .swipeable { touch-action: pan-y; }
 .bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.3s; }

@@ -22,6 +22,13 @@
   --blur: blur(22px) saturate(170%);
   /* 宽屏顶部导航占的高度，学习页的卡片按它算能撑多高。 */
   --nav-h: 68px;
+  /* 视口高度：支持 dvh 的浏览器用 100dvh，旧版 iOS Safari 或门户未升级时由 main.tsx 动态写入。 */
+  --vb-vh: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --vb-vh: 100dvh;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -89,7 +96,7 @@ body {
 /* 页面内容在背景之上。 */
 /* flow-root：导航的上边距留在 .app 里面，不穿出去把整页撑高（否则宽屏多出 12px 滚动条）。 */
 /* 用 100dvh（可见区域的高度）：手机浏览器的 100vh 算上了地址栏，页面会多出一截能滚。 */
-.app { position: relative; min-height: 100vh; min-height: 100dvh; display: flow-root; }
+.app { position: relative; min-height: 100vh; min-height: var(--vb-vh); display: flow-root; }
 .app > main { position: relative; z-index: 1; }
 
 .muted { color: var(--muted); font-size: 14px; }
@@ -149,13 +156,15 @@ button.link {
 
 .stack { display: flex; flex-direction: column; gap: 16px; }
 /* 学习卡片的页面：内容区正好是屏幕减去导航的高度，卡片（Player）撑满里面剩下的空间。宽屏放宽一些。 */
-.fill { max-width: 1000px; height: calc(100dvh - var(--nav-h)); }
+.fill { max-width: 1000px; height: calc(var(--vb-vh) - var(--nav-h)); }
 
 /* 专注模式（学习卡片、做题时，见 Nav.tsx 的 useImmersive）：导航收起，页面不滚动，内容区占满整个屏幕。 */
 body[data-immersive] { --nav-h: 0px; overflow: hidden; overscroll-behavior: none; }
 body[data-immersive] .content { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-/* 做题的页面内容可能比屏幕高（看完答案），在内容区里面滚动；学习卡片（.fill）正好一屏，不滚。 */
-body[data-immersive] .content:not(.fill) { height: 100dvh; overflow-y: auto; overscroll-behavior: contain; }
+/* 做题的页面内容可能比屏幕高（看完答案、展开题解），在内容区里面滚动；学习卡片（.fill）正好一屏，不滚。 */
+/* .content.stack 是定高纵向 flex 容器，带 overflow: hidden 的子卡片默认会被压扁导致裁切且无法滚动，必须禁止压缩。 */
+body[data-immersive] .content:not(.fill) { height: 100vh; height: var(--vb-vh); overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+body[data-immersive] .content:not(.fill) > * { flex-shrink: 0; }
 /* 横屏的手机：卡片像视频一样铺满，边距收小。 */
 @media (orientation: landscape) and (max-height: 500px) {
   body[data-immersive] .fill { max-width: none; padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
@@ -186,7 +195,7 @@ input[type="checkbox"] { flex: none; width: 20px; height: 20px; accent-color: va
 /* 手机上导航（Nav）是底部悬浮的标签栏，页面底部给它留出位置。 */
 @media (max-width: 600px) {
   :root { --nav-h: 0px; }
-  .content { padding: 16px 16px calc(96px + env(safe-area-inset-bottom)); }
+  .content { padding: 16px 16px calc(96px + env(safe-area-inset-bottom) + var(--vb-bottom-clip, 0px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

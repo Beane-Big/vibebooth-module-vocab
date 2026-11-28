@@ -6,9 +6,9 @@
   .landscape {
     position: fixed;
     z-index: 20;
-    top: 50%;
+    top: calc(var(--vb-vh) / 2);
     left: 50%;
-    width: 100dvh;
+    width: var(--vb-vh);
     height: 100vw;
     padding: 10px max(12px, env(safe-area-inset-bottom)) 10px max(12px, env(safe-area-inset-top));
     background: var(--bg);

@@ -69,6 +69,7 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
   const [error, setError] = useState("");
   const results = useRef<Result[]>([]);
   const card = useRef<HTMLElement>(null);
+  const analysis = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; dx: number; id: number; moved: boolean } | null>(null);
   const input = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   // 选择题每题的方向：true 是选中文（看英文选中文、听音选中文），false 是选英文。
@@ -123,6 +124,7 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
     setSelected(null);
     setPicked(null);
     setError("");
+    card.current?.parentElement?.scrollTo({ top: 0 });
     playPrompt();
     if (typing || m === "translate") input.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -421,8 +423,19 @@ export default function Quiz({ words, mode, grading, examples, settings, onAnswe
             </div>
           )}
           {choice && picked !== null && otherOptions.length > 0 && (
-            <div className={styles.analysis}>
-              <button type="button" className={styles.analysisToggle} aria-expanded={showAnalysis} onClick={() => setShowAnalysis((open) => !open)}>
+            <div ref={analysis} className={styles.analysis}>
+              <button
+                type="button"
+                className={styles.analysisToggle}
+                aria-expanded={showAnalysis}
+                onClick={() => {
+                  const nextOpen = !showAnalysis;
+                  setShowAnalysis(nextOpen);
+                  if (nextOpen) {
+                    requestAnimationFrame(() => analysis.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+                  }
+                }}
+              >
                 <span>题解 · 其他选项释义</span>
                 <span className={`${styles.analysisArrow} ${showAnalysis ? styles.analysisArrowOpen : ""}`} aria-hidden="true">
                   ▾

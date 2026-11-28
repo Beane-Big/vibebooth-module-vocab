@@ -70,7 +70,7 @@
     left: 12px;
     right: 12px;
     top: auto;
-    bottom: max(12px, env(safe-area-inset-bottom));
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + var(--vb-bottom-clip, 0px));
     width: auto;
     margin: 0;
   }
